@@ -14,6 +14,7 @@ import { createClient } from "@/lib/supabase/client";
 import { FarmsMap } from "./farms-map";
 import { FarmsList } from "./farms-list";
 import { FarmsByCounty } from "./farms-by-county";
+import { FarmsSummary } from "./farms-summary";
 
 export type Farm = {
   upid: string;
@@ -86,19 +87,19 @@ export function FarmsExplorer() {
   const filterActive =
     statusFilter !== "all" || typeFilter !== ALL_TYPES;
 
-  const countyCount = countUniqueCounties(filteredFarms);
-
-  const summary = loading
-    ? "Loading…"
-    : loadError
-      ? `Error: ${loadError}`
-      : filterActive
-        ? `${filteredFarms.length} of ${farms.length} farms · ${countyCount} counties`
-        : `${farms.length} farms across ${countyCount} counties`;
-
   return (
     <div>
-      <div className="mb-4 text-sm text-zinc-600">{summary}</div>
+      {loading ? (
+        <div className="mb-4 text-sm text-zinc-600">Loading…</div>
+      ) : loadError ? (
+        <div className="mb-4 text-sm text-red-700">Error: {loadError}</div>
+      ) : (
+        <FarmsSummary
+          filteredFarms={filteredFarms}
+          totalFarms={farms}
+          filterActive={filterActive}
+        />
+      )}
 
       <div className="mb-4 rounded-lg border border-gray-200 bg-white px-4 py-3 flex flex-wrap items-center gap-x-6 gap-y-3">
         <div className="flex items-center gap-3">
@@ -171,13 +172,4 @@ export function FarmsExplorer() {
       </Tabs>
     </div>
   );
-}
-
-function countUniqueCounties(farms: Farm[]): number {
-  const set = new Set<string>();
-  for (const f of farms) {
-    const name = (f.attributes as { county_name?: string } | null)?.county_name;
-    if (name) set.add(name);
-  }
-  return set.size;
 }
