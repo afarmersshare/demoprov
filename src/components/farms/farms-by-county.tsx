@@ -30,7 +30,9 @@ export function FarmsByCounty({ farms }: { farms: Farm[] }) {
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-5">
       {rows.length === 0 ? (
-        <div className="text-sm text-zinc-500">No farms to summarize yet.</div>
+        <div className="text-sm text-zinc-500">
+          No farms match these filters — adjust above.
+        </div>
       ) : (
         <div className="space-y-4">
           {rows.map((row) => {

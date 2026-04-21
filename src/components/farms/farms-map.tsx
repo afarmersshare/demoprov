@@ -90,6 +90,14 @@ export function FarmsMap({ farms }: { farms: Farm[] }) {
         ) : null}
       </Map>
 
+      {farms.length === 0 ? (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="bg-white/95 backdrop-blur-sm rounded-md shadow-md px-4 py-3 text-sm text-zinc-700">
+            No farms match these filters — adjust above.
+          </div>
+        </div>
+      ) : null}
+
       <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm rounded-md shadow-md px-3 py-2 text-xs space-y-0.5">
         <div className="flex items-center gap-1.5">
           <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#15803d]" />

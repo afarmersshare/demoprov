@@ -12,6 +12,14 @@ function prettify(raw: string | null): string {
 export function FarmsList({ farms }: { farms: Farm[] }) {
   const sorted = [...farms].sort((a, b) => a.name.localeCompare(b.name));
 
+  if (sorted.length === 0) {
+    return (
+      <div className="rounded-lg border border-gray-200 bg-white px-5 py-8 text-center text-sm text-zinc-500">
+        No farms match these filters — adjust above.
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-lg border border-gray-200 overflow-hidden bg-white">
       <div className="overflow-x-auto">
