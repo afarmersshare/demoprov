@@ -1,6 +1,11 @@
 "use client";
 
-import Map, { Marker, NavigationControl } from "react-map-gl/maplibre";
+import { useEffect, useRef } from "react";
+import Map, {
+  Marker,
+  NavigationControl,
+  type MapRef,
+} from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Farm } from "./farms-explorer";
 
@@ -18,9 +23,47 @@ type Props = {
 };
 
 export function FarmsMap({ farms, selected, onSelect }: Props) {
+  const mapRef = useRef<MapRef | null>(null);
+  const hasAutoFittedOnceRef = useRef(false);
+
+  useEffect(() => {
+    if (!hasAutoFittedOnceRef.current) {
+      hasAutoFittedOnceRef.current = true;
+      return;
+    }
+    const map = mapRef.current;
+    if (!map) return;
+    const points = farms
+      .filter((f) => f.geom_point)
+      .map((f) => f.geom_point!.coordinates);
+    if (points.length === 0) return;
+    if (points.length === 1) {
+      map.flyTo({ center: points[0], zoom: 11, duration: 700 });
+      return;
+    }
+    let minLng = points[0][0];
+    let maxLng = points[0][0];
+    let minLat = points[0][1];
+    let maxLat = points[0][1];
+    for (const [lng, lat] of points) {
+      if (lng < minLng) minLng = lng;
+      if (lng > maxLng) maxLng = lng;
+      if (lat < minLat) minLat = lat;
+      if (lat > maxLat) maxLat = lat;
+    }
+    map.fitBounds(
+      [
+        [minLng, minLat],
+        [maxLng, maxLat],
+      ],
+      { padding: 60, duration: 700, maxZoom: 11 },
+    );
+  }, [farms]);
+
   return (
     <div className="relative w-full h-[600px] rounded-[14px] overflow-hidden border border-cream-shadow">
       <Map
+        ref={mapRef}
         initialViewState={{
           longitude: -85.7585,
           latitude: 38.2527,

@@ -33,6 +33,7 @@ export type Farm = {
 
 type StatusFilter = "all" | "enrolled" | "engaged" | "prospect";
 const ALL_TYPES = "__all__";
+const ALL_COUNTIES = "__all_counties__";
 
 function prettify(raw: string): string {
   return raw.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
@@ -44,6 +45,7 @@ export function FarmsExplorer() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [typeFilter, setTypeFilter] = useState<string>(ALL_TYPES);
+  const [countyFilter, setCountyFilter] = useState<string>(ALL_COUNTIES);
   const [selectedFarm, setSelectedFarm] = useState<Farm | null>(null);
 
   useEffect(() => {
@@ -71,6 +73,16 @@ export function FarmsExplorer() {
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [farms]);
 
+  const availableCounties = useMemo(() => {
+    const set = new Set<string>();
+    for (const f of farms) {
+      const county = (f.attributes as { county_name?: string } | null)
+        ?.county_name;
+      if (county) set.add(county);
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [farms]);
+
   const filteredFarms = useMemo(() => {
     return farms.filter((f) => {
       if (statusFilter !== "all" && f.afs_member_status !== statusFilter) {
@@ -79,12 +91,19 @@ export function FarmsExplorer() {
       if (typeFilter !== ALL_TYPES && f.farm_type !== typeFilter) {
         return false;
       }
+      if (countyFilter !== ALL_COUNTIES) {
+        const county = (f.attributes as { county_name?: string } | null)
+          ?.county_name;
+        if (county !== countyFilter) return false;
+      }
       return true;
     });
-  }, [farms, statusFilter, typeFilter]);
+  }, [farms, statusFilter, typeFilter, countyFilter]);
 
   const filterActive =
-    statusFilter !== "all" || typeFilter !== ALL_TYPES;
+    statusFilter !== "all" ||
+    typeFilter !== ALL_TYPES ||
+    countyFilter !== ALL_COUNTIES;
 
   useEffect(() => {
     if (!selectedFarm) return;
@@ -146,12 +165,32 @@ export function FarmsExplorer() {
           </Select>
         </div>
 
+        <div className="flex items-center gap-3">
+          <label className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft">
+            County
+          </label>
+          <Select value={countyFilter} onValueChange={setCountyFilter}>
+            <SelectTrigger className="min-w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL_COUNTIES}>All counties</SelectItem>
+              {availableCounties.map((c) => (
+                <SelectItem key={c} value={c}>
+                  {c}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         {filterActive ? (
           <button
             type="button"
             onClick={() => {
               setStatusFilter("all");
               setTypeFilter(ALL_TYPES);
+              setCountyFilter(ALL_COUNTIES);
             }}
             className="ml-auto text-xs text-charcoal-soft underline underline-offset-2 hover:text-moss"
           >
