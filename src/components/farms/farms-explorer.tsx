@@ -13,6 +13,9 @@ export type Farm = {
   farm_type: string | null;
   afs_member_status: string | null;
   acres_total: number | null;
+  gross_revenue_baseline: number | null;
+  gross_revenue_baseline_year: number | null;
+  afs_priority_tier: string | null;
   county_fips: string | null;
   attributes: Record<string, unknown> | null;
   geom_point: { coordinates: [number, number] } | null;
@@ -28,7 +31,7 @@ export function FarmsExplorer() {
     supabase
       .from("farms")
       .select(
-        "upid, name, farm_type, afs_member_status, acres_total, county_fips, attributes, geom_point",
+        "upid, name, farm_type, afs_member_status, acres_total, gross_revenue_baseline, gross_revenue_baseline_year, afs_priority_tier, county_fips, attributes, geom_point",
       )
       .then(({ data, error }) => {
         setLoading(false);
