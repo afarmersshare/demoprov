@@ -9,6 +9,13 @@ function prettify(raw: string | null): string {
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+function statusPillClasses(status: string | null): string {
+  if (status === "enrolled") return "bg-moss text-cream";
+  if (status === "engaged") return "bg-amber text-cream";
+  if (status === "prospect") return "bg-terracotta text-cream";
+  return "bg-bone text-charcoal";
+}
+
 export function FarmsList({ farms }: { farms: Farm[] }) {
   const sorted = [...farms].sort((a, b) => a.name.localeCompare(b.name));
 
@@ -48,7 +55,6 @@ export function FarmsList({ farms }: { farms: Farm[] }) {
               const countyName =
                 (farm.attributes as { county_name?: string } | null)
                   ?.county_name ?? "—";
-              const enrolled = farm.afs_member_status === "enrolled";
               return (
                 <tr
                   key={farm.upid}
@@ -70,9 +76,7 @@ export function FarmsList({ farms }: { farms: Farm[] }) {
                     <span
                       className={
                         "inline-block px-2.5 py-0.5 rounded-full text-[11px] font-medium " +
-                        (enrolled
-                          ? "bg-moss text-cream"
-                          : "bg-bone text-charcoal")
+                        statusPillClasses(farm.afs_member_status)
                       }
                     >
                       {prettify(farm.afs_member_status)}

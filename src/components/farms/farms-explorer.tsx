@@ -15,6 +15,7 @@ import { FarmsMap } from "./farms-map";
 import { FarmsList } from "./farms-list";
 import { FarmsByCounty } from "./farms-by-county";
 import { FarmsSummary } from "./farms-summary";
+import { FarmDetailPanel } from "./farm-detail-panel";
 
 export type Farm = {
   upid: string;
@@ -30,7 +31,7 @@ export type Farm = {
   geom_point: { coordinates: [number, number] } | null;
 };
 
-type StatusFilter = "all" | "enrolled" | "engaged";
+type StatusFilter = "all" | "enrolled" | "engaged" | "prospect";
 const ALL_TYPES = "__all__";
 
 function prettify(raw: string): string {
@@ -43,6 +44,7 @@ export function FarmsExplorer() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [typeFilter, setTypeFilter] = useState<string>(ALL_TYPES);
+  const [selectedFarm, setSelectedFarm] = useState<Farm | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -71,10 +73,7 @@ export function FarmsExplorer() {
 
   const filteredFarms = useMemo(() => {
     return farms.filter((f) => {
-      if (statusFilter === "enrolled" && f.afs_member_status !== "enrolled") {
-        return false;
-      }
-      if (statusFilter === "engaged" && f.afs_member_status === "enrolled") {
+      if (statusFilter !== "all" && f.afs_member_status !== statusFilter) {
         return false;
       }
       if (typeFilter !== ALL_TYPES && f.farm_type !== typeFilter) {
@@ -86,6 +85,12 @@ export function FarmsExplorer() {
 
   const filterActive =
     statusFilter !== "all" || typeFilter !== ALL_TYPES;
+
+  useEffect(() => {
+    if (!selectedFarm) return;
+    const stillIn = filteredFarms.some((f) => f.upid === selectedFarm.upid);
+    if (!stillIn) setSelectedFarm(null);
+  }, [filteredFarms, selectedFarm]);
 
   return (
     <div>
@@ -117,7 +122,8 @@ export function FarmsExplorer() {
           >
             <ToggleGroupItem value="all">All</ToggleGroupItem>
             <ToggleGroupItem value="enrolled">Enrolled</ToggleGroupItem>
-            <ToggleGroupItem value="engaged">Engaged / prospect</ToggleGroupItem>
+            <ToggleGroupItem value="engaged">Engaged</ToggleGroupItem>
+            <ToggleGroupItem value="prospect">Prospect</ToggleGroupItem>
           </ToggleGroup>
         </div>
 
@@ -161,7 +167,17 @@ export function FarmsExplorer() {
           <TabsTrigger value="county">By county</TabsTrigger>
         </TabsList>
         <TabsContent value="map" className="mt-4">
-          <FarmsMap farms={filteredFarms} />
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_340px] gap-5">
+            <FarmsMap
+              farms={filteredFarms}
+              selected={selectedFarm}
+              onSelect={setSelectedFarm}
+            />
+            <FarmDetailPanel
+              farm={selectedFarm}
+              farmCount={filteredFarms.length}
+            />
+          </div>
         </TabsContent>
         <TabsContent value="list" className="mt-4">
           <FarmsList farms={filteredFarms} />
