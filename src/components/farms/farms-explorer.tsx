@@ -90,9 +90,9 @@ export function FarmsExplorer() {
   return (
     <div>
       {loading ? (
-        <div className="mb-4 text-sm text-zinc-600">Loading…</div>
+        <div className="mb-6 text-sm text-charcoal-soft">Loading…</div>
       ) : loadError ? (
-        <div className="mb-4 text-sm text-red-700">Error: {loadError}</div>
+        <div className="mb-6 text-sm text-red-700">Error: {loadError}</div>
       ) : (
         <FarmsSummary
           filteredFarms={filteredFarms}
@@ -101,9 +101,9 @@ export function FarmsExplorer() {
         />
       )}
 
-      <div className="mb-4 rounded-lg border border-gray-200 bg-white px-4 py-3 flex flex-wrap items-center gap-x-6 gap-y-3">
+      <div className="mb-5 rounded-[14px] border border-cream-shadow bg-white px-5 py-4 flex flex-wrap items-center gap-x-8 gap-y-3">
         <div className="flex items-center gap-3">
-          <label className="text-xs font-medium text-zinc-600 uppercase tracking-wide">
+          <label className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft">
             Member status
           </label>
           <ToggleGroup
@@ -122,7 +122,7 @@ export function FarmsExplorer() {
         </div>
 
         <div className="flex items-center gap-3">
-          <label className="text-xs font-medium text-zinc-600 uppercase tracking-wide">
+          <label className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft">
             Farm type
           </label>
           <Select value={typeFilter} onValueChange={setTypeFilter}>
@@ -147,7 +147,7 @@ export function FarmsExplorer() {
               setStatusFilter("all");
               setTypeFilter(ALL_TYPES);
             }}
-            className="ml-auto text-xs text-zinc-600 underline underline-offset-2 hover:text-zinc-900"
+            className="ml-auto text-xs text-charcoal-soft underline underline-offset-2 hover:text-moss"
           >
             Clear filters
           </button>

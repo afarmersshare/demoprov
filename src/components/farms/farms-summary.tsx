@@ -24,7 +24,7 @@ export function FarmsSummary({ filteredFarms, totalFarms, filterActive }: Props)
   const totalCounties = uniqueCounties(totalFarms);
 
   return (
-    <div className="mb-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-4">
       <Card
         label="Farms"
         value={farmCount.toLocaleString()}
@@ -51,7 +51,6 @@ export function FarmsSummary({ filteredFarms, totalFarms, filterActive }: Props)
             ? `${enrolledPct.toFixed(0)}% of farms in view`
             : "—"
         }
-        accent="emerald"
       />
       <Card
         label="Counties"
@@ -70,28 +69,20 @@ function Card({
   label,
   value,
   sub,
-  accent,
 }: {
   label: string;
   value: string;
   sub: string;
-  accent?: "emerald";
 }) {
-  const valueClass =
-    accent === "emerald"
-      ? "text-emerald-700"
-      : "text-zinc-900";
   return (
-    <div className="rounded-lg border border-gray-200 bg-white px-4 py-3">
-      <div className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
-        {label}
-      </div>
-      <div
-        className={`mt-1 text-2xl font-semibold tabular-nums leading-none ${valueClass}`}
-      >
+    <div className="rounded-[14px] border border-cream-shadow bg-white px-6 py-6 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(31,36,33,0.06)]">
+      <div className="font-mono text-[40px] font-bold leading-none text-moss tabular-nums">
         {value}
       </div>
-      <div className="mt-1.5 text-xs text-zinc-500">{sub}</div>
+      <div className="mt-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-charcoal-soft">
+        {label}
+      </div>
+      <div className="mt-1 text-xs text-charcoal-soft/80">{sub}</div>
     </div>
   );
 }

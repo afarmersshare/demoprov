@@ -14,25 +14,33 @@ export function FarmsList({ farms }: { farms: Farm[] }) {
 
   if (sorted.length === 0) {
     return (
-      <div className="rounded-lg border border-gray-200 bg-white px-5 py-8 text-center text-sm text-zinc-500">
+      <div className="rounded-[14px] border border-cream-shadow bg-white px-5 py-10 text-center text-sm text-charcoal-soft">
         No farms match these filters — adjust above.
       </div>
     );
   }
 
   return (
-    <div className="rounded-lg border border-gray-200 overflow-hidden bg-white">
+    <div className="rounded-[14px] border border-cream-shadow overflow-hidden bg-white">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-zinc-50 border-b border-gray-200">
+          <thead className="bg-cream-deep/60 border-b border-cream-shadow">
             <tr className="text-left">
-              <th className="px-4 py-2.5 font-medium text-zinc-700">Farm</th>
-              <th className="px-4 py-2.5 font-medium text-zinc-700">County</th>
-              <th className="px-4 py-2.5 font-medium text-zinc-700">Type</th>
-              <th className="px-4 py-2.5 font-medium text-zinc-700 text-right">
+              <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-charcoal-soft">
+                Farm
+              </th>
+              <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-charcoal-soft">
+                County
+              </th>
+              <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-charcoal-soft">
+                Type
+              </th>
+              <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-charcoal-soft text-right">
                 Acres
               </th>
-              <th className="px-4 py-2.5 font-medium text-zinc-700">Status</th>
+              <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-charcoal-soft">
+                Status
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -44,23 +52,27 @@ export function FarmsList({ farms }: { farms: Farm[] }) {
               return (
                 <tr
                   key={farm.upid}
-                  className="border-b border-gray-100 last:border-0 hover:bg-zinc-50"
+                  className="border-b border-cream-shadow/60 last:border-0 hover:bg-cream-deep/40 transition-colors"
                 >
-                  <td className="px-4 py-2 text-zinc-900">{farm.name}</td>
-                  <td className="px-4 py-2 text-zinc-600">{countyName}</td>
-                  <td className="px-4 py-2 text-zinc-600">
+                  <td className="px-4 py-2.5 text-charcoal font-medium">
+                    {farm.name}
+                  </td>
+                  <td className="px-4 py-2.5 text-charcoal-soft">
+                    {countyName}
+                  </td>
+                  <td className="px-4 py-2.5 text-charcoal-soft">
                     {prettify(farm.farm_type)}
                   </td>
-                  <td className="px-4 py-2 text-right tabular-nums text-zinc-600">
+                  <td className="px-4 py-2.5 text-right tabular-nums text-charcoal-soft font-mono">
                     {farm.acres_total?.toLocaleString() ?? "—"}
                   </td>
-                  <td className="px-4 py-2">
+                  <td className="px-4 py-2.5">
                     <span
                       className={
-                        "inline-block px-2 py-0.5 rounded-full text-xs font-medium " +
+                        "inline-block px-2.5 py-0.5 rounded-full text-[11px] font-medium " +
                         (enrolled
-                          ? "bg-green-100 text-green-800"
-                          : "bg-amber-100 text-amber-800")
+                          ? "bg-moss text-cream"
+                          : "bg-bone text-charcoal")
                       }
                     >
                       {prettify(farm.afs_member_status)}

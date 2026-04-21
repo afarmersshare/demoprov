@@ -2,18 +2,19 @@ import { FarmsExplorer } from "@/components/farms/farms-explorer";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-zinc-50 p-6 sm:p-10">
-      <div className="mx-auto max-w-6xl">
-        <header className="mb-6">
-          <h1 className="text-3xl font-bold tracking-tight text-zinc-900">
-            Provender — Louisville Demo
-          </h1>
-          <p className="mt-2 text-zinc-600">
-            60 fictional farms across Louisville metro and surrounding
-            Kentucky / Southern Indiana counties. Switch lenses to see the same
-            data through different questions.
-          </p>
-        </header>
+    <main className="min-h-screen bg-cream text-charcoal">
+      <nav className="border-b border-cream-shadow bg-cream/85 backdrop-blur-md">
+        <div className="mx-auto max-w-7xl flex items-center justify-between px-6 sm:px-10 py-3.5">
+          <div className="font-display text-[26px] font-bold tracking-[-0.02em] leading-none text-moss">
+            Provender<span className="text-amber">.</span>
+          </div>
+          <div className="inline-flex items-center gap-2 rounded-full bg-bone px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-charcoal-soft">
+            <span className="inline-block h-2 w-2 rounded-full bg-amber" />
+            Louisville &amp; Kentuckiana
+          </div>
+        </div>
+      </nav>
+      <div className="mx-auto max-w-7xl px-6 sm:px-10 py-8 sm:py-10">
         <FarmsExplorer />
       </div>
     </main>

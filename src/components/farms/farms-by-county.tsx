@@ -28,42 +28,42 @@ export function FarmsByCounty({ farms }: { farms: Farm[] }) {
   const maxCount = Math.max(1, ...rows.map((r) => r.count));
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-5">
+    <div className="rounded-[14px] border border-cream-shadow bg-white p-6">
       {rows.length === 0 ? (
-        <div className="text-sm text-zinc-500">
+        <div className="text-sm text-charcoal-soft">
           No farms match these filters — adjust above.
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-5">
           {rows.map((row) => {
             const enrolledPct = row.count > 0 ? (row.enrolled / row.count) * 100 : 0;
             return (
               <div key={row.name}>
-                <div className="flex items-baseline justify-between mb-1.5 gap-4">
-                  <div className="text-sm font-medium text-zinc-900 truncate">
+                <div className="flex items-baseline justify-between mb-2 gap-4">
+                  <div className="text-sm font-medium text-charcoal truncate">
                     {row.name}
                   </div>
-                  <div className="text-xs text-zinc-600 tabular-nums whitespace-nowrap">
+                  <div className="text-xs text-charcoal-soft tabular-nums font-mono whitespace-nowrap">
                     {row.count} farm{row.count === 1 ? "" : "s"}
                     {" · "}
                     {row.enrolled} enrolled
                     {" · "}
-                    {row.acres.toLocaleString()} acres
+                    {row.acres.toLocaleString()} ac
                   </div>
                 </div>
-                <div className="relative h-2.5 w-full bg-zinc-100 rounded-full overflow-hidden">
+                <div className="relative h-2.5 w-full bg-cream-deep rounded-full overflow-hidden">
                   <div
-                    className="absolute inset-y-0 left-0 bg-amber-400"
+                    className="absolute inset-y-0 left-0 bg-amber"
                     style={{ width: `${(row.count / maxCount) * 100}%` }}
                   />
                   <div
-                    className="absolute inset-y-0 left-0 bg-emerald-600"
+                    className="absolute inset-y-0 left-0 bg-moss"
                     style={{
                       width: `${((row.enrolled / maxCount) * 100).toFixed(2)}%`,
                     }}
                   />
                 </div>
-                <div className="mt-0.5 text-[11px] text-zinc-500 tabular-nums">
+                <div className="mt-1 text-[11px] text-charcoal-soft tabular-nums">
                   {enrolledPct.toFixed(0)}% enrolled
                 </div>
               </div>

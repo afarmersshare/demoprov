@@ -27,7 +27,7 @@ export function FarmsMap({ farms }: { farms: Farm[] }) {
   const [selected, setSelected] = useState<Farm | null>(null);
 
   return (
-    <div className="relative w-full h-[600px] rounded-lg overflow-hidden border border-gray-200">
+    <div className="relative w-full h-[600px] rounded-[14px] overflow-hidden border border-cream-shadow">
       <Map
         initialViewState={{
           longitude: -85.7585,
@@ -59,11 +59,11 @@ export function FarmsMap({ farms }: { farms: Farm[] }) {
                   borderRadius: "50%",
                   background:
                     farm.afs_member_status === "enrolled"
-                      ? "#15803d"
-                      : "#d97706",
+                      ? "#2f4a3a"
+                      : "#c77f2a",
                   border:
                     selected?.upid === farm.upid
-                      ? "3px solid #1e40af"
+                      ? "3px solid #1f2421"
                       : "2px solid white",
                   boxShadow: "0 0 4px rgba(0,0,0,0.35)",
                   cursor: "pointer",
@@ -98,16 +98,16 @@ export function FarmsMap({ farms }: { farms: Farm[] }) {
         </div>
       ) : null}
 
-      <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm rounded-md shadow-md px-3 py-2 text-xs space-y-0.5">
-        <div className="flex items-center gap-1.5">
-          <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#15803d]" />
+      <div className="absolute bottom-4 left-4 bg-white/96 backdrop-blur-sm rounded-[10px] border border-cream-shadow px-4 py-3 text-xs text-charcoal-soft shadow-sm space-y-1.5">
+        <div className="flex items-center gap-2.5">
+          <span className="inline-block w-3 h-3 rounded-full bg-moss" />
           Enrolled AFS member
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#d97706]" />
+        <div className="flex items-center gap-2.5">
+          <span className="inline-block w-3 h-3 rounded-full bg-amber" />
           Engaged / prospect
         </div>
-        <div className="pt-1 text-[10px] text-zinc-500">
+        <div className="pt-1 text-[10px] text-charcoal-soft/70">
           Click a dot for details
         </div>
       </div>
@@ -121,15 +121,15 @@ function FarmPopupContent({ farm }: { farm: Farm }) {
   const enrolled = farm.afs_member_status === "enrolled";
 
   return (
-    <div className="text-sm font-sans">
-      <div className="font-semibold text-zinc-900 text-[15px] leading-tight mb-1 pr-4">
+    <div className="text-sm">
+      <div className="font-display text-[18px] font-semibold text-moss leading-tight mb-1 pr-4 tracking-[-0.01em]">
         {farm.name}
       </div>
       {countyName ? (
-        <div className="text-xs text-zinc-500 mb-2">{countyName}</div>
+        <div className="text-xs text-charcoal-soft mb-2">{countyName}</div>
       ) : null}
 
-      <div className="space-y-1 text-xs">
+      <div className="space-y-1.5 text-xs">
         <Row label="Type" value={prettify(farm.farm_type)} />
         <Row
           label="Acres"
@@ -143,13 +143,13 @@ function FarmPopupContent({ farm }: { farm: Farm }) {
         ) : null}
       </div>
 
-      <div className="mt-2">
+      <div className="mt-2.5">
         <span
           className={
-            "inline-block px-2 py-0.5 rounded-full text-[11px] font-medium " +
+            "inline-block px-2.5 py-0.5 rounded-full text-[11px] font-medium " +
             (enrolled
-              ? "bg-green-100 text-green-800"
-              : "bg-amber-100 text-amber-800")
+              ? "bg-moss text-cream"
+              : "bg-bone text-charcoal")
           }
         >
           {prettify(farm.afs_member_status)}
@@ -161,9 +161,11 @@ function FarmPopupContent({ farm }: { farm: Farm }) {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between gap-3">
-      <span className="text-zinc-500">{label}</span>
-      <span className="text-zinc-900 tabular-nums text-right">{value}</span>
+    <div className="flex justify-between gap-3 border-t border-cream-shadow pt-1.5 first:border-t-0 first:pt-0">
+      <span className="text-charcoal-soft">{label}</span>
+      <span className="text-charcoal tabular-nums font-semibold text-right">
+        {value}
+      </span>
     </div>
   );
 }
