@@ -16,7 +16,13 @@ function statusPillClasses(status: string | null): string {
   return "bg-bone text-charcoal";
 }
 
-export function FarmsList({ farms }: { farms: Farm[] }) {
+type Props = {
+  farms: Farm[];
+  selected: Farm | null;
+  onSelect: (farm: Farm | null) => void;
+};
+
+export function FarmsList({ farms, selected, onSelect }: Props) {
   const sorted = [...farms].sort((a, b) => a.name.localeCompare(b.name));
 
   if (sorted.length === 0) {
@@ -29,9 +35,9 @@ export function FarmsList({ farms }: { farms: Farm[] }) {
 
   return (
     <div className="rounded-[14px] border border-cream-shadow overflow-hidden bg-white">
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
         <table className="w-full text-sm">
-          <thead className="bg-cream-deep/60 border-b border-cream-shadow">
+          <thead className="bg-cream-deep/60 border-b border-cream-shadow sticky top-0 z-10">
             <tr className="text-left">
               <th className="px-4 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-charcoal-soft">
                 Farm
@@ -55,10 +61,17 @@ export function FarmsList({ farms }: { farms: Farm[] }) {
               const countyName =
                 (farm.attributes as { county_name?: string } | null)
                   ?.county_name ?? "—";
+              const isSelected = selected?.upid === farm.upid;
               return (
                 <tr
                   key={farm.upid}
-                  className="border-b border-cream-shadow/60 last:border-0 hover:bg-cream-deep/40 transition-colors"
+                  onClick={() => onSelect(farm)}
+                  className={
+                    "border-b border-cream-shadow/60 last:border-0 cursor-pointer transition-colors " +
+                    (isSelected
+                      ? "bg-cream-deep"
+                      : "hover:bg-cream-deep/40")
+                  }
                 >
                   <td className="px-4 py-2.5 text-charcoal font-medium">
                     {farm.name}

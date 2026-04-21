@@ -15,7 +15,7 @@ import { FarmsMap } from "./farms-map";
 import { FarmsList } from "./farms-list";
 import { FarmsByCounty } from "./farms-by-county";
 import { FarmsSummary } from "./farms-summary";
-import { FarmDetailPanel } from "./farm-detail-panel";
+import { FarmDetailPanel, FarmDetailOverlay } from "./farm-detail-panel";
 
 export type Farm = {
   upid: string;
@@ -167,25 +167,47 @@ export function FarmsExplorer() {
           <TabsTrigger value="county">By county</TabsTrigger>
         </TabsList>
         <TabsContent value="map" className="mt-4">
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_340px] gap-5">
+          <div className="md:grid md:grid-cols-[1fr_340px] md:gap-5">
             <FarmsMap
               farms={filteredFarms}
               selected={selectedFarm}
               onSelect={setSelectedFarm}
             />
-            <FarmDetailPanel
-              farm={selectedFarm}
-              farmCount={filteredFarms.length}
-            />
+            <div className="hidden md:block">
+              <FarmDetailPanel
+                farm={selectedFarm}
+                farmCount={filteredFarms.length}
+                hintToClick="Click any marker on the map to see details for that farm."
+              />
+            </div>
           </div>
         </TabsContent>
         <TabsContent value="list" className="mt-4">
-          <FarmsList farms={filteredFarms} />
+          <div className="md:grid md:grid-cols-[1fr_340px] md:gap-5">
+            <FarmsList
+              farms={filteredFarms}
+              selected={selectedFarm}
+              onSelect={setSelectedFarm}
+            />
+            <div className="hidden md:block">
+              <FarmDetailPanel
+                farm={selectedFarm}
+                farmCount={filteredFarms.length}
+                hintToClick="Click any row to see details for that farm."
+              />
+            </div>
+          </div>
         </TabsContent>
         <TabsContent value="county" className="mt-4">
           <FarmsByCounty farms={filteredFarms} />
         </TabsContent>
       </Tabs>
+
+      <FarmDetailOverlay
+        farm={selectedFarm}
+        farmCount={filteredFarms.length}
+        onClose={() => setSelectedFarm(null)}
+      />
     </div>
   );
 }

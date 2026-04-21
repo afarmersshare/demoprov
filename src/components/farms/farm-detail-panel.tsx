@@ -1,5 +1,6 @@
 "use client";
 
+import { X } from "lucide-react";
 import type { Farm } from "./farms-explorer";
 
 function prettify(raw: string | null): string {
@@ -23,28 +24,31 @@ function statusPillClasses(status: string | null): string {
   return "bg-bone text-charcoal";
 }
 
-type Props = {
+function FarmDetailContent({
+  farm,
+  farmCount,
+  hintToClick,
+}: {
   farm: Farm | null;
   farmCount: number;
-};
-
-export function FarmDetailPanel({ farm, farmCount }: Props) {
+  hintToClick: string;
+}) {
   if (!farm) {
     return (
-      <div className="rounded-[14px] border border-cream-shadow bg-white p-6 h-[600px] flex flex-col">
+      <>
         <div className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft">
           Farm details
         </div>
         <div className="mt-auto mb-auto text-center px-2">
           <div className="text-charcoal-soft text-sm leading-relaxed">
-            Click any marker on the map to see details for that farm.
+            {hintToClick}
           </div>
           <div className="mt-3 text-xs text-charcoal-soft/70">
             {farmCount.toLocaleString()} farm{farmCount === 1 ? "" : "s"} in
             view.
           </div>
         </div>
-      </div>
+      </>
     );
   }
 
@@ -52,7 +56,7 @@ export function FarmDetailPanel({ farm, farmCount }: Props) {
     (farm.attributes as { county_name?: string } | null)?.county_name ?? null;
 
   return (
-    <div className="rounded-[14px] border border-cream-shadow bg-white p-6 h-[600px] overflow-y-auto">
+    <>
       <div className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft mb-3">
         Farm details
       </div>
@@ -98,6 +102,61 @@ export function FarmDetailPanel({ farm, farmCount }: Props) {
           />
         ) : null}
       </dl>
+    </>
+  );
+}
+
+export function FarmDetailPanel({
+  farm,
+  farmCount,
+  hintToClick = "Click any marker on the map to see details for that farm.",
+}: {
+  farm: Farm | null;
+  farmCount: number;
+  hintToClick?: string;
+}) {
+  return (
+    <div className="rounded-[14px] border border-cream-shadow bg-white p-6 h-[600px] overflow-y-auto flex flex-col">
+      <FarmDetailContent
+        farm={farm}
+        farmCount={farmCount}
+        hintToClick={hintToClick}
+      />
+    </div>
+  );
+}
+
+export function FarmDetailOverlay({
+  farm,
+  farmCount,
+  onClose,
+}: {
+  farm: Farm | null;
+  farmCount: number;
+  onClose: () => void;
+}) {
+  if (!farm) return null;
+  return (
+    <div className="md:hidden fixed inset-0 z-50 flex items-stretch">
+      <div
+        className="absolute inset-0 bg-charcoal/40 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <div className="relative m-4 w-full bg-white rounded-[14px] border border-cream-shadow p-6 overflow-y-auto max-h-[calc(100vh-2rem)]">
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close farm details"
+          className="absolute top-3 right-3 w-8 h-8 rounded-full bg-cream-deep hover:bg-cream-shadow flex items-center justify-center text-charcoal-soft transition-colors"
+        >
+          <X className="w-4 h-4" />
+        </button>
+        <FarmDetailContent
+          farm={farm}
+          farmCount={farmCount}
+          hintToClick=""
+        />
+      </div>
     </div>
   );
 }
