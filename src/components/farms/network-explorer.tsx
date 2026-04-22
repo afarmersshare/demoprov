@@ -21,6 +21,7 @@ import {
   EntityDetailOverlay,
 } from "./entity-detail-panel";
 import { NetworkDirectory } from "./network-directory";
+import { NetworkGraph } from "./network-graph";
 
 export type Farm = {
   upid: string;
@@ -346,6 +347,7 @@ export function NetworkExplorer() {
       <Tabs defaultValue="map" className="w-full">
         <TabsList>
           <TabsTrigger value="map">Map</TabsTrigger>
+          <TabsTrigger value="network">Network</TabsTrigger>
           <TabsTrigger value="list">List</TabsTrigger>
           <TabsTrigger value="directory">Directory</TabsTrigger>
           <TabsTrigger value="county">By county</TabsTrigger>
@@ -365,6 +367,25 @@ export function NetworkExplorer() {
                 entity={selectedEntity}
                 entityCount={mapPinCount}
                 hintToClick="Click any marker on the map to see details."
+              />
+            </div>
+          </div>
+        </TabsContent>
+        <TabsContent value="network" className="mt-4">
+          <div className="md:grid md:grid-cols-[1fr_340px] md:gap-5">
+            <NetworkGraph
+              farms={filteredFarms}
+              markets={filteredMarkets}
+              distributors={filteredDistributors}
+              relationships={relationships}
+              selected={selectedEntity}
+              onSelect={setSelectedEntity}
+            />
+            <div className="hidden md:block">
+              <EntityDetailPanel
+                entity={selectedEntity}
+                entityCount={mapPinCount}
+                hintToClick="Click any node in the graph to see details."
               />
             </div>
           </div>
