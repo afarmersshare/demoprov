@@ -16,6 +16,7 @@ import { FarmsList } from "./farms-list";
 import { FarmsByCounty } from "./farms-by-county";
 import { FarmsSummary } from "./farms-summary";
 import { FarmDetailPanel, FarmDetailOverlay } from "./farm-detail-panel";
+import { NetworkDirectory } from "./network-directory";
 
 export type Farm = {
   upid: string;
@@ -300,6 +301,7 @@ export function NetworkExplorer() {
         <TabsList>
           <TabsTrigger value="map">Map</TabsTrigger>
           <TabsTrigger value="list">List</TabsTrigger>
+          <TabsTrigger value="directory">Directory</TabsTrigger>
           <TabsTrigger value="county">By county</TabsTrigger>
         </TabsList>
         <TabsContent value="map" className="mt-4">
@@ -333,6 +335,14 @@ export function NetworkExplorer() {
               />
             </div>
           </div>
+        </TabsContent>
+        <TabsContent value="directory" className="mt-4">
+          <NetworkDirectory
+            farms={farms}
+            markets={markets}
+            distributors={distributors}
+            statusFilter={statusFilter}
+          />
         </TabsContent>
         <TabsContent value="county" className="mt-4">
           <FarmsByCounty farms={filteredFarms} />
