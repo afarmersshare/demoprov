@@ -5,35 +5,65 @@ import type {
   Farm,
   Market,
   Distributor,
+  Processor,
+  RecoveryNode,
+  Enabler,
 } from "./network-explorer";
 
-type EntityKind = "farm" | "market" | "distributor";
+type EntityKind =
+  | "farm"
+  | "market"
+  | "distributor"
+  | "processor"
+  | "recovery_node"
+  | "enabler";
 
 type DirectoryEntity =
   | { kind: "farm"; data: Farm }
   | { kind: "market"; data: Market }
-  | { kind: "distributor"; data: Distributor };
+  | { kind: "distributor"; data: Distributor }
+  | { kind: "processor"; data: Processor }
+  | { kind: "recovery_node"; data: RecoveryNode }
+  | { kind: "enabler"; data: Enabler };
 
 type Props = {
   farms: Farm[];
   markets: Market[];
   distributors: Distributor[];
+  processors: Processor[];
+  recoveryNodes: RecoveryNode[];
+  enablers: Enabler[];
   statusFilter: "all" | "enrolled" | "engaged" | "prospect";
 };
 
 type SortKey = "name" | "type" | "location" | "status";
 type SortDir = "asc" | "desc";
 
+const KIND_ORDER: EntityKind[] = [
+  "farm",
+  "market",
+  "distributor",
+  "processor",
+  "recovery_node",
+  "enabler",
+];
+
 const KIND_LABEL: Record<EntityKind, string> = {
   farm: "Farm",
   market: "Market",
   distributor: "Distributor",
+  processor: "Processor",
+  recovery_node: "Recovery",
+  enabler: "Enabler",
 };
 
 const KIND_COLOR: Record<EntityKind, string> = {
   farm: "#2f4a3a",
   market: "#c77f2a",
   distributor: "#7a8aa0",
+  processor: "#a14a2a",
+  recovery_node: "#6b9370",
+  enabler: "#bfa98a",
 };
 
 const STATUS_ORDER: Record<string, number> = {
@@ -51,7 +81,14 @@ function statusPillClasses(status: string | null | undefined): string {
   if (status === "enrolled") return "bg-moss text-cream";
   if (status === "engaged") return "bg-amber text-cream";
   if (status === "prospect") return "bg-terracotta text-cream";
+  if (status === "afs_active") return "bg-moss-light text-charcoal";
   return "bg-bone text-charcoal";
+}
+
+function statusLabel(s: string): string {
+  if (!s) return "—";
+  if (s === "afs_active") return "AFS partner";
+  return prettify(s);
 }
 
 function farmCounty(f: Farm): string {
@@ -65,18 +102,50 @@ function nameOf(e: DirectoryEntity): string {
 }
 
 function typeOf(e: DirectoryEntity): string {
-  if (e.kind === "farm") return e.data.farm_type ?? "";
-  if (e.kind === "market") return e.data.market_type ?? "";
-  return e.data.distributor_type ?? "";
+  switch (e.kind) {
+    case "farm":
+      return e.data.farm_type ?? "";
+    case "market":
+      return e.data.market_type ?? "";
+    case "distributor":
+      return e.data.distributor_type ?? "";
+    case "processor":
+      return e.data.processor_type ?? "";
+    case "recovery_node":
+      return e.data.recovery_node_type ?? "";
+    case "enabler":
+      return e.data.enabler_type ?? "";
+  }
 }
 
 function locationOf(e: DirectoryEntity): string {
-  if (e.kind === "farm") return farmCounty(e.data);
-  return e.data.address_text ?? "";
+  switch (e.kind) {
+    case "farm":
+      return farmCounty(e.data);
+    case "market":
+    case "distributor":
+    case "processor":
+      return e.data.address_text ?? "";
+    case "recovery_node":
+    case "enabler":
+      return e.data.description ?? "";
+  }
 }
 
 function statusOf(e: DirectoryEntity): string {
-  return e.data.afs_member_status ?? "";
+  switch (e.kind) {
+    case "farm":
+    case "market":
+    case "distributor":
+    case "processor":
+      return e.data.afs_member_status ?? "";
+    case "recovery_node":
+    case "enabler": {
+      const active = (e.data.attributes as { afs_active?: boolean } | null)
+        ?.afs_active;
+      return active ? "afs_active" : "";
+    }
+  }
 }
 
 function subtypeLabel(e: DirectoryEntity): string {
@@ -87,10 +156,13 @@ export function NetworkDirectory({
   farms,
   markets,
   distributors,
+  processors,
+  recoveryNodes,
+  enablers,
   statusFilter,
 }: Props) {
   const [selectedKinds, setSelectedKinds] = useState<Set<EntityKind>>(
-    new Set(["farm", "market", "distributor"]),
+    new Set(KIND_ORDER),
   );
   const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("name");
@@ -108,8 +180,26 @@ export function NetworkDirectory({
     if (selectedKinds.has("distributor")) {
       for (const d of distributors) out.push({ kind: "distributor", data: d });
     }
+    if (selectedKinds.has("processor")) {
+      for (const p of processors) out.push({ kind: "processor", data: p });
+    }
+    if (selectedKinds.has("recovery_node")) {
+      for (const r of recoveryNodes)
+        out.push({ kind: "recovery_node", data: r });
+    }
+    if (selectedKinds.has("enabler")) {
+      for (const en of enablers) out.push({ kind: "enabler", data: en });
+    }
     return out;
-  }, [farms, markets, distributors, selectedKinds]);
+  }, [
+    farms,
+    markets,
+    distributors,
+    processors,
+    recoveryNodes,
+    enablers,
+    selectedKinds,
+  ]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -189,7 +279,7 @@ export function NetworkDirectory({
     <div className="md:grid md:grid-cols-[1fr_340px] md:gap-5">
       <div className="rounded-[14px] border border-cream-shadow overflow-hidden bg-white">
         <div className="px-4 py-3 border-b border-cream-shadow bg-cream/40 flex flex-wrap items-center gap-3">
-          {(["farm", "market", "distributor"] as EntityKind[]).map((k) => {
+          {KIND_ORDER.map((k) => {
             const active = selectedKinds.has(k);
             return (
               <button
@@ -274,14 +364,18 @@ export function NetworkDirectory({
                         {locationOf(e) || "—"}
                       </td>
                       <td className="px-4 py-2.5">
-                        <span
-                          className={
-                            "inline-block px-2.5 py-0.5 rounded-full text-[11px] font-medium " +
-                            statusPillClasses(statusOf(e))
-                          }
-                        >
-                          {prettify(statusOf(e))}
-                        </span>
+                        {statusOf(e) ? (
+                          <span
+                            className={
+                              "inline-block px-2.5 py-0.5 rounded-full text-[11px] font-medium " +
+                              statusPillClasses(statusOf(e))
+                            }
+                          >
+                            {statusLabel(statusOf(e))}
+                          </span>
+                        ) : (
+                          <span className="text-charcoal-soft/60">—</span>
+                        )}
                       </td>
                     </tr>
                   );
@@ -348,7 +442,7 @@ function DirectoryDetailPanel({
               statusPillClasses(statusOf(entity))
             }
           >
-            {prettify(statusOf(entity))}
+            {statusLabel(statusOf(entity))}
           </span>
         </div>
       ) : null}
@@ -379,40 +473,109 @@ function detailRows(e: DirectoryEntity): Array<[string, string]> {
           currency: "USD",
           maximumFractionDigits: 0,
         });
-  if (e.kind === "farm") {
-    const f = e.data;
-    const rows: Array<[string, string]> = [
-      ["Farm type", prettify(f.farm_type)],
-      ["Acres", f.acres_total?.toLocaleString() ?? "—"],
-    ];
-    if (f.gross_revenue_baseline != null) {
-      rows.push([
-        `Revenue (${f.gross_revenue_baseline_year ?? "baseline"})`,
-        money(f.gross_revenue_baseline),
-      ]);
+  switch (e.kind) {
+    case "farm": {
+      const f = e.data;
+      const rows: Array<[string, string]> = [
+        ["Farm type", prettify(f.farm_type)],
+        ["Acres", f.acres_total?.toLocaleString() ?? "—"],
+      ];
+      if (f.gross_revenue_baseline != null) {
+        rows.push([
+          `Revenue (${f.gross_revenue_baseline_year ?? "baseline"})`,
+          money(f.gross_revenue_baseline),
+        ]);
+      }
+      if (f.afs_priority_tier) {
+        rows.push(["Priority tier", prettify(f.afs_priority_tier)]);
+      }
+      return rows;
     }
-    if (f.afs_priority_tier) {
-      rows.push(["Priority tier", prettify(f.afs_priority_tier)]);
+    case "market": {
+      const m = e.data;
+      const rows: Array<[string, string]> = [
+        ["Market type", prettify(m.market_type)],
+      ];
+      if (m.afs_priority_tier) {
+        rows.push(["Priority tier", prettify(m.afs_priority_tier)]);
+      }
+      return rows;
     }
-    return rows;
-  }
-  if (e.kind === "market") {
-    const m = e.data;
-    const rows: Array<[string, string]> = [
-      ["Market type", prettify(m.market_type)],
-    ];
-    if (m.afs_priority_tier) {
-      rows.push(["Priority tier", prettify(m.afs_priority_tier)]);
+    case "distributor": {
+      const d = e.data;
+      const rows: Array<[string, string]> = [
+        ["Distributor type", prettify(d.distributor_type)],
+      ];
+      if (d.afs_priority_tier) {
+        rows.push(["Priority tier", prettify(d.afs_priority_tier)]);
+      }
+      return rows;
     }
-    return rows;
+    case "processor": {
+      const p = e.data;
+      const attrs = (p.attributes ?? {}) as Record<string, unknown>;
+      const rows: Array<[string, string]> = [
+        ["Processor type", prettify(p.processor_type)],
+      ];
+      if (typeof attrs.capacity_kg_per_day === "number") {
+        rows.push([
+          "Capacity",
+          `${attrs.capacity_kg_per_day.toLocaleString()} kg/day`,
+        ]);
+      }
+      if (attrs.gfsi_certified) {
+        const scheme = attrs.gfsi_scheme;
+        rows.push([
+          "GFSI certified",
+          typeof scheme === "string" ? scheme.toUpperCase() : "Yes",
+        ]);
+      }
+      if (attrs.usda_inspected) rows.push(["USDA inspected", "Yes"]);
+      if (attrs.shared_space) rows.push(["Shared space", "Yes"]);
+      if (p.afs_priority_tier) {
+        rows.push(["Priority tier", prettify(p.afs_priority_tier)]);
+      }
+      return rows;
+    }
+    case "recovery_node": {
+      const r = e.data;
+      const attrs = (r.attributes ?? {}) as Record<string, unknown>;
+      const rows: Array<[string, string]> = [
+        ["Type", prettify(r.recovery_node_type)],
+      ];
+      if (typeof attrs.capacity_pounds_per_week === "number") {
+        rows.push([
+          "Capacity",
+          `${attrs.capacity_pounds_per_week.toLocaleString()} lbs/week`,
+        ]);
+      }
+      if (attrs.has_cold_storage) rows.push(["Cold storage", "Yes"]);
+      if (attrs.has_freezer) rows.push(["Freezer", "Yes"]);
+      if (attrs.accepts_perishables)
+        rows.push(["Accepts perishables", "Yes"]);
+      if (attrs.pickup_capable) rows.push(["Pickup capable", "Yes"]);
+      return rows;
+    }
+    case "enabler": {
+      const en = e.data;
+      const attrs = (en.attributes ?? {}) as Record<string, unknown>;
+      const rows: Array<[string, string]> = [
+        ["Type", prettify(en.enabler_type)],
+      ];
+      if (typeof attrs.founded_year === "number") {
+        rows.push(["Founded", String(attrs.founded_year)]);
+      }
+      if (typeof attrs.staff_count === "number") {
+        rows.push(["Staff", attrs.staff_count.toLocaleString()]);
+      }
+      if (typeof attrs.annual_budget_usd === "number") {
+        rows.push(["Annual budget", money(attrs.annual_budget_usd)]);
+      }
+      if (typeof attrs.service_radius_miles === "number") {
+        rows.push(["Service radius", `${attrs.service_radius_miles} mi`]);
+      }
+      if (attrs.usda_funded) rows.push(["USDA funded", "Yes"]);
+      return rows;
+    }
   }
-  // distributor
-  const d = e.data;
-  const rows: Array<[string, string]> = [
-    ["Distributor type", prettify(d.distributor_type)],
-  ];
-  if (d.afs_priority_tier) {
-    rows.push(["Priority tier", prettify(d.afs_priority_tier)]);
-  }
-  return rows;
 }

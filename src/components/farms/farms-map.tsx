@@ -13,13 +13,13 @@ import type {
   Farm,
   Market,
   Distributor,
+  Processor,
+  RecoveryNode,
+  Enabler,
   Region,
   NetworkEntity,
 } from "./network-explorer";
 
-// Map tab currently only plots farm / market / distributor pins. The other
-// three kinds are defined on NetworkEntity but never passed to this tab —
-// the extra entries exist only to keep the exhaustive Record type satisfied.
 const KIND_COLOR: Record<NetworkEntity["kind"], string> = {
   farm: "#2f4a3a",
   market: "#c77f2a",
@@ -33,6 +33,9 @@ type Props = {
   farms: Farm[];
   markets: Market[];
   distributors: Distributor[];
+  processors: Processor[];
+  recoveryNodes: RecoveryNode[];
+  enablers: Enabler[];
   regions: Region[];
   selected: NetworkEntity | null;
   onSelect: (entity: NetworkEntity | null) => void;
@@ -47,6 +50,9 @@ export function FarmsMap({
   farms,
   markets,
   distributors,
+  processors,
+  recoveryNodes,
+  enablers,
   regions,
   selected,
   onSelect,
@@ -80,8 +86,32 @@ export function FarmsMap({
         });
       }
     }
+    for (const p of processors) {
+      if (p.geom_point) {
+        list.push({
+          entity: { kind: "processor", data: p },
+          coords: p.geom_point.coordinates,
+        });
+      }
+    }
+    for (const r of recoveryNodes) {
+      if (r.geom_point) {
+        list.push({
+          entity: { kind: "recovery_node", data: r },
+          coords: r.geom_point.coordinates,
+        });
+      }
+    }
+    for (const en of enablers) {
+      if (en.geom_point) {
+        list.push({
+          entity: { kind: "enabler", data: en },
+          coords: en.geom_point.coordinates,
+        });
+      }
+    }
     return list;
-  }, [farms, markets, distributors]);
+  }, [farms, markets, distributors, processors, recoveryNodes, enablers]);
 
   const regionGeoJson = useMemo(() => {
     const features = regions
@@ -213,28 +243,25 @@ export function FarmsMap({
       ) : null}
 
       <div className="absolute bottom-4 left-4 bg-white/96 backdrop-blur-sm rounded-[10px] border border-cream-shadow px-4 py-3 text-xs text-charcoal-soft shadow-sm space-y-1.5">
-        <div className="flex items-center gap-2.5">
-          <span
-            className="inline-block w-3 h-3 rounded-full"
-            style={{ background: KIND_COLOR.farm }}
-          />
-          Farms
-        </div>
-        <div className="flex items-center gap-2.5">
-          <span
-            className="inline-block w-3 h-3 rounded-full"
-            style={{ background: KIND_COLOR.market }}
-          />
-          Markets / buyers
-        </div>
-        <div className="flex items-center gap-2.5">
-          <span
-            className="inline-block w-3 h-3 rounded-full"
-            style={{ background: KIND_COLOR.distributor }}
-          />
-          Distributors
-        </div>
+        <LegendRow color={KIND_COLOR.farm} label="Farms" />
+        <LegendRow color={KIND_COLOR.market} label="Markets / buyers" />
+        <LegendRow color={KIND_COLOR.distributor} label="Distributors" />
+        <LegendRow color={KIND_COLOR.processor} label="Processors" />
+        <LegendRow color={KIND_COLOR.recovery_node} label="Recovery" />
+        <LegendRow color={KIND_COLOR.enabler} label="Enablers" />
       </div>
+    </div>
+  );
+}
+
+function LegendRow({ color, label }: { color: string; label: string }) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <span
+        className="inline-block w-3 h-3 rounded-full"
+        style={{ background: color }}
+      />
+      {label}
     </div>
   );
 }

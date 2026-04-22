@@ -365,7 +365,12 @@ export function NetworkExplorer() {
       ? selectedEntity.data
       : null;
   const mapPinCount =
-    filteredFarms.length + filteredMarkets.length + filteredDistributors.length;
+    filteredFarms.length +
+    filteredMarkets.length +
+    filteredDistributors.length +
+    filteredProcessors.length +
+    filteredRecoveryNodes.length +
+    filteredEnablers.length;
 
   return (
     <div>
@@ -485,6 +490,9 @@ export function NetworkExplorer() {
               farms={filteredFarms}
               markets={filteredMarkets}
               distributors={filteredDistributors}
+              processors={filteredProcessors}
+              recoveryNodes={filteredRecoveryNodes}
+              enablers={filteredEnablers}
               regions={regions}
               selected={selectedEntity}
               onSelect={setSelectedEntity}
@@ -548,6 +556,9 @@ export function NetworkExplorer() {
             farms={farms}
             markets={markets}
             distributors={distributors}
+            processors={processors}
+            recoveryNodes={recoveryNodes}
+            enablers={enablers}
             statusFilter={statusFilter}
           />
         </TabsContent>
