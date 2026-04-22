@@ -39,6 +39,9 @@ yarn-error.log*
 # local mockups (not deployable, preview only)
 /mockups
 
+# local IDE / tool configs
+/.claude
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
