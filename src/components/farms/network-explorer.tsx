@@ -15,7 +15,11 @@ import { FarmsMap } from "./farms-map";
 import { FarmsList } from "./farms-list";
 import { FarmsByCounty } from "./farms-by-county";
 import { FarmsSummary } from "./farms-summary";
-import { FarmDetailPanel, FarmDetailOverlay } from "./farm-detail-panel";
+import { FarmDetailPanel } from "./farm-detail-panel";
+import {
+  EntityDetailPanel,
+  EntityDetailOverlay,
+} from "./entity-detail-panel";
 import { NetworkDirectory } from "./network-directory";
 
 export type Farm = {
@@ -84,6 +88,11 @@ export type Relationship = {
   attributes: Record<string, unknown> | null;
 };
 
+export type NetworkEntity =
+  | { kind: "farm"; data: Farm }
+  | { kind: "market"; data: Market }
+  | { kind: "distributor"; data: Distributor };
+
 type StatusFilter = "all" | "enrolled" | "engaged" | "prospect";
 const ALL_TYPES = "__all__";
 const ALL_COUNTIES = "__all_counties__";
@@ -104,7 +113,9 @@ export function NetworkExplorer() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [typeFilter, setTypeFilter] = useState<string>(ALL_TYPES);
   const [countyFilter, setCountyFilter] = useState<string>(ALL_COUNTIES);
-  const [selectedFarm, setSelectedFarm] = useState<Farm | null>(null);
+  const [selectedEntity, setSelectedEntity] = useState<NetworkEntity | null>(
+    null,
+  );
 
   useEffect(() => {
     const supabase = createClient();
@@ -196,11 +207,46 @@ export function NetworkExplorer() {
     typeFilter !== ALL_TYPES ||
     countyFilter !== ALL_COUNTIES;
 
+  // Markets and distributors aren't affected by the farm-type or county filters,
+  // only by the global status filter. Build the visible non-farm sets so the
+  // Map tab can render them and the selection-clearing logic below has a target.
+  const filteredMarkets = useMemo(() => {
+    return markets.filter((m) =>
+      statusFilter === "all" ? true : m.afs_member_status === statusFilter,
+    );
+  }, [markets, statusFilter]);
+
+  const filteredDistributors = useMemo(() => {
+    return distributors.filter((d) =>
+      statusFilter === "all" ? true : d.afs_member_status === statusFilter,
+    );
+  }, [distributors, statusFilter]);
+
   useEffect(() => {
-    if (!selectedFarm) return;
-    const stillIn = filteredFarms.some((f) => f.upid === selectedFarm.upid);
-    if (!stillIn) setSelectedFarm(null);
-  }, [filteredFarms, selectedFarm]);
+    if (!selectedEntity) return;
+    let stillIn = false;
+    if (selectedEntity.kind === "farm") {
+      stillIn = filteredFarms.some(
+        (f) => f.upid === selectedEntity.data.upid,
+      );
+    } else if (selectedEntity.kind === "market") {
+      stillIn = filteredMarkets.some(
+        (m) => m.upid === selectedEntity.data.upid,
+      );
+    } else {
+      stillIn = filteredDistributors.some(
+        (d) => d.upid === selectedEntity.data.upid,
+      );
+    }
+    if (!stillIn) setSelectedEntity(null);
+  }, [filteredFarms, filteredMarkets, filteredDistributors, selectedEntity]);
+
+  const selectedFarm: Farm | null =
+    selectedEntity && selectedEntity.kind === "farm"
+      ? selectedEntity.data
+      : null;
+  const mapPinCount =
+    filteredFarms.length + filteredMarkets.length + filteredDistributors.length;
 
   return (
     <div>
@@ -308,14 +354,17 @@ export function NetworkExplorer() {
           <div className="md:grid md:grid-cols-[1fr_340px] md:gap-5">
             <FarmsMap
               farms={filteredFarms}
-              selected={selectedFarm}
-              onSelect={setSelectedFarm}
+              markets={filteredMarkets}
+              distributors={filteredDistributors}
+              regions={regions}
+              selected={selectedEntity}
+              onSelect={setSelectedEntity}
             />
             <div className="hidden md:block">
-              <FarmDetailPanel
-                farm={selectedFarm}
-                farmCount={filteredFarms.length}
-                hintToClick="Click any marker on the map to see details for that farm."
+              <EntityDetailPanel
+                entity={selectedEntity}
+                entityCount={mapPinCount}
+                hintToClick="Click any marker on the map to see details."
               />
             </div>
           </div>
@@ -325,7 +374,9 @@ export function NetworkExplorer() {
             <FarmsList
               farms={filteredFarms}
               selected={selectedFarm}
-              onSelect={setSelectedFarm}
+              onSelect={(f) =>
+                setSelectedEntity(f ? { kind: "farm", data: f } : null)
+              }
             />
             <div className="hidden md:block">
               <FarmDetailPanel
@@ -349,10 +400,10 @@ export function NetworkExplorer() {
         </TabsContent>
       </Tabs>
 
-      <FarmDetailOverlay
-        farm={selectedFarm}
-        farmCount={filteredFarms.length}
-        onClose={() => setSelectedFarm(null)}
+      <EntityDetailOverlay
+        entity={selectedEntity}
+        entityCount={mapPinCount}
+        onClose={() => setSelectedEntity(null)}
       />
     </div>
   );
