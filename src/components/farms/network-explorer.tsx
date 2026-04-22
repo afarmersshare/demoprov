@@ -22,6 +22,7 @@ import {
 } from "./entity-detail-panel";
 import { NetworkDirectory } from "./network-directory";
 import { NetworkGraph } from "./network-graph";
+import { NetworkFlows } from "./network-flows";
 
 export type Farm = {
   upid: string;
@@ -348,6 +349,7 @@ export function NetworkExplorer() {
         <TabsList>
           <TabsTrigger value="map">Map</TabsTrigger>
           <TabsTrigger value="network">Network</TabsTrigger>
+          <TabsTrigger value="flows">Flows</TabsTrigger>
           <TabsTrigger value="list">List</TabsTrigger>
           <TabsTrigger value="directory">Directory</TabsTrigger>
           <TabsTrigger value="county">By county</TabsTrigger>
@@ -389,6 +391,14 @@ export function NetworkExplorer() {
               />
             </div>
           </div>
+        </TabsContent>
+        <TabsContent value="flows" className="mt-4">
+          <NetworkFlows
+            farms={filteredFarms}
+            markets={filteredMarkets}
+            distributors={filteredDistributors}
+            relationships={relationships}
+          />
         </TabsContent>
         <TabsContent value="list" className="mt-4">
           <div className="md:grid md:grid-cols-[1fr_340px] md:gap-5">
