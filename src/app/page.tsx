@@ -1,4 +1,4 @@
-import { FarmsExplorer } from "@/components/farms/farms-explorer";
+import { NetworkExplorer } from "@/components/farms/network-explorer";
 
 export default function Home() {
   return (
@@ -15,7 +15,7 @@ export default function Home() {
         </div>
       </nav>
       <div className="mx-auto max-w-7xl px-6 sm:px-10 py-8 sm:py-10">
-        <FarmsExplorer />
+        <NetworkExplorer />
       </div>
     </main>
   );

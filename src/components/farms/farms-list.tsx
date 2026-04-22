@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { Farm } from "./farms-explorer";
+import type { Farm } from "./network-explorer";
 
 function prettify(raw: string | null): string {
   if (!raw) return "—";

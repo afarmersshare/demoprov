@@ -7,7 +7,7 @@ import Map, {
   type MapRef,
 } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
-import type { Farm } from "./farms-explorer";
+import type { Farm } from "./network-explorer";
 
 function markerColor(status: string | null): string {
   if (status === "enrolled") return "#2f4a3a";

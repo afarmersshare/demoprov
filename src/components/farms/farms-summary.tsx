@@ -1,6 +1,6 @@
 "use client";
 
-import type { Farm } from "./farms-explorer";
+import type { Farm } from "./network-explorer";
 
 type Props = {
   filteredFarms: Farm[];

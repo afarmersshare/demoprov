@@ -31,6 +31,58 @@ export type Farm = {
   geom_point: { coordinates: [number, number] } | null;
 };
 
+export type Market = {
+  upid: string;
+  name: string;
+  market_type: string | null;
+  afs_member_status: string | null;
+  afs_priority_tier: string | null;
+  address_text: string | null;
+  attributes: Record<string, unknown> | null;
+  geom_point: { coordinates: [number, number] } | null;
+};
+
+export type Distributor = {
+  upid: string;
+  name: string;
+  distributor_type: string | null;
+  afs_member_status: string | null;
+  afs_priority_tier: string | null;
+  address_text: string | null;
+  attributes: Record<string, unknown> | null;
+  geom_point: { coordinates: [number, number] } | null;
+};
+
+export type Region = {
+  upid: string;
+  name: string;
+  region_type: string | null;
+  fips_codes: string[] | null;
+  description: string | null;
+  attributes: Record<string, unknown> | null;
+  geom_point: { coordinates: [number, number] } | null;
+  geom_boundary: unknown;
+};
+
+export type FarmCrop = {
+  farm_upid: string;
+  crop_type: string;
+  crop_category: string | null;
+  is_primary: boolean | null;
+  production_method: string | null;
+  season: string | null;
+  acres: number | null;
+  attributes: Record<string, unknown> | null;
+};
+
+export type Relationship = {
+  node_a_upid: string;
+  node_b_upid: string;
+  relationship_type: string;
+  valid_from: string | null;
+  attributes: Record<string, unknown> | null;
+};
+
 type StatusFilter = "all" | "enrolled" | "engaged" | "prospect";
 const ALL_TYPES = "__all__";
 const ALL_COUNTIES = "__all_counties__";
@@ -39,8 +91,13 @@ function prettify(raw: string): string {
   return raw.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-export function FarmsExplorer() {
+export function NetworkExplorer() {
   const [farms, setFarms] = useState<Farm[]>([]);
+  const [markets, setMarkets] = useState<Market[]>([]);
+  const [distributors, setDistributors] = useState<Distributor[]>([]);
+  const [regions, setRegions] = useState<Region[]>([]);
+  const [farmCrops, setFarmCrops] = useState<FarmCrop[]>([]);
+  const [relationships, setRelationships] = useState<Relationship[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -50,19 +107,52 @@ export function FarmsExplorer() {
 
   useEffect(() => {
     const supabase = createClient();
-    supabase
-      .from("farms")
-      .select(
-        "upid, name, farm_type, afs_member_status, acres_total, gross_revenue_baseline, gross_revenue_baseline_year, afs_priority_tier, county_fips, attributes, geom_point",
-      )
-      .then(({ data, error }) => {
-        setLoading(false);
-        if (error) {
-          setLoadError(error.message);
-          return;
-        }
-        setFarms((data ?? []) as Farm[]);
-      });
+    Promise.all([
+      supabase
+        .from("farms")
+        .select(
+          "upid, name, farm_type, afs_member_status, acres_total, gross_revenue_baseline, gross_revenue_baseline_year, afs_priority_tier, county_fips, attributes, geom_point",
+        ),
+      supabase
+        .from("markets")
+        .select(
+          "upid, name, market_type, afs_member_status, afs_priority_tier, address_text, attributes, geom_point",
+        ),
+      supabase
+        .from("distributors")
+        .select(
+          "upid, name, distributor_type, afs_member_status, afs_priority_tier, address_text, attributes, geom_point",
+        ),
+      supabase
+        .from("regions")
+        .select(
+          "upid, name, region_type, fips_codes, description, attributes, geom_point, geom_boundary",
+        ),
+      supabase
+        .from("farm_crops")
+        .select(
+          "farm_upid, crop_type, crop_category, is_primary, production_method, season, acres, attributes",
+        ),
+      supabase
+        .from("relationships")
+        .select(
+          "node_a_upid, node_b_upid, relationship_type, valid_from, attributes",
+        ),
+    ]).then((results) => {
+      setLoading(false);
+      const firstError = results.find((r) => r.error)?.error;
+      if (firstError) {
+        setLoadError(firstError.message);
+        return;
+      }
+      const [fRes, mRes, dRes, rRes, cRes, relRes] = results;
+      setFarms((fRes.data ?? []) as Farm[]);
+      setMarkets((mRes.data ?? []) as Market[]);
+      setDistributors((dRes.data ?? []) as Distributor[]);
+      setRegions((rRes.data ?? []) as Region[]);
+      setFarmCrops((cRes.data ?? []) as FarmCrop[]);
+      setRelationships((relRes.data ?? []) as Relationship[]);
+    });
   }, []);
 
   const availableTypes = useMemo(() => {
@@ -118,11 +208,18 @@ export function FarmsExplorer() {
       ) : loadError ? (
         <div className="mb-6 text-sm text-red-700">Error: {loadError}</div>
       ) : (
-        <FarmsSummary
-          filteredFarms={filteredFarms}
-          totalFarms={farms}
-          filterActive={filterActive}
-        />
+        <>
+          <FarmsSummary
+            filteredFarms={filteredFarms}
+            totalFarms={farms}
+            filterActive={filterActive}
+          />
+          <div className="mb-4 -mt-2 text-[11px] text-charcoal-soft/80 tabular-nums font-mono">
+            Network loaded — {farms.length} farms · {markets.length} markets ·{" "}
+            {distributors.length} distributors · {regions.length} regions ·{" "}
+            {relationships.length} connections · {farmCrops.length} crop links
+          </div>
+        </>
       )}
 
       <div className="mb-5 rounded-[14px] border border-cream-shadow bg-white px-5 py-4 flex flex-wrap items-center gap-x-8 gap-y-3">
