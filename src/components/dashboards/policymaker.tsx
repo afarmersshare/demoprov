@@ -9,67 +9,31 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { createClient } from "@/lib/supabase/client";
+import type {
+  Farm,
+  Market,
+  Processor,
+  RecoveryNode,
+  Enabler,
+  Region,
+  FarmCrop,
+  NetworkEntity,
+} from "../farms/network-explorer";
 import {
   PolicymakerMap,
   type ChoroplethMetric,
 } from "./policymaker-map";
 
-type GeomPoint = { coordinates: [number, number] } | null;
-
-type Region = {
-  upid: string;
-  name: string;
-  region_type: string | null;
-  attributes: Record<string, unknown> | null;
-  geom_point: GeomPoint;
-  geom_boundary: unknown;
-};
-
-type Farm = {
-  upid: string;
-  name: string;
-  acres_total: number | null;
-  afs_member_status: string | null;
-  attributes: Record<string, unknown> | null;
-  geom_point: GeomPoint;
-};
-
-type Market = {
-  upid: string;
-  name: string;
-  afs_member_status: string | null;
-  attributes: Record<string, unknown> | null;
-  geom_point: GeomPoint;
-};
-
-type Processor = {
-  upid: string;
-  name: string;
-  afs_member_status: string | null;
-  attributes: Record<string, unknown> | null;
-  geom_point: GeomPoint;
-};
-
-type RecoveryNode = {
-  upid: string;
-  name: string;
-  attributes: Record<string, unknown> | null;
-  geom_point: GeomPoint;
-};
-
-type Enabler = {
-  upid: string;
-  name: string;
-  attributes: Record<string, unknown> | null;
-  geom_point: GeomPoint;
-};
-
-type FarmCrop = {
-  farm_upid: string;
-  crop_type: string;
-  crop_category: string | null;
-  acres: number | null;
+type Props = {
+  farms: Farm[];
+  markets: Market[];
+  processors: Processor[];
+  recoveryNodes: RecoveryNode[];
+  enablers: Enabler[];
+  regions: Region[];
+  farmCrops: FarmCrop[];
+  selected: NetworkEntity | null;
+  onSelect: (e: NetworkEntity | null) => void;
 };
 
 function fmtInt(n: number | null | undefined): string {
@@ -95,68 +59,55 @@ function prettifyCrop(raw: string): string {
   return raw.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-export function PolicymakerDashboard() {
-  const [regions, setRegions] = useState<Region[]>([]);
-  const [farms, setFarms] = useState<Farm[]>([]);
-  const [markets, setMarkets] = useState<Market[]>([]);
-  const [processors, setProcessors] = useState<Processor[]>([]);
-  const [recoveryNodes, setRecoveryNodes] = useState<RecoveryNode[]>([]);
-  const [enablers, setEnablers] = useState<Enabler[]>([]);
-  const [farmCrops, setFarmCrops] = useState<FarmCrop[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
+function haversineMiles(
+  a: [number, number],
+  b: [number, number],
+): number {
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const R = 3958.8;
+  const [lng1, lat1] = a;
+  const [lng2, lat2] = b;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const s1 = Math.sin(dLat / 2);
+  const s2 = Math.sin(dLng / 2);
+  const h =
+    s1 * s1 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * s2 * s2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+function nearestCountyName(
+  point: { coordinates: [number, number] } | null | undefined,
+  counties: Region[],
+): string {
+  if (!point || counties.length === 0) return "";
+  let bestName = "";
+  let bestDist = Infinity;
+  for (const c of counties) {
+    const pt = c.geom_point?.coordinates;
+    if (!pt) continue;
+    const d = haversineMiles(point.coordinates, pt);
+    if (d < bestDist) {
+      bestDist = d;
+      bestName = c.name;
+    }
+  }
+  return bestName;
+}
+
+export function PolicymakerDashboard({
+  farms,
+  markets,
+  processors,
+  recoveryNodes,
+  enablers,
+  regions,
+  farmCrops,
+  selected,
+  onSelect,
+}: Props) {
   const [selectedCounty, setSelectedCounty] = useState<string>("");
   const [metric, setMetric] = useState<ChoroplethMetric>("food_insecurity");
-
-  useEffect(() => {
-    const supabase = createClient();
-    Promise.all([
-      supabase
-        .from("regions")
-        .select(
-          "upid, name, region_type, attributes, geom_point, geom_boundary",
-        ),
-      supabase
-        .from("farms")
-        .select(
-          "upid, name, acres_total, afs_member_status, attributes, geom_point",
-        ),
-      supabase
-        .from("markets")
-        .select(
-          "upid, name, afs_member_status, attributes, geom_point",
-        ),
-      supabase
-        .from("processors")
-        .select(
-          "upid, name, afs_member_status, attributes, geom_point",
-        ),
-      supabase
-        .from("recovery_nodes")
-        .select("upid, name, attributes, geom_point"),
-      supabase
-        .from("enablers")
-        .select("upid, name, attributes, geom_point"),
-      supabase
-        .from("farm_crops")
-        .select("farm_upid, crop_type, crop_category, acres"),
-    ]).then((results) => {
-      setLoading(false);
-      const firstError = results.find((r) => r.error)?.error;
-      if (firstError) {
-        setLoadError(firstError.message);
-        return;
-      }
-      const [rRes, fRes, mRes, pRes, rnRes, enRes, cRes] = results;
-      setRegions((rRes.data ?? []) as Region[]);
-      setFarms((fRes.data ?? []) as Farm[]);
-      setMarkets((mRes.data ?? []) as Market[]);
-      setProcessors((pRes.data ?? []) as Processor[]);
-      setRecoveryNodes((rnRes.data ?? []) as RecoveryNode[]);
-      setEnablers((enRes.data ?? []) as Enabler[]);
-      setFarmCrops((cRes.data ?? []) as FarmCrop[]);
-    });
-  }, []);
 
   const counties = useMemo(
     () =>
@@ -222,12 +173,10 @@ export function PolicymakerDashboard() {
   const enrolledPct =
     countyFarms.length > 0 ? enrolledFarms / countyFarms.length : null;
 
-  // Regional (metro) averages for context
   const metroFoodInsec = useMemo(() => {
-    const counties2 = regions.filter((r) => r.region_type === "county");
     let total = 0;
     let n = 0;
-    for (const c of counties2) {
+    for (const c of counties) {
       const a = (c.attributes ?? {}) as { food_insecurity_rate?: number };
       if (typeof a.food_insecurity_rate === "number") {
         total += a.food_insecurity_rate;
@@ -235,9 +184,8 @@ export function PolicymakerDashboard() {
       }
     }
     return n > 0 ? total / n : null;
-  }, [regions]);
+  }, [counties]);
 
-  // Infrastructure within the county (nearest-centroid approximation)
   const countyMarkets = useMemo(
     () =>
       markets.filter(
@@ -270,88 +218,63 @@ export function PolicymakerDashboard() {
     [enablers, selectedCounty, counties],
   );
 
-  if (loading) {
-    return <div className="text-sm text-charcoal-soft">Loading…</div>;
-  }
-  if (loadError) {
-    return <div className="text-sm text-red-700">Error: {loadError}</div>;
-  }
-
   return (
-    <div className="space-y-8">
-      <header>
-        <h1 className="font-display text-[34px] font-semibold text-moss leading-[1.1] tracking-[-0.02em]">
-          Policymaker view
-        </h1>
-        <p className="mt-2 text-charcoal-soft leading-relaxed max-w-3xl">
-          A county-by-county lens on the Louisville metro food system —
-          who grows what, what infrastructure is in place, and where food
-          access gaps line up with available supply. Click a county on
-          the map or pick from the dropdown; details update below.
-        </p>
-      </header>
-
-      {/* Map + controls */}
-      <section className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3 flex-wrap">
-            <label className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft">
-              Color counties by
-            </label>
-            <ToggleGroup
-              type="single"
-              variant="outline"
-              size="sm"
-              value={metric}
-              onValueChange={(v) => {
-                if (v) setMetric(v as ChoroplethMetric);
-              }}
-            >
-              <ToggleGroupItem value="food_insecurity">
-                Food insecurity
-              </ToggleGroupItem>
-              <ToggleGroupItem value="farm_count">Farms</ToggleGroupItem>
-              <ToggleGroupItem value="enrolled_pct">
-                Enrolled %
-              </ToggleGroupItem>
-              <ToggleGroupItem value="food_deserts">
-                Food deserts
-              </ToggleGroupItem>
-            </ToggleGroup>
-          </div>
-          <div className="flex items-center gap-3">
-            <label className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft">
-              County
-            </label>
-            <Select value={selectedCounty} onValueChange={setSelectedCounty}>
-              <SelectTrigger className="min-w-[220px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {counties.map((c) => (
-                  <SelectItem key={c.upid} value={c.name}>
-                    {c.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3 flex-wrap">
+          <label className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft">
+            Color counties by
+          </label>
+          <ToggleGroup
+            type="single"
+            variant="outline"
+            size="sm"
+            value={metric}
+            onValueChange={(v) => {
+              if (v) setMetric(v as ChoroplethMetric);
+            }}
+          >
+            <ToggleGroupItem value="food_insecurity">
+              Food insecurity
+            </ToggleGroupItem>
+            <ToggleGroupItem value="farm_count">Farms</ToggleGroupItem>
+            <ToggleGroupItem value="enrolled_pct">Enrolled %</ToggleGroupItem>
+            <ToggleGroupItem value="food_deserts">Food deserts</ToggleGroupItem>
+          </ToggleGroup>
         </div>
+        <div className="flex items-center gap-3">
+          <label className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft">
+            County
+          </label>
+          <Select value={selectedCounty} onValueChange={setSelectedCounty}>
+            <SelectTrigger className="min-w-[220px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {counties.map((c) => (
+                <SelectItem key={c.upid} value={c.name}>
+                  {c.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
-        <PolicymakerMap
-          regions={regions}
-          farms={farms}
-          markets={markets}
-          processors={processors}
-          recoveryNodes={recoveryNodes}
-          enablers={enablers}
-          selectedCounty={selectedCounty}
-          onSelectCounty={setSelectedCounty}
-          metric={metric}
-        />
-      </section>
+      <PolicymakerMap
+        regions={regions}
+        farms={farms}
+        markets={markets}
+        processors={processors}
+        recoveryNodes={recoveryNodes}
+        enablers={enablers}
+        selectedCounty={selectedCounty}
+        onSelectCounty={setSelectedCounty}
+        metric={metric}
+        selectedEntity={selected}
+        onSelectEntity={onSelect}
+      />
 
-      {/* Card 1: Food system snapshot by county */}
       <section className="rounded-[14px] border border-cream-shadow bg-white p-6 sm:p-8 shadow-sm">
         <div className="mb-6">
           <div className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft mb-1">
@@ -425,10 +348,7 @@ export function PolicymakerDashboard() {
                 <div className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft mb-3">
                   Food production
                 </div>
-                <StatRow
-                  label="Farms"
-                  value={fmtInt(countyFarms.length)}
-                />
+                <StatRow label="Farms" value={fmtInt(countyFarms.length)} />
                 <StatRow
                   label="Acres in production"
                   value={fmtInt(Math.round(totalAcresInProd))}
@@ -510,9 +430,8 @@ export function PolicymakerDashboard() {
             </div>
 
             <div className="text-[11px] text-charcoal-soft/70 italic">
-              Demographic values in this card are illustrative-fictional —
-              plausible ranges, not real Census measurements. Everything else
-              is real demo data.
+              Demographic values are illustrative-fictional — plausible ranges,
+              not real Census measurements. Everything else is real demo data.
             </div>
           </>
         ) : null}
@@ -550,37 +469,4 @@ function StatRow({
       </div>
     </div>
   );
-}
-
-function haversineMiles(
-  a: [number, number],
-  b: [number, number],
-): number {
-  const toRad = (d: number) => (d * Math.PI) / 180;
-  const R = 3958.8;
-  const [lng1, lat1] = a;
-  const [lng2, lat2] = b;
-  const dLat = toRad(lat2 - lat1);
-  const dLng = toRad(lng2 - lng1);
-  const s1 = Math.sin(dLat / 2);
-  const s2 = Math.sin(dLng / 2);
-  const h =
-    s1 * s1 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * s2 * s2;
-  return 2 * R * Math.asin(Math.sqrt(h));
-}
-
-function nearestCountyName(point: GeomPoint, counties: Region[]): string {
-  if (!point || counties.length === 0) return "";
-  let bestName = "";
-  let bestDist = Infinity;
-  for (const c of counties) {
-    const pt = c.geom_point?.coordinates;
-    if (!pt) continue;
-    const d = haversineMiles(point.coordinates, pt);
-    if (d < bestDist) {
-      bestDist = d;
-      bestName = c.name;
-    }
-  }
-  return bestName;
 }

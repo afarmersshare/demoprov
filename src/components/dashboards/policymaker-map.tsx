@@ -9,6 +9,15 @@ import MapGL, {
   type MapLayerMouseEvent,
 } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
+import type {
+  Farm,
+  Market,
+  Processor,
+  RecoveryNode,
+  Enabler,
+  Region,
+  NetworkEntity,
+} from "../farms/network-explorer";
 
 export type ChoroplethMetric =
   | "food_insecurity"
@@ -16,27 +25,13 @@ export type ChoroplethMetric =
   | "enrolled_pct"
   | "food_deserts";
 
-type GeomPoint = { coordinates: [number, number] } | null;
-
-type RegionLike = {
-  name: string;
-  region_type: string | null;
-  attributes: Record<string, unknown> | null;
-  geom_boundary: unknown;
-  geom_point: GeomPoint;
-};
-
-type FarmLike = {
-  upid: string;
-  afs_member_status: string | null;
-  attributes: Record<string, unknown> | null;
-  geom_point?: GeomPoint;
-};
-
-type PinLike = {
-  upid: string;
-  geom_point: GeomPoint;
-};
+const PIN_COLOR = {
+  farm: "#2f4a3a",
+  market: "#c77f2a",
+  processor: "#a14a2a",
+  recovery_node: "#6b9370",
+  enabler: "#bfa98a",
+} as const;
 
 const METRIC_CONFIG: Record<
   ChoroplethMetric,
@@ -89,15 +84,17 @@ const METRIC_CONFIG: Record<
 };
 
 type Props = {
-  regions: RegionLike[];
-  farms: FarmLike[];
-  markets: PinLike[];
-  processors: PinLike[];
-  recoveryNodes: PinLike[];
-  enablers: PinLike[];
+  regions: Region[];
+  farms: Farm[];
+  markets: Market[];
+  processors: Processor[];
+  recoveryNodes: RecoveryNode[];
+  enablers: Enabler[];
   selectedCounty: string;
   onSelectCounty: (name: string) => void;
   metric: ChoroplethMetric;
+  selectedEntity: NetworkEntity | null;
+  onSelectEntity: (e: NetworkEntity | null) => void;
 };
 
 export function PolicymakerMap({
@@ -110,10 +107,12 @@ export function PolicymakerMap({
   selectedCounty,
   onSelectCounty,
   metric,
+  selectedEntity,
+  onSelectEntity,
 }: Props) {
   const { geojson, metricRange } = useMemo(() => {
     const counties = regions.filter((r) => r.region_type === "county");
-    const farmsByCounty = new Map<string, FarmLike[]>();
+    const farmsByCounty = new Map<string, Farm[]>();
     for (const f of farms) {
       const c =
         (f.attributes as { county_name?: string } | null)?.county_name ?? "";
@@ -171,11 +170,14 @@ export function PolicymakerMap({
 
   const cfg = METRIC_CONFIG[metric];
 
-  const handleClick = (e: MapLayerMouseEvent) => {
+  const handleMapClick = (e: MapLayerMouseEvent) => {
     const f = e.features?.[0];
     const name = f?.properties?.name;
     if (typeof name === "string") {
       onSelectCounty(name);
+    } else {
+      // background click clears entity selection
+      onSelectEntity(null);
     }
   };
 
@@ -210,8 +212,13 @@ export function PolicymakerMap({
     0.7,
   ];
 
+  const isSelectedEntity = (kind: NetworkEntity["kind"], upid: string) =>
+    selectedEntity !== null &&
+    selectedEntity.kind === kind &&
+    selectedEntity.data.upid === upid;
+
   return (
-    <div className="relative w-full h-[440px] md:h-[560px] rounded-[14px] overflow-hidden border border-cream-shadow">
+    <div className="relative w-full h-[460px] md:h-[580px] rounded-[14px] overflow-hidden border border-cream-shadow">
       <MapGL
         initialViewState={{
           longitude: -85.7585,
@@ -221,7 +228,7 @@ export function PolicymakerMap({
         mapStyle="https://tiles.openfreemap.org/styles/positron"
         style={{ width: "100%", height: "100%" }}
         interactiveLayerIds={["regions-fill"]}
-        onClick={handleClick}
+        onClick={handleMapClick}
       >
         <NavigationControl position="top-right" />
 
@@ -247,115 +254,70 @@ export function PolicymakerMap({
           </Source>
         ) : null}
 
-        {/* Entity pins — small, non-interactive */}
         {farms.map((f) =>
           f.geom_point ? (
-            <Marker
+            <EntityPin
               key={"f:" + f.upid}
-              longitude={f.geom_point.coordinates[0]}
-              latitude={f.geom_point.coordinates[1]}
-              anchor="center"
-            >
-              <div
-                style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: "50%",
-                  background: "#2f4a3a",
-                  border: "1px solid rgba(255,255,255,0.85)",
-                  pointerEvents: "none",
-                }}
-              />
-            </Marker>
+              kind="farm"
+              name={f.name}
+              coords={f.geom_point.coordinates}
+              selected={isSelectedEntity("farm", f.upid)}
+              onClick={() => onSelectEntity({ kind: "farm", data: f })}
+            />
           ) : null,
         )}
         {markets.map((m) =>
           m.geom_point ? (
-            <Marker
+            <EntityPin
               key={"m:" + m.upid}
-              longitude={m.geom_point.coordinates[0]}
-              latitude={m.geom_point.coordinates[1]}
-              anchor="center"
-            >
-              <div
-                style={{
-                  width: 7,
-                  height: 7,
-                  borderRadius: "50%",
-                  background: "#c77f2a",
-                  border: "1px solid rgba(255,255,255,0.85)",
-                  pointerEvents: "none",
-                }}
-              />
-            </Marker>
+              kind="market"
+              name={m.name}
+              coords={m.geom_point.coordinates}
+              selected={isSelectedEntity("market", m.upid)}
+              onClick={() => onSelectEntity({ kind: "market", data: m })}
+            />
           ) : null,
         )}
         {processors.map((p) =>
           p.geom_point ? (
-            <Marker
+            <EntityPin
               key={"p:" + p.upid}
-              longitude={p.geom_point.coordinates[0]}
-              latitude={p.geom_point.coordinates[1]}
-              anchor="center"
-            >
-              <div
-                style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: "50%",
-                  background: "#a14a2a",
-                  border: "1px solid rgba(255,255,255,0.85)",
-                  pointerEvents: "none",
-                }}
-              />
-            </Marker>
+              kind="processor"
+              name={p.name}
+              coords={p.geom_point.coordinates}
+              selected={isSelectedEntity("processor", p.upid)}
+              onClick={() => onSelectEntity({ kind: "processor", data: p })}
+            />
           ) : null,
         )}
         {recoveryNodes.map((r) =>
           r.geom_point ? (
-            <Marker
+            <EntityPin
               key={"r:" + r.upid}
-              longitude={r.geom_point.coordinates[0]}
-              latitude={r.geom_point.coordinates[1]}
-              anchor="center"
-            >
-              <div
-                style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: "50%",
-                  background: "#6b9370",
-                  border: "1px solid rgba(255,255,255,0.85)",
-                  pointerEvents: "none",
-                }}
-              />
-            </Marker>
+              kind="recovery_node"
+              name={r.name}
+              coords={r.geom_point.coordinates}
+              selected={isSelectedEntity("recovery_node", r.upid)}
+              onClick={() =>
+                onSelectEntity({ kind: "recovery_node", data: r })
+              }
+            />
           ) : null,
         )}
         {enablers.map((e) =>
           e.geom_point ? (
-            <Marker
+            <EntityPin
               key={"e:" + e.upid}
-              longitude={e.geom_point.coordinates[0]}
-              latitude={e.geom_point.coordinates[1]}
-              anchor="center"
-            >
-              <div
-                style={{
-                  width: 7,
-                  height: 7,
-                  borderRadius: "50%",
-                  background: "#bfa98a",
-                  border: "1px solid rgba(255,255,255,0.85)",
-                  pointerEvents: "none",
-                }}
-              />
-            </Marker>
+              kind="enabler"
+              name={e.name}
+              coords={e.geom_point.coordinates}
+              selected={isSelectedEntity("enabler", e.upid)}
+              onClick={() => onSelectEntity({ kind: "enabler", data: e })}
+            />
           ) : null,
         )}
       </MapGL>
 
-      {/* Choropleth legend */}
       <div className="absolute bottom-4 left-4 bg-white/96 backdrop-blur-sm rounded-[10px] border border-cream-shadow px-3.5 py-2.5 shadow-sm">
         <div className="text-[10px] font-bold uppercase tracking-[0.1em] text-charcoal-soft mb-1.5">
           {cfg.label}
@@ -371,21 +333,20 @@ export function PolicymakerMap({
           <span>{cfg.fmt(cfg.lowStop)}</span>
           <span>{cfg.fmt(cfg.highStop)}</span>
         </div>
-        <div className="mt-2 pt-2 border-t border-cream-shadow space-y-1 text-[10px] text-charcoal-soft">
-          <LegendDot color="#2f4a3a" label="Farms" />
-          <LegendDot color="#c77f2a" label="Markets / buyers" />
-          <LegendDot color="#a14a2a" label="Processors" />
-          <LegendDot color="#6b9370" label="Recovery nodes" />
-          <LegendDot color="#bfa98a" label="Enablers" />
+        <div className="mt-2 pt-2 border-t border-cream-shadow grid grid-cols-2 gap-x-3 gap-y-1 text-[10px] text-charcoal-soft">
+          <LegendDot color={PIN_COLOR.farm} label="Farms" />
+          <LegendDot color={PIN_COLOR.market} label="Markets" />
+          <LegendDot color={PIN_COLOR.processor} label="Processors" />
+          <LegendDot color={PIN_COLOR.recovery_node} label="Recovery" />
+          <LegendDot color={PIN_COLOR.enabler} label="Enablers" />
         </div>
       </div>
 
-      {/* Hint */}
-      <div className="absolute top-4 left-4 bg-white/92 backdrop-blur-sm rounded-[10px] border border-cream-shadow px-3 py-2 text-[11px] text-charcoal-soft shadow-sm max-w-[220px] leading-snug">
-        Click any county to see its details below.
+      <div className="absolute top-4 left-4 bg-white/92 backdrop-blur-sm rounded-[10px] border border-cream-shadow px-3 py-2 text-[11px] text-charcoal-soft shadow-sm max-w-[240px] leading-snug">
+        Click a county to drive the cards below. Click a pin to see that
+        entity&apos;s details.
       </div>
 
-      {/* Tiny metric-range stamp — useful diagnostic, unobtrusive */}
       <div className="absolute bottom-4 right-4 bg-white/80 backdrop-blur-sm rounded-[8px] px-2 py-1 text-[10px] text-charcoal-soft/70 font-mono tabular-nums">
         {cfg.fmt(metricRange.min)} – {cfg.fmt(metricRange.max)} across 11
         counties
@@ -394,9 +355,50 @@ export function PolicymakerMap({
   );
 }
 
+function EntityPin({
+  kind,
+  name,
+  coords,
+  selected,
+  onClick,
+}: {
+  kind: keyof typeof PIN_COLOR;
+  name: string;
+  coords: [number, number];
+  selected: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <Marker
+      longitude={coords[0]}
+      latitude={coords[1]}
+      anchor="center"
+      onClick={(e) => {
+        e.originalEvent.stopPropagation();
+        onClick();
+      }}
+    >
+      <div
+        title={name}
+        style={{
+          width: 14,
+          height: 14,
+          borderRadius: "50%",
+          background: PIN_COLOR[kind],
+          border: selected ? "3px solid #1f2421" : "2px solid white",
+          boxShadow: "0 2px 6px rgba(0,0,0,0.28)",
+          cursor: "pointer",
+          transition: "border 0.15s ease, transform 0.1s ease",
+          transform: selected ? "scale(1.3)" : "scale(1)",
+        }}
+      />
+    </Marker>
+  );
+}
+
 function LegendDot({ color, label }: { color: string; label: string }) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1.5">
       <span
         className="inline-block w-2 h-2 rounded-full"
         style={{ background: color }}

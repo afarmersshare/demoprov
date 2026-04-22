@@ -23,6 +23,7 @@ import {
 import { NetworkDirectory } from "./network-directory";
 import { NetworkGraph } from "./network-graph";
 import { NetworkFlows } from "./network-flows";
+import { PolicymakerDashboard } from "../dashboards/policymaker";
 
 export type Farm = {
   upid: string;
@@ -509,6 +510,7 @@ export function NetworkExplorer() {
           <TabsTrigger value="list">List</TabsTrigger>
           <TabsTrigger value="directory">Directory</TabsTrigger>
           <TabsTrigger value="county">By county</TabsTrigger>
+          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
         </TabsList>
         <TabsContent value="map" className="mt-4">
           <div className="md:grid md:grid-cols-[1fr_340px] md:gap-5">
@@ -610,6 +612,28 @@ export function NetworkExplorer() {
                 entity={selectedEntity}
                 entityCount={mapPinCount}
                 hintToClick="Expand a county and click any entity name to see details."
+              />
+            </div>
+          </div>
+        </TabsContent>
+        <TabsContent value="dashboard" className="mt-4">
+          <div className="md:grid md:grid-cols-[1fr_340px] md:gap-5 md:items-start">
+            <PolicymakerDashboard
+              farms={farmsForByCounty}
+              markets={filteredMarkets}
+              processors={filteredProcessors}
+              recoveryNodes={filteredRecoveryNodes}
+              enablers={filteredEnablers}
+              regions={regions}
+              farmCrops={farmCrops}
+              selected={selectedEntity}
+              onSelect={setSelectedEntity}
+            />
+            <div className="hidden md:block md:sticky md:top-4">
+              <EntityDetailPanel
+                entity={selectedEntity}
+                entityCount={mapPinCount}
+                hintToClick="Click any pin on the map to see that entity's details."
               />
             </div>
           </div>
