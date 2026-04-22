@@ -8,23 +8,16 @@ import type {
   Processor,
   RecoveryNode,
   Enabler,
+  NetworkEntity,
 } from "./network-explorer";
+import {
+  EntityDetailPanel,
+  prettify,
+  statusPillClasses,
+  statusLabel,
+} from "./entity-detail-panel";
 
-type EntityKind =
-  | "farm"
-  | "market"
-  | "distributor"
-  | "processor"
-  | "recovery_node"
-  | "enabler";
-
-type DirectoryEntity =
-  | { kind: "farm"; data: Farm }
-  | { kind: "market"; data: Market }
-  | { kind: "distributor"; data: Distributor }
-  | { kind: "processor"; data: Processor }
-  | { kind: "recovery_node"; data: RecoveryNode }
-  | { kind: "enabler"; data: Enabler };
+type EntityKind = NetworkEntity["kind"];
 
 type Props = {
   farms: Farm[];
@@ -72,36 +65,17 @@ const STATUS_ORDER: Record<string, number> = {
   prospect: 2,
 };
 
-function prettify(raw: string | null | undefined): string {
-  if (!raw) return "—";
-  return raw.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-function statusPillClasses(status: string | null | undefined): string {
-  if (status === "enrolled") return "bg-moss text-cream";
-  if (status === "engaged") return "bg-amber text-cream";
-  if (status === "prospect") return "bg-terracotta text-cream";
-  if (status === "afs_active") return "bg-moss-light text-charcoal";
-  return "bg-bone text-charcoal";
-}
-
-function statusLabel(s: string): string {
-  if (!s) return "—";
-  if (s === "afs_active") return "AFS partner";
-  return prettify(s);
-}
-
 function farmCounty(f: Farm): string {
   return (
     (f.attributes as { county_name?: string } | null)?.county_name ?? ""
   );
 }
 
-function nameOf(e: DirectoryEntity): string {
+function nameOf(e: NetworkEntity): string {
   return e.data.name ?? "";
 }
 
-function typeOf(e: DirectoryEntity): string {
+function typeOf(e: NetworkEntity): string {
   switch (e.kind) {
     case "farm":
       return e.data.farm_type ?? "";
@@ -118,7 +92,7 @@ function typeOf(e: DirectoryEntity): string {
   }
 }
 
-function locationOf(e: DirectoryEntity): string {
+function locationOf(e: NetworkEntity): string {
   switch (e.kind) {
     case "farm":
       return farmCounty(e.data);
@@ -132,7 +106,7 @@ function locationOf(e: DirectoryEntity): string {
   }
 }
 
-function statusOf(e: DirectoryEntity): string {
+function statusOf(e: NetworkEntity): string {
   switch (e.kind) {
     case "farm":
     case "market":
@@ -148,7 +122,7 @@ function statusOf(e: DirectoryEntity): string {
   }
 }
 
-function subtypeLabel(e: DirectoryEntity): string {
+function subtypeLabel(e: NetworkEntity): string {
   return prettify(typeOf(e));
 }
 
@@ -167,10 +141,10 @@ export function NetworkDirectory({
   const [query, setQuery] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
-  const [selected, setSelected] = useState<DirectoryEntity | null>(null);
+  const [selected, setSelected] = useState<NetworkEntity | null>(null);
 
-  const allEntities: DirectoryEntity[] = useMemo(() => {
-    const out: DirectoryEntity[] = [];
+  const allEntities: NetworkEntity[] = useMemo(() => {
+    const out: NetworkEntity[] = [];
     if (selectedKinds.has("farm")) {
       for (const f of farms) out.push({ kind: "farm", data: f });
     }
@@ -387,195 +361,13 @@ export function NetworkDirectory({
       </div>
 
       <div className="hidden md:block">
-        <DirectoryDetailPanel entity={selected} totalInView={sorted.length} />
+        <EntityDetailPanel
+          entity={selected}
+          entityCount={sorted.length}
+          hintToClick="Click any row to see details."
+        />
       </div>
     </div>
   );
 }
 
-function DirectoryDetailPanel({
-  entity,
-  totalInView,
-}: {
-  entity: DirectoryEntity | null;
-  totalInView: number;
-}) {
-  if (!entity) {
-    return (
-      <div className="rounded-[14px] border border-cream-shadow bg-white p-6 h-[600px] flex flex-col">
-        <div className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft">
-          Details
-        </div>
-        <div className="mt-auto mb-auto text-center px-2">
-          <div className="text-charcoal-soft text-sm leading-relaxed">
-            Click any row to see details.
-          </div>
-          <div className="mt-3 text-xs text-charcoal-soft/70">
-            {totalInView.toLocaleString()} result{totalInView === 1 ? "" : "s"} in view.
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const rows = detailRows(entity);
-  const locationLabel = locationOf(entity);
-
-  return (
-    <div className="rounded-[14px] border border-cream-shadow bg-white p-6 h-[600px] overflow-y-auto flex flex-col">
-      <div className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft mb-3">
-        {KIND_LABEL[entity.kind]}
-      </div>
-
-      <div className="font-display text-[24px] font-semibold text-moss leading-[1.2] tracking-[-0.015em]">
-        {entity.data.name}
-      </div>
-      {locationLabel ? (
-        <div className="mt-1 text-sm text-charcoal-soft">{locationLabel}</div>
-      ) : null}
-
-      {statusOf(entity) ? (
-        <div className="mt-5">
-          <span
-            className={
-              "inline-block px-2.5 py-1 rounded-full text-[11px] font-medium " +
-              statusPillClasses(statusOf(entity))
-            }
-          >
-            {statusLabel(statusOf(entity))}
-          </span>
-        </div>
-      ) : null}
-
-      <dl className="mt-6 space-y-0">
-        {rows.map(([label, value]) => (
-          <div
-            key={label}
-            className="flex justify-between gap-4 border-t border-cream-shadow py-3 first:border-t-0 first:pt-0 text-sm"
-          >
-            <dt className="text-charcoal-soft">{label}</dt>
-            <dd className="m-0 text-charcoal font-semibold text-right">
-              {value}
-            </dd>
-          </div>
-        ))}
-      </dl>
-    </div>
-  );
-}
-
-function detailRows(e: DirectoryEntity): Array<[string, string]> {
-  const money = (v: number | null | undefined) =>
-    v == null
-      ? "—"
-      : v.toLocaleString("en-US", {
-          style: "currency",
-          currency: "USD",
-          maximumFractionDigits: 0,
-        });
-  switch (e.kind) {
-    case "farm": {
-      const f = e.data;
-      const rows: Array<[string, string]> = [
-        ["Farm type", prettify(f.farm_type)],
-        ["Acres", f.acres_total?.toLocaleString() ?? "—"],
-      ];
-      if (f.gross_revenue_baseline != null) {
-        rows.push([
-          `Revenue (${f.gross_revenue_baseline_year ?? "baseline"})`,
-          money(f.gross_revenue_baseline),
-        ]);
-      }
-      if (f.afs_priority_tier) {
-        rows.push(["Priority tier", prettify(f.afs_priority_tier)]);
-      }
-      return rows;
-    }
-    case "market": {
-      const m = e.data;
-      const rows: Array<[string, string]> = [
-        ["Market type", prettify(m.market_type)],
-      ];
-      if (m.afs_priority_tier) {
-        rows.push(["Priority tier", prettify(m.afs_priority_tier)]);
-      }
-      return rows;
-    }
-    case "distributor": {
-      const d = e.data;
-      const rows: Array<[string, string]> = [
-        ["Distributor type", prettify(d.distributor_type)],
-      ];
-      if (d.afs_priority_tier) {
-        rows.push(["Priority tier", prettify(d.afs_priority_tier)]);
-      }
-      return rows;
-    }
-    case "processor": {
-      const p = e.data;
-      const attrs = (p.attributes ?? {}) as Record<string, unknown>;
-      const rows: Array<[string, string]> = [
-        ["Processor type", prettify(p.processor_type)],
-      ];
-      if (typeof attrs.capacity_kg_per_day === "number") {
-        rows.push([
-          "Capacity",
-          `${attrs.capacity_kg_per_day.toLocaleString()} kg/day`,
-        ]);
-      }
-      if (attrs.gfsi_certified) {
-        const scheme = attrs.gfsi_scheme;
-        rows.push([
-          "GFSI certified",
-          typeof scheme === "string" ? scheme.toUpperCase() : "Yes",
-        ]);
-      }
-      if (attrs.usda_inspected) rows.push(["USDA inspected", "Yes"]);
-      if (attrs.shared_space) rows.push(["Shared space", "Yes"]);
-      if (p.afs_priority_tier) {
-        rows.push(["Priority tier", prettify(p.afs_priority_tier)]);
-      }
-      return rows;
-    }
-    case "recovery_node": {
-      const r = e.data;
-      const attrs = (r.attributes ?? {}) as Record<string, unknown>;
-      const rows: Array<[string, string]> = [
-        ["Type", prettify(r.recovery_node_type)],
-      ];
-      if (typeof attrs.capacity_pounds_per_week === "number") {
-        rows.push([
-          "Capacity",
-          `${attrs.capacity_pounds_per_week.toLocaleString()} lbs/week`,
-        ]);
-      }
-      if (attrs.has_cold_storage) rows.push(["Cold storage", "Yes"]);
-      if (attrs.has_freezer) rows.push(["Freezer", "Yes"]);
-      if (attrs.accepts_perishables)
-        rows.push(["Accepts perishables", "Yes"]);
-      if (attrs.pickup_capable) rows.push(["Pickup capable", "Yes"]);
-      return rows;
-    }
-    case "enabler": {
-      const en = e.data;
-      const attrs = (en.attributes ?? {}) as Record<string, unknown>;
-      const rows: Array<[string, string]> = [
-        ["Type", prettify(en.enabler_type)],
-      ];
-      if (typeof attrs.founded_year === "number") {
-        rows.push(["Founded", String(attrs.founded_year)]);
-      }
-      if (typeof attrs.staff_count === "number") {
-        rows.push(["Staff", attrs.staff_count.toLocaleString()]);
-      }
-      if (typeof attrs.annual_budget_usd === "number") {
-        rows.push(["Annual budget", money(attrs.annual_budget_usd)]);
-      }
-      if (typeof attrs.service_radius_miles === "number") {
-        rows.push(["Service radius", `${attrs.service_radius_miles} mi`]);
-      }
-      if (attrs.usda_funded) rows.push(["USDA funded", "Yes"]);
-      return rows;
-    }
-  }
-}

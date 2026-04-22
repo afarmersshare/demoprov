@@ -3,7 +3,7 @@
 import { X } from "lucide-react";
 import type { NetworkEntity } from "./network-explorer";
 
-function prettify(raw: string | null | undefined): string {
+export function prettify(raw: string | null | undefined): string {
   if (!raw) return "—";
   return raw.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
@@ -26,7 +26,7 @@ const KIND_LABEL: Record<NetworkEntity["kind"], string> = {
   enabler: "Enabler",
 };
 
-function statusPillClasses(status: string | null | undefined): string {
+export function statusPillClasses(status: string | null | undefined): string {
   if (status === "enrolled") return "bg-moss text-cream";
   if (status === "engaged") return "bg-amber text-cream";
   if (status === "prospect") return "bg-terracotta text-cream";
@@ -67,7 +67,7 @@ function status(e: NetworkEntity): string | null {
   }
 }
 
-function statusLabel(s: string): string {
+export function statusLabel(s: string): string {
   if (s === "afs_active") return "AFS partner";
   return prettify(s);
 }
