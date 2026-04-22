@@ -21,65 +21,163 @@ const KIND_LABEL: Record<NetworkEntity["kind"], string> = {
   farm: "Farm",
   market: "Market",
   distributor: "Distributor",
+  processor: "Processor",
+  recovery_node: "Recovery Node",
+  enabler: "Enabler",
 };
 
 function statusPillClasses(status: string | null | undefined): string {
   if (status === "enrolled") return "bg-moss text-cream";
   if (status === "engaged") return "bg-amber text-cream";
   if (status === "prospect") return "bg-terracotta text-cream";
+  if (status === "afs_active") return "bg-moss-light text-charcoal";
   return "bg-bone text-charcoal";
 }
 
 function subhead(e: NetworkEntity): string | null {
-  if (e.kind === "farm") {
-    return (
-      (e.data.attributes as { county_name?: string } | null)?.county_name ??
-      null
-    );
+  switch (e.kind) {
+    case "farm":
+      return (
+        (e.data.attributes as { county_name?: string } | null)?.county_name ??
+        null
+      );
+    case "market":
+    case "distributor":
+    case "processor":
+      return e.data.address_text ?? null;
+    case "recovery_node":
+    case "enabler":
+      return e.data.description ?? null;
   }
-  return e.data.address_text ?? null;
 }
 
 function status(e: NetworkEntity): string | null {
-  return e.data.afs_member_status ?? null;
+  switch (e.kind) {
+    case "farm":
+    case "market":
+    case "distributor":
+    case "processor":
+      return e.data.afs_member_status ?? null;
+    case "recovery_node":
+    case "enabler": {
+      const active = (e.data.attributes as { afs_active?: boolean } | null)
+        ?.afs_active;
+      return active ? "afs_active" : null;
+    }
+  }
+}
+
+function statusLabel(s: string): string {
+  if (s === "afs_active") return "AFS partner";
+  return prettify(s);
 }
 
 function detailRows(e: NetworkEntity): Array<[string, string]> {
-  if (e.kind === "farm") {
-    const f = e.data;
-    const rows: Array<[string, string]> = [
-      ["Farm type", prettify(f.farm_type)],
-      ["Acres", f.acres_total?.toLocaleString() ?? "—"],
-    ];
-    if (f.gross_revenue_baseline != null) {
-      rows.push([
-        `Revenue (${f.gross_revenue_baseline_year ?? "baseline"})`,
-        formatCurrency(f.gross_revenue_baseline),
-      ]);
+  switch (e.kind) {
+    case "farm": {
+      const f = e.data;
+      const rows: Array<[string, string]> = [
+        ["Farm type", prettify(f.farm_type)],
+        ["Acres", f.acres_total?.toLocaleString() ?? "—"],
+      ];
+      if (f.gross_revenue_baseline != null) {
+        rows.push([
+          `Revenue (${f.gross_revenue_baseline_year ?? "baseline"})`,
+          formatCurrency(f.gross_revenue_baseline),
+        ]);
+      }
+      if (f.afs_priority_tier) {
+        rows.push(["Priority tier", prettify(f.afs_priority_tier)]);
+      }
+      return rows;
     }
-    if (f.afs_priority_tier) {
-      rows.push(["Priority tier", prettify(f.afs_priority_tier)]);
+    case "market": {
+      const m = e.data;
+      const rows: Array<[string, string]> = [
+        ["Market type", prettify(m.market_type)],
+      ];
+      if (m.afs_priority_tier) {
+        rows.push(["Priority tier", prettify(m.afs_priority_tier)]);
+      }
+      return rows;
     }
-    return rows;
-  }
-  if (e.kind === "market") {
-    const m = e.data;
-    const rows: Array<[string, string]> = [
-      ["Market type", prettify(m.market_type)],
-    ];
-    if (m.afs_priority_tier) {
-      rows.push(["Priority tier", prettify(m.afs_priority_tier)]);
+    case "distributor": {
+      const d = e.data;
+      const rows: Array<[string, string]> = [
+        ["Distributor type", prettify(d.distributor_type)],
+      ];
+      if (d.afs_priority_tier) {
+        rows.push(["Priority tier", prettify(d.afs_priority_tier)]);
+      }
+      return rows;
     }
-    return rows;
+    case "processor": {
+      const p = e.data;
+      const attrs = (p.attributes ?? {}) as Record<string, unknown>;
+      const rows: Array<[string, string]> = [
+        ["Processor type", prettify(p.processor_type)],
+      ];
+      if (typeof attrs.capacity_kg_per_day === "number") {
+        rows.push([
+          "Capacity",
+          `${attrs.capacity_kg_per_day.toLocaleString()} kg/day`,
+        ]);
+      }
+      if (attrs.gfsi_certified) {
+        const scheme = attrs.gfsi_scheme;
+        rows.push([
+          "GFSI certified",
+          typeof scheme === "string" ? scheme.toUpperCase() : "Yes",
+        ]);
+      }
+      if (attrs.usda_inspected) rows.push(["USDA inspected", "Yes"]);
+      if (attrs.shared_space) rows.push(["Shared space", "Yes"]);
+      if (p.afs_priority_tier) {
+        rows.push(["Priority tier", prettify(p.afs_priority_tier)]);
+      }
+      return rows;
+    }
+    case "recovery_node": {
+      const r = e.data;
+      const attrs = (r.attributes ?? {}) as Record<string, unknown>;
+      const rows: Array<[string, string]> = [
+        ["Type", prettify(r.recovery_node_type)],
+      ];
+      if (typeof attrs.capacity_pounds_per_week === "number") {
+        rows.push([
+          "Capacity",
+          `${attrs.capacity_pounds_per_week.toLocaleString()} lbs/week`,
+        ]);
+      }
+      if (attrs.has_cold_storage) rows.push(["Cold storage", "Yes"]);
+      if (attrs.has_freezer) rows.push(["Freezer", "Yes"]);
+      if (attrs.accepts_perishables)
+        rows.push(["Accepts perishables", "Yes"]);
+      if (attrs.pickup_capable) rows.push(["Pickup capable", "Yes"]);
+      return rows;
+    }
+    case "enabler": {
+      const en = e.data;
+      const attrs = (en.attributes ?? {}) as Record<string, unknown>;
+      const rows: Array<[string, string]> = [
+        ["Type", prettify(en.enabler_type)],
+      ];
+      if (typeof attrs.founded_year === "number") {
+        rows.push(["Founded", String(attrs.founded_year)]);
+      }
+      if (typeof attrs.staff_count === "number") {
+        rows.push(["Staff", attrs.staff_count.toLocaleString()]);
+      }
+      if (typeof attrs.annual_budget_usd === "number") {
+        rows.push(["Annual budget", formatCurrency(attrs.annual_budget_usd)]);
+      }
+      if (typeof attrs.service_radius_miles === "number") {
+        rows.push(["Service radius", `${attrs.service_radius_miles} mi`]);
+      }
+      if (attrs.usda_funded) rows.push(["USDA funded", "Yes"]);
+      return rows;
+    }
   }
-  const d = e.data;
-  const rows: Array<[string, string]> = [
-    ["Distributor type", prettify(d.distributor_type)],
-  ];
-  if (d.afs_priority_tier) {
-    rows.push(["Priority tier", prettify(d.afs_priority_tier)]);
-  }
-  return rows;
 }
 
 function Body({
@@ -133,7 +231,7 @@ function Body({
               statusPillClasses(st)
             }
           >
-            {prettify(st)}
+            {statusLabel(st)}
           </span>
         </div>
       ) : null}

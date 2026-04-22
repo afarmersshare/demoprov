@@ -17,10 +17,16 @@ import type {
   NetworkEntity,
 } from "./network-explorer";
 
+// Map tab currently only plots farm / market / distributor pins. The other
+// three kinds are defined on NetworkEntity but never passed to this tab —
+// the extra entries exist only to keep the exhaustive Record type satisfied.
 const KIND_COLOR: Record<NetworkEntity["kind"], string> = {
   farm: "#2f4a3a",
   market: "#c77f2a",
   distributor: "#7a8aa0",
+  processor: "#a14a2a",
+  recovery_node: "#6b9370",
+  enabler: "#bfa98a",
 };
 
 type Props = {

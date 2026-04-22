@@ -13,7 +13,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { FarmsMap } from "./farms-map";
 import { FarmsList } from "./farms-list";
-import { FarmsByCounty } from "./farms-by-county";
+import { NetworkByCounty } from "./network-by-county";
 import { FarmsSummary } from "./farms-summary";
 import { FarmDetailPanel } from "./farm-detail-panel";
 import {
@@ -60,6 +60,38 @@ export type Distributor = {
   geom_point: { coordinates: [number, number] } | null;
 };
 
+export type Processor = {
+  upid: string;
+  name: string;
+  processor_type: string | null;
+  afs_member_status: string | null;
+  afs_priority_tier: string | null;
+  address_text: string | null;
+  county_fips: string | null;
+  attributes: Record<string, unknown> | null;
+  geom_point: { coordinates: [number, number] } | null;
+};
+
+export type RecoveryNode = {
+  upid: string;
+  name: string;
+  recovery_node_type: string | null;
+  contact_visibility: string | null;
+  description: string | null;
+  attributes: Record<string, unknown> | null;
+  geom_point: { coordinates: [number, number] } | null;
+};
+
+export type Enabler = {
+  upid: string;
+  name: string;
+  enabler_type: string | null;
+  contact_visibility: string | null;
+  description: string | null;
+  attributes: Record<string, unknown> | null;
+  geom_point: { coordinates: [number, number] } | null;
+};
+
 export type Region = {
   upid: string;
   name: string;
@@ -93,7 +125,10 @@ export type Relationship = {
 export type NetworkEntity =
   | { kind: "farm"; data: Farm }
   | { kind: "market"; data: Market }
-  | { kind: "distributor"; data: Distributor };
+  | { kind: "distributor"; data: Distributor }
+  | { kind: "processor"; data: Processor }
+  | { kind: "recovery_node"; data: RecoveryNode }
+  | { kind: "enabler"; data: Enabler };
 
 type StatusFilter = "all" | "enrolled" | "engaged" | "prospect";
 const ALL_TYPES = "__all__";
@@ -107,6 +142,9 @@ export function NetworkExplorer() {
   const [farms, setFarms] = useState<Farm[]>([]);
   const [markets, setMarkets] = useState<Market[]>([]);
   const [distributors, setDistributors] = useState<Distributor[]>([]);
+  const [processors, setProcessors] = useState<Processor[]>([]);
+  const [recoveryNodes, setRecoveryNodes] = useState<RecoveryNode[]>([]);
+  const [enablers, setEnablers] = useState<Enabler[]>([]);
   const [regions, setRegions] = useState<Region[]>([]);
   const [farmCrops, setFarmCrops] = useState<FarmCrop[]>([]);
   const [relationships, setRelationships] = useState<Relationship[]>([]);
@@ -115,6 +153,7 @@ export function NetworkExplorer() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [typeFilter, setTypeFilter] = useState<string>(ALL_TYPES);
   const [countyFilter, setCountyFilter] = useState<string>(ALL_COUNTIES);
+  const [activeTab, setActiveTab] = useState<string>("map");
   const [selectedEntity, setSelectedEntity] = useState<NetworkEntity | null>(
     null,
   );
@@ -138,6 +177,21 @@ export function NetworkExplorer() {
           "upid, name, distributor_type, afs_member_status, afs_priority_tier, address_text, attributes, geom_point",
         ),
       supabase
+        .from("processors")
+        .select(
+          "upid, name, processor_type, afs_member_status, afs_priority_tier, address_text, county_fips, attributes, geom_point",
+        ),
+      supabase
+        .from("recovery_nodes")
+        .select(
+          "upid, name, recovery_node_type, contact_visibility, description, attributes, geom_point",
+        ),
+      supabase
+        .from("enablers")
+        .select(
+          "upid, name, enabler_type, contact_visibility, description, attributes, geom_point",
+        ),
+      supabase
         .from("regions")
         .select(
           "upid, name, region_type, fips_codes, description, attributes, geom_point, geom_boundary",
@@ -159,10 +213,14 @@ export function NetworkExplorer() {
         setLoadError(firstError.message);
         return;
       }
-      const [fRes, mRes, dRes, rRes, cRes, relRes] = results;
+      const [fRes, mRes, dRes, pRes, rnRes, enRes, rRes, cRes, relRes] =
+        results;
       setFarms((fRes.data ?? []) as Farm[]);
       setMarkets((mRes.data ?? []) as Market[]);
       setDistributors((dRes.data ?? []) as Distributor[]);
+      setProcessors((pRes.data ?? []) as Processor[]);
+      setRecoveryNodes((rnRes.data ?? []) as RecoveryNode[]);
+      setEnablers((enRes.data ?? []) as Enabler[]);
       setRegions((rRes.data ?? []) as Region[]);
       setFarmCrops((cRes.data ?? []) as FarmCrop[]);
       setRelationships((relRes.data ?? []) as Relationship[]);
@@ -209,9 +267,11 @@ export function NetworkExplorer() {
     typeFilter !== ALL_TYPES ||
     countyFilter !== ALL_COUNTIES;
 
-  // Markets and distributors aren't affected by the farm-type or county filters,
-  // only by the global status filter. Build the visible non-farm sets so the
-  // Map tab can render them and the selection-clearing logic below has a target.
+  // Non-farm entities aren't affected by the farm-type or county filters,
+  // only by the global status filter. Recovery nodes and enablers don't
+  // carry afs_member_status at all — they use an attributes.afs_active bool —
+  // so when a status is actively selected we hide them entirely. The
+  // By-county tab surfaces a note explaining this.
   const filteredMarkets = useMemo(() => {
     return markets.filter((m) =>
       statusFilter === "all" ? true : m.afs_member_status === statusFilter,
@@ -224,24 +284,81 @@ export function NetworkExplorer() {
     );
   }, [distributors, statusFilter]);
 
+  const filteredProcessors = useMemo(() => {
+    return processors.filter((p) =>
+      statusFilter === "all" ? true : p.afs_member_status === statusFilter,
+    );
+  }, [processors, statusFilter]);
+
+  const filteredRecoveryNodes = useMemo(
+    () => (statusFilter === "all" ? recoveryNodes : []),
+    [recoveryNodes, statusFilter],
+  );
+
+  const filteredEnablers = useMemo(
+    () => (statusFilter === "all" ? enablers : []),
+    [enablers, statusFilter],
+  );
+
+  // Farms scoped by status + type but NOT by county — the By-county tab
+  // shows every county, so the county dropdown is meaningless there.
+  const farmsForByCounty = useMemo(() => {
+    return farms.filter((f) => {
+      if (statusFilter !== "all" && f.afs_member_status !== statusFilter) {
+        return false;
+      }
+      if (typeFilter !== ALL_TYPES && f.farm_type !== typeFilter) {
+        return false;
+      }
+      return true;
+    });
+  }, [farms, statusFilter, typeFilter]);
+
   useEffect(() => {
     if (!selectedEntity) return;
     let stillIn = false;
-    if (selectedEntity.kind === "farm") {
-      stillIn = filteredFarms.some(
-        (f) => f.upid === selectedEntity.data.upid,
-      );
-    } else if (selectedEntity.kind === "market") {
-      stillIn = filteredMarkets.some(
-        (m) => m.upid === selectedEntity.data.upid,
-      );
-    } else {
-      stillIn = filteredDistributors.some(
-        (d) => d.upid === selectedEntity.data.upid,
-      );
+    switch (selectedEntity.kind) {
+      case "farm":
+        stillIn = filteredFarms.some(
+          (f) => f.upid === selectedEntity.data.upid,
+        );
+        break;
+      case "market":
+        stillIn = filteredMarkets.some(
+          (m) => m.upid === selectedEntity.data.upid,
+        );
+        break;
+      case "distributor":
+        stillIn = filteredDistributors.some(
+          (d) => d.upid === selectedEntity.data.upid,
+        );
+        break;
+      case "processor":
+        stillIn = filteredProcessors.some(
+          (p) => p.upid === selectedEntity.data.upid,
+        );
+        break;
+      case "recovery_node":
+        stillIn = filteredRecoveryNodes.some(
+          (r) => r.upid === selectedEntity.data.upid,
+        );
+        break;
+      case "enabler":
+        stillIn = filteredEnablers.some(
+          (e) => e.upid === selectedEntity.data.upid,
+        );
+        break;
     }
     if (!stillIn) setSelectedEntity(null);
-  }, [filteredFarms, filteredMarkets, filteredDistributors, selectedEntity]);
+  }, [
+    filteredFarms,
+    filteredMarkets,
+    filteredDistributors,
+    filteredProcessors,
+    filteredRecoveryNodes,
+    filteredEnablers,
+    selectedEntity,
+  ]);
 
   const selectedFarm: Farm | null =
     selectedEntity && selectedEntity.kind === "farm"
@@ -265,8 +382,10 @@ export function NetworkExplorer() {
           />
           <div className="mb-4 -mt-2 text-[11px] text-charcoal-soft/80 tabular-nums font-mono">
             Network loaded — {farms.length} farms · {markets.length} markets ·{" "}
-            {distributors.length} distributors · {regions.length} regions ·{" "}
-            {relationships.length} connections · {farmCrops.length} crop links
+            {distributors.length} distributors · {processors.length}{" "}
+            processors · {recoveryNodes.length} recovery · {enablers.length}{" "}
+            enablers · {regions.length} regions · {relationships.length}{" "}
+            connections · {farmCrops.length} crop links
           </div>
         </>
       )}
@@ -311,24 +430,26 @@ export function NetworkExplorer() {
           </Select>
         </div>
 
-        <div className="flex items-center gap-3">
-          <label className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft">
-            County
-          </label>
-          <Select value={countyFilter} onValueChange={setCountyFilter}>
-            <SelectTrigger className="min-w-[180px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL_COUNTIES}>All counties</SelectItem>
-              {availableCounties.map((c) => (
-                <SelectItem key={c} value={c}>
-                  {c}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {activeTab !== "county" ? (
+          <div className="flex items-center gap-3">
+            <label className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft">
+              County
+            </label>
+            <Select value={countyFilter} onValueChange={setCountyFilter}>
+              <SelectTrigger className="min-w-[180px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL_COUNTIES}>All counties</SelectItem>
+                {availableCounties.map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : null}
 
         {filterActive ? (
           <button
@@ -345,7 +466,11 @@ export function NetworkExplorer() {
         ) : null}
       </div>
 
-      <Tabs defaultValue="map" className="w-full">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="w-full"
+      >
         <TabsList>
           <TabsTrigger value="map">Map</TabsTrigger>
           <TabsTrigger value="network">Network</TabsTrigger>
@@ -427,7 +552,26 @@ export function NetworkExplorer() {
           />
         </TabsContent>
         <TabsContent value="county" className="mt-4">
-          <FarmsByCounty farms={filteredFarms} />
+          <div className="md:grid md:grid-cols-[1fr_340px] md:gap-5">
+            <NetworkByCounty
+              farms={farmsForByCounty}
+              markets={filteredMarkets}
+              distributors={filteredDistributors}
+              processors={filteredProcessors}
+              recoveryNodes={filteredRecoveryNodes}
+              enablers={filteredEnablers}
+              regions={regions}
+              statusFilter={statusFilter}
+              onSelect={setSelectedEntity}
+            />
+            <div className="hidden md:block">
+              <EntityDetailPanel
+                entity={selectedEntity}
+                entityCount={mapPinCount}
+                hintToClick="Expand a county and click any entity name to see details."
+              />
+            </div>
+          </div>
         </TabsContent>
       </Tabs>
 
