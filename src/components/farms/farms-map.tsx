@@ -164,6 +164,13 @@ export function FarmsMap({
     selected.kind === e.kind &&
     selected.data.upid === e.data.upid;
 
+  const isAfsActive = (e: NetworkEntity): boolean => {
+    if (e.kind !== "recovery_node" && e.kind !== "enabler") return false;
+    const active = (e.data.attributes as { afs_active?: boolean } | null)
+      ?.afs_active;
+    return active === true;
+  };
+
   return (
     <div className="relative w-full h-[600px] rounded-[14px] overflow-hidden border border-cream-shadow">
       <Map
@@ -204,6 +211,10 @@ export function FarmsMap({
 
         {plotted.map((p) => {
           const sel = isSelected(p.entity);
+          const active = isAfsActive(p.entity);
+          const boxShadow = active
+            ? "0 0 0 2px #456658, 0 2px 6px rgba(0,0,0,0.25)"
+            : "0 2px 6px rgba(0,0,0,0.25)";
           return (
             <Marker
               key={p.entity.kind + ":" + p.entity.data.upid}
@@ -216,14 +227,18 @@ export function FarmsMap({
               }}
             >
               <div
-                title={p.entity.data.name ?? ""}
+                title={
+                  active
+                    ? `${p.entity.data.name ?? ""} — AFS partner`
+                    : (p.entity.data.name ?? "")
+                }
                 style={{
                   width: 14,
                   height: 14,
                   borderRadius: "50%",
                   background: KIND_COLOR[p.entity.kind],
                   border: sel ? "3px solid #1f2421" : "2px solid white",
-                  boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
+                  boxShadow,
                   cursor: "pointer",
                   transition: "border 0.15s ease, transform 0.1s ease",
                   transform: sel ? "scale(1.3)" : "scale(1)",
