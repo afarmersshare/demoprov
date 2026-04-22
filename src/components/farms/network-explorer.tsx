@@ -512,6 +512,9 @@ export function NetworkExplorer() {
               farms={filteredFarms}
               markets={filteredMarkets}
               distributors={filteredDistributors}
+              processors={filteredProcessors}
+              recoveryNodes={filteredRecoveryNodes}
+              enablers={filteredEnablers}
               relationships={relationships}
               selected={selectedEntity}
               onSelect={setSelectedEntity}

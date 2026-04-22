@@ -6,6 +6,9 @@ import type {
   Farm,
   Market,
   Distributor,
+  Processor,
+  RecoveryNode,
+  Enabler,
   Relationship,
   NetworkEntity,
 } from "./network-explorer";
@@ -18,6 +21,9 @@ const KIND_COLOR = {
   farm: "#2f4a3a",
   market: "#c77f2a",
   distributor: "#7a8aa0",
+  processor: "#a14a2a",
+  recovery_node: "#6b9370",
+  enabler: "#bfa98a",
   afs: "#1f2421",
 } as const;
 
@@ -29,7 +35,14 @@ const AFS_ID = "__afs__";
 
 type GraphNode = {
   id: string;
-  kind: "farm" | "market" | "distributor" | "afs";
+  kind:
+    | "farm"
+    | "market"
+    | "distributor"
+    | "processor"
+    | "recovery_node"
+    | "enabler"
+    | "afs";
   name: string;
   weight: number;
   entity: NetworkEntity | null;
@@ -49,6 +62,9 @@ type Props = {
   farms: Farm[];
   markets: Market[];
   distributors: Distributor[];
+  processors: Processor[];
+  recoveryNodes: RecoveryNode[];
+  enablers: Enabler[];
   relationships: Relationship[];
   selected: NetworkEntity | null;
   onSelect: (entity: NetworkEntity | null) => void;
@@ -78,6 +94,46 @@ function distributorWeight(d: Distributor): number {
   return 0.5;
 }
 
+function processorWeight(p: Processor): number {
+  const attrs = p.attributes as {
+    capacity_kg_per_day?: number;
+    annual_capacity_lbs?: number;
+    annual_capacity_gal?: number;
+  } | null;
+  const cap =
+    attrs?.capacity_kg_per_day ??
+    (typeof attrs?.annual_capacity_lbs === "number"
+      ? attrs.annual_capacity_lbs / 365
+      : undefined) ??
+    (typeof attrs?.annual_capacity_gal === "number"
+      ? attrs.annual_capacity_gal / 100
+      : undefined);
+  if (typeof cap === "number" && cap > 0) return Math.min(1, cap / 9000);
+  return 0.5;
+}
+
+function recoveryWeight(r: RecoveryNode): number {
+  const attrs = r.attributes as {
+    capacity_pounds_per_week?: number;
+  } | null;
+  const cap = attrs?.capacity_pounds_per_week;
+  if (typeof cap === "number" && cap > 0) return Math.min(1, cap / 200_000);
+  return 0.5;
+}
+
+function enablerWeight(en: Enabler): number {
+  const attrs = en.attributes as {
+    staff_count?: number;
+    annual_budget_usd?: number;
+  } | null;
+  const staff = attrs?.staff_count;
+  if (typeof staff === "number" && staff > 0) return Math.min(1, staff / 60);
+  const budget = attrs?.annual_budget_usd;
+  if (typeof budget === "number" && budget > 0)
+    return Math.min(1, budget / 5_000_000);
+  return 0.5;
+}
+
 function resolveEndpointId(end: unknown): string {
   if (typeof end === "string") return end;
   if (end && typeof end === "object" && "id" in (end as { id?: unknown })) {
@@ -104,6 +160,12 @@ function kindLabel(kind: GraphNode["kind"]): string {
       return "Market / buyer";
     case "distributor":
       return "Distributor";
+    case "processor":
+      return "Processor";
+    case "recovery_node":
+      return "Recovery node";
+    case "enabler":
+      return "Enabler";
   }
 }
 
@@ -111,6 +173,9 @@ export function NetworkGraph({
   farms,
   markets,
   distributors,
+  processors,
+  recoveryNodes,
+  enablers,
   relationships,
   selected,
   onSelect,
@@ -168,6 +233,39 @@ export function NetworkGraph({
         entity,
       });
     }
+    for (const p of processors) {
+      const entity: NetworkEntity = { kind: "processor", data: p };
+      byUpid.set(p.upid, entity);
+      nodesList.push({
+        id: p.upid,
+        kind: "processor",
+        name: p.name,
+        weight: processorWeight(p),
+        entity,
+      });
+    }
+    for (const r of recoveryNodes) {
+      const entity: NetworkEntity = { kind: "recovery_node", data: r };
+      byUpid.set(r.upid, entity);
+      nodesList.push({
+        id: r.upid,
+        kind: "recovery_node",
+        name: r.name,
+        weight: recoveryWeight(r),
+        entity,
+      });
+    }
+    for (const en of enablers) {
+      const entity: NetworkEntity = { kind: "enabler", data: en };
+      byUpid.set(en.upid, entity);
+      nodesList.push({
+        id: en.upid,
+        kind: "enabler",
+        name: en.name,
+        weight: enablerWeight(en),
+        entity,
+      });
+    }
     nodesList.push({
       id: AFS_ID,
       kind: "afs",
@@ -194,7 +292,7 @@ export function NetworkGraph({
     if (orphans > 0 && typeof window !== "undefined") {
       // eslint-disable-next-line no-console
       console.info(
-        `[NetworkGraph] skipped ${orphans} relationship(s) whose endpoints are not in the seeded farm/market/distributor tables.`,
+        `[NetworkGraph] skipped ${orphans} relationship(s) whose endpoints are not in the seeded entity tables (farms, markets, distributors, processors, recovery_nodes, enablers).`,
       );
     }
 
@@ -204,6 +302,37 @@ export function NetworkGraph({
           source: AFS_ID,
           target: f.upid,
           type: "afs_enrollment",
+        });
+      }
+    }
+    for (const p of processors) {
+      if (p.afs_member_status === "enrolled") {
+        linksList.push({
+          source: AFS_ID,
+          target: p.upid,
+          type: "afs_enrollment",
+        });
+      }
+    }
+    for (const r of recoveryNodes) {
+      const active = (r.attributes as { afs_active?: boolean } | null)
+        ?.afs_active;
+      if (active) {
+        linksList.push({
+          source: AFS_ID,
+          target: r.upid,
+          type: "afs_partnership",
+        });
+      }
+    }
+    for (const en of enablers) {
+      const active = (en.attributes as { afs_active?: boolean } | null)
+        ?.afs_active;
+      if (active) {
+        linksList.push({
+          source: AFS_ID,
+          target: en.upid,
+          type: "afs_partnership",
         });
       }
     }
@@ -219,7 +348,15 @@ export function NetworkGraph({
     }
 
     return { nodes: nodesList, links: linksList, neighborMap: nm };
-  }, [farms, markets, distributors, relationships]);
+  }, [
+    farms,
+    markets,
+    distributors,
+    processors,
+    recoveryNodes,
+    enablers,
+    relationships,
+  ]);
 
   const graphData = useMemo(
     () => ({
@@ -240,7 +377,14 @@ export function NetworkGraph({
     return neighbors ? neighbors.has(id) : false;
   };
 
-  const nothingToPlot = farms.length + markets.length + distributors.length === 0;
+  const nothingToPlot =
+    farms.length +
+      markets.length +
+      distributors.length +
+      processors.length +
+      recoveryNodes.length +
+      enablers.length ===
+    0;
 
   return (
     <div
@@ -365,32 +509,29 @@ export function NetworkGraph({
           />
           A Farmer&apos;s Share
         </div>
-        <div className="flex items-center gap-2.5">
-          <span
-            className="inline-block w-3 h-3 rounded-full"
-            style={{ background: KIND_COLOR.farm }}
-          />
-          Farms
-        </div>
-        <div className="flex items-center gap-2.5">
-          <span
-            className="inline-block w-3 h-3 rounded-full"
-            style={{ background: KIND_COLOR.market }}
-          />
-          Markets / buyers
-        </div>
-        <div className="flex items-center gap-2.5">
-          <span
-            className="inline-block w-3 h-3 rounded-full"
-            style={{ background: KIND_COLOR.distributor }}
-          />
-          Distributors
-        </div>
+        <LegendRow color={KIND_COLOR.farm} label="Farms" />
+        <LegendRow color={KIND_COLOR.market} label="Markets / buyers" />
+        <LegendRow color={KIND_COLOR.distributor} label="Distributors" />
+        <LegendRow color={KIND_COLOR.processor} label="Processors" />
+        <LegendRow color={KIND_COLOR.recovery_node} label="Recovery" />
+        <LegendRow color={KIND_COLOR.enabler} label="Enablers" />
       </div>
 
       <div className="absolute top-4 right-4 bg-white/92 backdrop-blur-sm rounded-[10px] border border-cream-shadow px-3 py-2 text-[11px] text-charcoal-soft shadow-sm max-w-[220px] leading-snug">
         Hover a node to trace its connections. Click to open details.
       </div>
+    </div>
+  );
+}
+
+function LegendRow({ color, label }: { color: string; label: string }) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <span
+        className="inline-block w-3 h-3 rounded-full"
+        style={{ background: color }}
+      />
+      {label}
     </div>
   );
 }
