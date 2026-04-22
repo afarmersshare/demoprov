@@ -10,6 +10,7 @@ import type {
   RecoveryNode,
   Enabler,
   Relationship,
+  Person,
   NetworkEntity,
 } from "./network-explorer";
 
@@ -25,6 +26,7 @@ const KIND_COLOR = {
   recovery_node: "#6b9370",
   enabler: "#bfa98a",
   afs: "#1f2421",
+  person: "#8a8072",
 } as const;
 
 const CREAM = "#f7f3eb";
@@ -42,10 +44,13 @@ type GraphNode = {
     | "processor"
     | "recovery_node"
     | "enabler"
-    | "afs";
+    | "afs"
+    | "person";
   name: string;
   weight: number;
   entity: NetworkEntity | null;
+  personTitle?: string;
+  affiliatedOrgName?: string;
   x?: number;
   y?: number;
   fx?: number;
@@ -56,6 +61,7 @@ type GraphLink = {
   source: string | GraphNode;
   target: string | GraphNode;
   type: string;
+  isPersonEdge?: boolean;
 };
 
 type Props = {
@@ -66,6 +72,7 @@ type Props = {
   recoveryNodes: RecoveryNode[];
   enablers: Enabler[];
   relationships: Relationship[];
+  persons: Person[];
   selected: NetworkEntity | null;
   onSelect: (entity: NetworkEntity | null) => void;
 };
@@ -166,6 +173,8 @@ function kindLabel(kind: GraphNode["kind"]): string {
       return "Recovery node";
     case "enabler":
       return "Enabler";
+    case "person":
+      return "Person";
   }
 }
 
@@ -177,12 +186,14 @@ export function NetworkGraph({
   recoveryNodes,
   enablers,
   relationships,
+  persons,
   selected,
   onSelect,
 }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [dims, setDims] = useState({ width: 800, height: 600 });
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [showPeople, setShowPeople] = useState(false);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -337,6 +348,44 @@ export function NetworkGraph({
       }
     }
 
+    if (showPeople) {
+      const personByUpid = new Map<string, Person>();
+      for (const px of persons) personByUpid.set(px.upid, px);
+
+      const personAffiliations = new Map<string, string>();
+      for (const r of relationships) {
+        const kind = (r.attributes as { edge_kind?: string } | null)
+          ?.edge_kind;
+        if (kind !== "person_affiliation") continue;
+        const person = personByUpid.get(r.node_a_upid);
+        if (!person) continue;
+        if (!byUpid.has(r.node_b_upid)) continue;
+        personAffiliations.set(person.upid, r.node_b_upid);
+      }
+
+      for (const [personUpid, orgUpid] of personAffiliations) {
+        const person = personByUpid.get(personUpid);
+        const org = byUpid.get(orgUpid);
+        if (!person || !org) continue;
+        const title = (person.attributes as { title?: string } | null)?.title;
+        nodesList.push({
+          id: person.upid,
+          kind: "person",
+          name: person.full_name,
+          weight: 0,
+          entity: org,
+          personTitle: title ?? undefined,
+          affiliatedOrgName: org.data.name ?? undefined,
+        });
+        linksList.push({
+          source: person.upid,
+          target: orgUpid,
+          type: "person_affiliation",
+          isPersonEdge: true,
+        });
+      }
+    }
+
     const nm = new Map<string, Set<string>>();
     for (const l of linksList) {
       const s = resolveEndpointId(l.source);
@@ -356,6 +405,8 @@ export function NetworkGraph({
     recoveryNodes,
     enablers,
     relationships,
+    persons,
+    showPeople,
   ]);
 
   const graphData = useMemo(
@@ -398,15 +449,26 @@ export function NetworkGraph({
           height={dims.height}
           backgroundColor={CREAM}
           nodeRelSize={4}
-          nodeVal={(n: GraphNode) =>
-            n.kind === "afs" ? 36 : 9 + n.weight * 5
-          }
+          nodeVal={(n: GraphNode) => {
+            if (n.kind === "afs") return 36;
+            if (n.kind === "person") return 2;
+            return 9 + n.weight * 5;
+          }}
           nodeColor={(n: GraphNode) => {
             const base = KIND_COLOR[n.kind];
             if (!activeId) return base;
             return isNeighborOfActive(n.id) ? base : "rgba(31,36,33,0.12)";
           }}
           nodeLabel={(n: GraphNode) => {
+            if (n.kind === "person") {
+              const title = n.personTitle
+                ? escapeHtml(n.personTitle)
+                : "Person";
+              const org = n.affiliatedOrgName
+                ? ` at <b>${escapeHtml(n.affiliatedOrgName)}</b>`
+                : "";
+              return `<div style="background:white;padding:6px 10px;border-radius:6px;border:1px solid ${CREAM_SHADOW};font-size:12px;color:${CHARCOAL};box-shadow:0 2px 6px rgba(0,0,0,0.08);"><b>${escapeHtml(n.name)}</b><br/><span style="color:#4a524e;font-size:11px;">${title}${org}</span></div>`;
+            }
             const sub =
               n.kind === "afs"
                 ? "Aggregator"
@@ -414,18 +476,23 @@ export function NetworkGraph({
             return `<div style="background:white;padding:6px 10px;border-radius:6px;border:1px solid ${CREAM_SHADOW};font-size:12px;color:${CHARCOAL};box-shadow:0 2px 6px rgba(0,0,0,0.08);"><b>${escapeHtml(n.name)}</b><br/><span style="color:#4a524e;font-size:11px;">${escapeHtml(sub)}</span></div>`;
           }}
           linkColor={(l: GraphLink) => {
-            if (!activeId) return "rgba(31,36,33,0.12)";
             const s = resolveEndpointId(l.source);
             const t = resolveEndpointId(l.target);
-            if (s === activeId || t === activeId)
-              return "rgba(31,36,33,0.45)";
+            const highlighted =
+              activeId && (s === activeId || t === activeId);
+            if (highlighted) return "rgba(31,36,33,0.45)";
+            if (l.isPersonEdge) return "rgba(138,128,114,0.35)";
+            if (!activeId) return "rgba(31,36,33,0.12)";
             return "rgba(31,36,33,0.04)";
           }}
           linkWidth={(l: GraphLink) => {
-            if (!activeId) return 0.6;
             const s = resolveEndpointId(l.source);
             const t = resolveEndpointId(l.target);
-            return s === activeId || t === activeId ? 2 : 0.6;
+            const highlighted =
+              activeId && (s === activeId || t === activeId);
+            if (highlighted) return 2;
+            if (l.isPersonEdge) return 0.4;
+            return 0.6;
           }}
           linkDirectionalParticles={(l: GraphLink) => {
             if (!activeId) return 0;
@@ -449,10 +516,9 @@ export function NetworkGraph({
           nodeCanvasObjectMode={(n: GraphNode) => {
             if (n.kind === "afs") return "before";
             if (
+              n.kind !== "person" &&
               selected &&
-              n.entity &&
-              selected.kind === n.entity.kind &&
-              selected.data.upid === n.entity.data.upid
+              n.id === selected.data.upid
             ) {
               return "before";
             }
@@ -475,10 +541,9 @@ export function NetworkGraph({
               return;
             }
             if (
+              n.kind !== "person" &&
               selected &&
-              n.entity &&
-              selected.kind === n.entity.kind &&
-              selected.data.upid === n.entity.data.upid
+              n.id === selected.data.upid
             ) {
               const baseRadius = Math.sqrt(9 + n.weight * 5) * 4;
               const r = baseRadius + 4;
@@ -515,10 +580,31 @@ export function NetworkGraph({
         <LegendRow color={KIND_COLOR.processor} label="Processors" />
         <LegendRow color={KIND_COLOR.recovery_node} label="Recovery" />
         <LegendRow color={KIND_COLOR.enabler} label="Enablers" />
+        {showPeople ? (
+          <LegendRow color={KIND_COLOR.person} label="People" />
+        ) : null}
       </div>
 
-      <div className="absolute top-4 right-4 bg-white/92 backdrop-blur-sm rounded-[10px] border border-cream-shadow px-3 py-2 text-[11px] text-charcoal-soft shadow-sm max-w-[220px] leading-snug">
-        Hover a node to trace its connections. Click to open details.
+      <div className="absolute top-4 right-4 bg-white/92 backdrop-blur-sm rounded-[10px] border border-cream-shadow px-3 py-2 text-[11px] text-charcoal-soft shadow-sm max-w-[240px] leading-snug space-y-2">
+        <div>Hover a node to trace its connections. Click to open details.</div>
+        <label className="flex items-center gap-2 cursor-pointer select-none pt-1 border-t border-cream-shadow">
+          <input
+            type="checkbox"
+            checked={showPeople}
+            onChange={(e) => setShowPeople(e.target.checked)}
+            className="accent-moss h-3 w-3 cursor-pointer"
+          />
+          <span className="text-charcoal">
+            Show people{" "}
+            <span className="text-charcoal-soft">({persons.length})</span>
+          </span>
+        </label>
+        {showPeople ? (
+          <div className="text-charcoal-soft/90 leading-snug">
+            Clicking a person opens their affiliated organization — a preview
+            of the CRM layer.
+          </div>
+        ) : null}
       </div>
     </div>
   );

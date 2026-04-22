@@ -122,6 +122,15 @@ export type Relationship = {
   attributes: Record<string, unknown> | null;
 };
 
+export type Person = {
+  upid: string;
+  full_name: string;
+  first_name: string | null;
+  last_name: string | null;
+  contact_visibility: string | null;
+  attributes: Record<string, unknown> | null;
+};
+
 export type NetworkEntity =
   | { kind: "farm"; data: Farm }
   | { kind: "market"; data: Market }
@@ -148,6 +157,7 @@ export function NetworkExplorer() {
   const [regions, setRegions] = useState<Region[]>([]);
   const [farmCrops, setFarmCrops] = useState<FarmCrop[]>([]);
   const [relationships, setRelationships] = useState<Relationship[]>([]);
+  const [persons, setPersons] = useState<Person[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -206,6 +216,11 @@ export function NetworkExplorer() {
         .select(
           "node_a_upid, node_b_upid, relationship_type, valid_from, attributes",
         ),
+      supabase
+        .from("persons")
+        .select(
+          "upid, full_name, first_name, last_name, contact_visibility, attributes",
+        ),
     ]).then((results) => {
       setLoading(false);
       const firstError = results.find((r) => r.error)?.error;
@@ -213,8 +228,18 @@ export function NetworkExplorer() {
         setLoadError(firstError.message);
         return;
       }
-      const [fRes, mRes, dRes, pRes, rnRes, enRes, rRes, cRes, relRes] =
-        results;
+      const [
+        fRes,
+        mRes,
+        dRes,
+        pRes,
+        rnRes,
+        enRes,
+        rRes,
+        cRes,
+        relRes,
+        pxRes,
+      ] = results;
       setFarms((fRes.data ?? []) as Farm[]);
       setMarkets((mRes.data ?? []) as Market[]);
       setDistributors((dRes.data ?? []) as Distributor[]);
@@ -224,6 +249,7 @@ export function NetworkExplorer() {
       setRegions((rRes.data ?? []) as Region[]);
       setFarmCrops((cRes.data ?? []) as FarmCrop[]);
       setRelationships((relRes.data ?? []) as Relationship[]);
+      setPersons((pxRes.data ?? []) as Person[]);
     });
   }, []);
 
@@ -389,8 +415,8 @@ export function NetworkExplorer() {
             Network loaded — {farms.length} farms · {markets.length} markets ·{" "}
             {distributors.length} distributors · {processors.length}{" "}
             processors · {recoveryNodes.length} recovery · {enablers.length}{" "}
-            enablers · {regions.length} regions · {relationships.length}{" "}
-            connections · {farmCrops.length} crop links
+            enablers · {persons.length} people · {regions.length} regions ·{" "}
+            {relationships.length} connections · {farmCrops.length} crop links
           </div>
         </>
       )}
@@ -516,6 +542,7 @@ export function NetworkExplorer() {
               recoveryNodes={filteredRecoveryNodes}
               enablers={filteredEnablers}
               relationships={relationships}
+              persons={persons}
               selected={selectedEntity}
               onSelect={setSelectedEntity}
             />
