@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 import type { NetworkEntity } from "./network-explorer";
 
 export function prettify(raw: string | null | undefined): string {
@@ -180,6 +182,193 @@ function detailRows(e: NetworkEntity): Array<[string, string]> {
   }
 }
 
+type EntityDocument = {
+  node_document_upid: string;
+  document_upid: string;
+  title: string;
+  document_type: string;
+  issued_date: string | null;
+  expires_date: string | null;
+  issuing_body: string | null;
+  computed_status: "current" | "expiring_soon" | "expired" | "superseded";
+  days_until_expiry: number | null;
+};
+
+const DOC_TYPE_LABEL: Record<string, string> = {
+  gap_cert: "GAP Certificate",
+  organic_cert: "USDA Organic",
+  real_organic_cert: "Real Organic Project",
+  gfsi_sqf: "SQF (GFSI)",
+  gfsi_brc: "BRCGS (GFSI)",
+  gfsi_primus: "PrimusGFS (GFSI)",
+  haccp_plan: "HACCP Plan",
+  food_safety_plan: "FSMA Food Safety Plan",
+  cold_chain_audit: "Cold Chain Audit",
+  liability_insurance: "General Liability",
+  product_liability_insurance: "Product Liability",
+  auto_insurance: "Commercial Auto",
+  workers_comp: "Workers' Comp",
+  water_test: "Water Test",
+  soil_test: "Soil Test",
+  usdot_authority: "USDOT Authority",
+  food_handler_permit: "Food Handler Permit",
+  wic_authorization: "WIC Authorization",
+  snap_authorization: "SNAP Authorization",
+  "501c3_determination": "501(c)(3) Letter",
+  board_roster: "Board Roster",
+  w9: "W-9",
+  usda_grant_award: "USDA Grant Award",
+  lease_agreement: "Land Lease",
+  certification_cert: "Certification",
+  contract: "Contract",
+  invoice: "Invoice",
+  inspection_report: "Inspection Report",
+  consent_form: "Consent Form",
+  photo: "Photo",
+  financial_statement: "Financial Statement",
+  permit: "Permit",
+  other: "Other",
+};
+
+const DOC_STATUS_SORT: Record<string, number> = {
+  expired: 0,
+  expiring_soon: 1,
+  current: 2,
+  superseded: 3,
+};
+
+function docTypeLabel(type: string): string {
+  return DOC_TYPE_LABEL[type] ?? prettify(type);
+}
+
+function docStatusPillClasses(status: string): string {
+  switch (status) {
+    case "current":
+      return "bg-moss/10 text-moss";
+    case "expiring_soon":
+      return "bg-amber/15 text-amber";
+    case "expired":
+      return "bg-terracotta/15 text-terracotta";
+    case "superseded":
+      return "bg-charcoal-soft/15 text-charcoal-soft";
+    default:
+      return "bg-bone text-charcoal-soft";
+  }
+}
+
+function docStatusLabel(status: string, days: number | null): string {
+  switch (status) {
+    case "current":
+      return "Current";
+    case "expiring_soon":
+      return days != null ? `Expires ${days}d` : "Expiring";
+    case "expired":
+      return days != null ? `Expired ${Math.abs(days)}d ago` : "Expired";
+    case "superseded":
+      return "Superseded";
+    default:
+      return status;
+  }
+}
+
+function DocumentsSection({ entityUpid }: { entityUpid: string }) {
+  const [docs, setDocs] = useState<EntityDocument[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setDocs(null);
+    setError(null);
+    const supabase = createClient();
+    supabase
+      .from("v_document_status")
+      .select(
+        "node_document_upid, document_upid, title, document_type, issued_date, expires_date, issuing_body, computed_status, days_until_expiry",
+      )
+      .eq("node_upid", entityUpid)
+      .then(({ data, error: err }) => {
+        if (cancelled) return;
+        if (err) {
+          setError(err.message);
+          return;
+        }
+        setDocs((data ?? []) as EntityDocument[]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [entityUpid]);
+
+  if (error) {
+    return (
+      <div className="mt-6 text-xs text-terracotta">
+        Couldn&rsquo;t load documents: {error}
+      </div>
+    );
+  }
+
+  if (docs === null) {
+    return (
+      <div className="mt-6 text-xs text-charcoal-soft">Loading documents…</div>
+    );
+  }
+
+  if (docs.length === 0) return null;
+
+  const sorted = [...docs].sort(
+    (a, b) =>
+      (DOC_STATUS_SORT[a.computed_status] ?? 99) -
+      (DOC_STATUS_SORT[b.computed_status] ?? 99),
+  );
+
+  return (
+    <div className="mt-6">
+      <div className="flex items-baseline justify-between">
+        <div className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft">
+          Documents
+        </div>
+        <div className="text-[10px] text-charcoal-soft/70">
+          {docs.length} on file
+        </div>
+      </div>
+
+      <ul className="mt-3 space-y-0">
+        {sorted.map((doc) => (
+          <li
+            key={doc.node_document_upid}
+            className="border-t border-cream-shadow py-3 first:border-t-0 first:pt-0"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold text-charcoal leading-tight">
+                  {docTypeLabel(doc.document_type)}
+                </div>
+                {doc.issuing_body ? (
+                  <div className="mt-0.5 text-[11px] text-charcoal-soft leading-tight">
+                    {doc.issuing_body}
+                  </div>
+                ) : null}
+              </div>
+              <span
+                className={
+                  "inline-block px-2 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap mt-0.5 " +
+                  docStatusPillClasses(doc.computed_status)
+                }
+              >
+                {docStatusLabel(doc.computed_status, doc.days_until_expiry)}
+              </span>
+            </div>
+          </li>
+        ))}
+      </ul>
+
+      <div className="mt-3 text-[10px] text-charcoal-soft/60 italic">
+        Illustrative documents — metadata only, no files attached.
+      </div>
+    </div>
+  );
+}
+
 function Body({
   entity,
   entityCount,
@@ -249,6 +438,8 @@ function Body({
           </div>
         ))}
       </dl>
+
+      <DocumentsSection entityUpid={entity.data.upid} />
     </>
   );
 }
