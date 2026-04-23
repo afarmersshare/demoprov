@@ -33,7 +33,7 @@ const PERSONAS: PersonaCard[] = [
       "Which counties need more recruitment coverage?",
       "Where are processor capacity bottlenecks?",
     ],
-    status: "coming_soon",
+    status: "live",
     color: "#c77f2a",
   },
   {
@@ -45,7 +45,7 @@ const PERSONAS: PersonaCard[] = [
       "What processing access do I have?",
       "Which support orgs — lenders, certifiers, extension — are in my county?",
     ],
-    status: "coming_soon",
+    status: "live",
     color: "#6b9370",
   },
   {
@@ -57,7 +57,7 @@ const PERSONAS: PersonaCard[] = [
       "Who can aggregate and deliver at my volume?",
       "How do peer institutions source locally?",
     ],
-    status: "coming_soon",
+    status: "live",
     color: "#a14a2a",
   },
   {
