@@ -17,12 +17,14 @@ import type {
   Enabler,
   Region,
   FarmCrop,
+  ImpactDoc,
   NetworkEntity,
 } from "../farms/network-explorer";
 import {
   PolicymakerMap,
   type ChoroplethMetric,
 } from "./policymaker-map";
+import { ImpactCards } from "./impact-cards";
 
 type Props = {
   farms: Farm[];
@@ -32,6 +34,7 @@ type Props = {
   enablers: Enabler[];
   regions: Region[];
   farmCrops: FarmCrop[];
+  impactDocs: ImpactDoc[];
   selected: NetworkEntity | null;
   onSelect: (e: NetworkEntity | null) => void;
 };
@@ -95,6 +98,7 @@ export function AfsDashboard({
   enablers,
   regions,
   farmCrops,
+  impactDocs,
   selected,
   onSelect,
 }: Props) {
@@ -135,6 +139,19 @@ export function AfsDashboard({
       ),
     [processors, selectedCounty, counties],
   );
+
+  const countyRecovery = useMemo(
+    () =>
+      recoveryNodes.filter(
+        (r) => nearestCountyName(r.geom_point, counties) === selectedCounty,
+      ),
+    [recoveryNodes, selectedCounty, counties],
+  );
+
+  const countyCrops = useMemo(() => {
+    const farmUpids = new Set(countyFarms.map((f) => f.upid));
+    return farmCrops.filter((c) => farmUpids.has(c.farm_upid));
+  }, [farmCrops, countyFarms]);
 
   // Pipeline stats — selected county
   const prospectsInCounty = countyFarms.filter(
@@ -230,6 +247,9 @@ export function AfsDashboard({
               Food insecurity
             </ToggleGroupItem>
             <ToggleGroupItem value="food_deserts">Food deserts</ToggleGroupItem>
+            <ToggleGroupItem value="regenerative_acres">
+              Regen acres
+            </ToggleGroupItem>
           </ToggleGroup>
         </div>
         <div className="flex items-center gap-3">
@@ -254,6 +274,7 @@ export function AfsDashboard({
       <PolicymakerMap
         regions={regions}
         farms={farms}
+        farmCrops={farmCrops}
         markets={markets}
         processors={processors}
         recoveryNodes={recoveryNodes}
@@ -369,6 +390,14 @@ export function AfsDashboard({
           </div>
         </div>
       </section>
+
+      <ImpactCards
+        farms={countyFarms}
+        farmCrops={countyCrops}
+        recoveryNodes={countyRecovery}
+        impactDocs={impactDocs}
+        scopeLabel={selectedCounty || "selected county"}
+      />
 
       {recruitmentGaps.length > 0 ? (
         <section className="rounded-[14px] border border-cream-shadow bg-white p-6 sm:p-8 shadow-sm">

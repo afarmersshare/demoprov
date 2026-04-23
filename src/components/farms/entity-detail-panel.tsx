@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { NetworkEntity } from "./network-explorer";
+import { LiteracyHook } from "@/components/ui/literacy-hook";
 
 export function prettify(raw: string | null | undefined): string {
   if (!raw) return "—";
@@ -271,6 +272,179 @@ function docStatusLabel(status: string, days: number | null): string {
   }
 }
 
+// -----------------------------------------------------------------------
+// Practices section — surfaces the regen-claim / Scope-3 / risk-flag facts
+// on farms, and the diversion metrics on recovery nodes. Mirrors the
+// Documents section's visual language (header bar + rows + literacy hook)
+// so the panel reads as a consistent stack of evidence blocks.
+// -----------------------------------------------------------------------
+
+const CLAIM_PILL_LABEL: Record<string, string> = {
+  third_party_roc: "ROC certified",
+  third_party_eov: "EOV certified",
+  third_party_leaf: "LEAF certified",
+  third_party_regenified: "Regenified",
+  third_party_biodynamic: "Biodynamic",
+  transitional: "In transition",
+  pending_verification: "Audit pending",
+  self_reported: "Self-reported",
+  none_claimed: "No regen claim",
+};
+
+function claimPillClasses(claim: string): string {
+  if (claim.startsWith("third_party")) return "bg-moss/15 text-moss";
+  if (claim === "transitional") return "bg-moss-light/30 text-moss";
+  if (claim === "pending_verification") return "bg-amber/15 text-amber";
+  if (claim === "self_reported") return "bg-amber-light/40 text-charcoal";
+  return "bg-bone text-charcoal-soft";
+}
+
+const PLATFORM_SHORT: Record<string, string> = {
+  comet_farm: "COMET-Farm",
+  fieldprint: "Fieldprint",
+  cool_farm_tool: "Cool Farm Tool",
+  conservis: "Conservis",
+  scope3_net_zero: "Scope3 NetZero",
+  cargill_regenconnect: "Cargill RegenConnect",
+  proprietary: "Proprietary",
+};
+
+function FarmPracticesBlock({
+  entity,
+}: {
+  entity: Extract<NetworkEntity, { kind: "farm" }>;
+}) {
+  const f = entity.data;
+  const claim = f.regenerative_claim_verified;
+  const platform = f.scope3_platform;
+  const flags = f.claim_risk_flags ?? [];
+
+  // Nothing set yet — skip the block entirely.
+  if (!claim && !platform && flags.length === 0) return null;
+
+  return (
+    <div className="mt-6">
+      <div className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft">
+        Practices
+      </div>
+
+      {claim ? (
+        <div className="mt-3">
+          <span
+            className={
+              "inline-block px-2.5 py-1 rounded-full text-[11px] font-medium " +
+              claimPillClasses(claim)
+            }
+          >
+            {CLAIM_PILL_LABEL[claim] ?? prettify(claim)}
+          </span>
+        </div>
+      ) : null}
+
+      <dl className="mt-3 space-y-0">
+        {platform && platform !== "none" ? (
+          <div className="flex justify-between gap-4 border-t border-cream-shadow py-3 first:border-t-0 first:pt-0 text-sm">
+            <dt className="text-charcoal-soft">Scope-3 platform</dt>
+            <dd className="m-0 text-charcoal font-semibold text-right">
+              {PLATFORM_SHORT[platform] ?? prettify(platform)}
+            </dd>
+          </div>
+        ) : null}
+      </dl>
+
+      {flags.length > 0 ? (
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {flags.map((fl) => (
+            <span
+              key={fl}
+              className="inline-block px-2 py-0.5 rounded-full text-[10px] font-medium bg-terracotta/15 text-terracotta"
+              title={prettify(fl)}
+            >
+              {prettify(fl)}
+            </span>
+          ))}
+        </div>
+      ) : null}
+
+      <LiteracyHook
+        topic="regenerative"
+        label="What do these labels mean?"
+      />
+    </div>
+  );
+}
+
+function RecoveryDiversionBlock({
+  entity,
+}: {
+  entity: Extract<NetworkEntity, { kind: "recovery_node" }>;
+}) {
+  const r = entity.data;
+  const attrs = (r.attributes ?? {}) as Record<string, unknown>;
+  const lbs = Number(attrs.lbs_diverted_annual);
+  const meals = Number(attrs.meals_equivalent_annual);
+  const cat = attrs.diversion_category as string | undefined;
+  const note = attrs.diversion_source_note as string | undefined;
+
+  if (!Number.isFinite(lbs) || lbs <= 0) return null;
+
+  const catLabel = cat
+    ? cat
+        .replace(/^to_/, "")
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase())
+    : "—";
+
+  return (
+    <div className="mt-6">
+      <div className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft">
+        Diversion
+      </div>
+
+      <dl className="mt-3 space-y-0">
+        <div className="flex justify-between gap-4 border-t border-cream-shadow py-3 first:border-t-0 first:pt-0 text-sm">
+          <dt className="text-charcoal-soft">Est. lbs diverted / yr</dt>
+          <dd className="m-0 text-charcoal font-semibold text-right tabular-nums">
+            {Math.round(lbs).toLocaleString()}
+          </dd>
+        </div>
+        {Number.isFinite(meals) && meals > 0 ? (
+          <div className="flex justify-between gap-4 border-t border-cream-shadow py-3 text-sm">
+            <dt className="text-charcoal-soft">Meals-equivalent / yr</dt>
+            <dd className="m-0 text-charcoal font-semibold text-right tabular-nums">
+              {Math.round(meals).toLocaleString()}
+            </dd>
+          </div>
+        ) : null}
+        <div className="flex justify-between gap-4 border-t border-cream-shadow py-3 text-sm">
+          <dt className="text-charcoal-soft">Diversion becomes</dt>
+          <dd className="m-0 text-charcoal font-semibold text-right">
+            {catLabel}
+          </dd>
+        </div>
+      </dl>
+
+      {note ? (
+        <div className="mt-3 text-[10px] text-charcoal-soft/70 italic leading-relaxed">
+          {note}
+        </div>
+      ) : null}
+
+      <LiteracyHook
+        topic="recovery"
+        label="What counts as food recovery?"
+      />
+    </div>
+  );
+}
+
+function PracticesSection({ entity }: { entity: NetworkEntity }) {
+  if (entity.kind === "farm") return <FarmPracticesBlock entity={entity} />;
+  if (entity.kind === "recovery_node")
+    return <RecoveryDiversionBlock entity={entity} />;
+  return null;
+}
+
 function DocumentsSection({ entityUpid }: { entityUpid: string }) {
   const [docs, setDocs] = useState<EntityDocument[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -439,6 +613,7 @@ function Body({
         ))}
       </dl>
 
+      <PracticesSection entity={entity} />
       <DocumentsSection entityUpid={entity.data.upid} />
     </>
   );

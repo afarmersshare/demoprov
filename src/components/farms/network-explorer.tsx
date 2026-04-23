@@ -45,6 +45,9 @@ export type Farm = {
   gross_revenue_baseline_year: number | null;
   afs_priority_tier: string | null;
   county_fips: string | null;
+  regenerative_claim_verified: string | null;
+  scope3_platform: string | null;
+  claim_risk_flags: string[] | null;
   attributes: Record<string, unknown> | null;
   geom_point: { coordinates: [number, number] } | null;
 };
@@ -142,6 +145,26 @@ export type Person = {
   attributes: Record<string, unknown> | null;
 };
 
+// Compact per-attachment record used by impact/literacy surfaces.
+// Loaded once globally and filtered per node_upid in-memory by the
+// dashboards — avoids per-card Supabase round-trips. Only a handful of
+// doc types hit impact framing, so the payload stays small.
+export type ImpactDoc = {
+  node_upid: string;
+  document_type: string;
+  expires_date: string | null;
+};
+
+const IMPACT_DOC_TYPES = [
+  "soil_test",
+  "cover_crop_plan",
+  "nrcs_conservation_practice_plan",
+  "organic_cert",
+  "real_organic_cert",
+  "gap_cert",
+  "usda_grant_award",
+];
+
 export type NetworkEntity =
   | { kind: "farm"; data: Farm }
   | { kind: "market"; data: Market }
@@ -173,6 +196,7 @@ export function NetworkExplorer({
   const [farmCrops, setFarmCrops] = useState<FarmCrop[]>([]);
   const [relationships, setRelationships] = useState<Relationship[]>([]);
   const [persons, setPersons] = useState<Person[]>([]);
+  const [impactDocs, setImpactDocs] = useState<ImpactDoc[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -191,7 +215,7 @@ export function NetworkExplorer({
       supabase
         .from("farms")
         .select(
-          "upid, name, farm_type, afs_member_status, acres_total, gross_revenue_baseline, gross_revenue_baseline_year, afs_priority_tier, county_fips, attributes, geom_point",
+          "upid, name, farm_type, afs_member_status, acres_total, gross_revenue_baseline, gross_revenue_baseline_year, afs_priority_tier, county_fips, regenerative_claim_verified, scope3_platform, claim_risk_flags, attributes, geom_point",
         ),
       supabase
         .from("markets")
@@ -238,6 +262,11 @@ export function NetworkExplorer({
         .select(
           "upid, full_name, first_name, last_name, contact_visibility, attributes",
         ),
+      supabase
+        .from("v_document_status")
+        .select("node_upid, document_type, expires_date")
+        .in("document_type", IMPACT_DOC_TYPES)
+        .eq("is_current", true),
     ]).then((results) => {
       setLoading(false);
       const firstError = results.find((r) => r.error)?.error;
@@ -256,6 +285,7 @@ export function NetworkExplorer({
         cRes,
         relRes,
         pxRes,
+        idRes,
       ] = results;
       setFarms((fRes.data ?? []) as Farm[]);
       setMarkets((mRes.data ?? []) as Market[]);
@@ -267,6 +297,7 @@ export function NetworkExplorer({
       setFarmCrops((cRes.data ?? []) as FarmCrop[]);
       setRelationships((relRes.data ?? []) as Relationship[]);
       setPersons((pxRes.data ?? []) as Person[]);
+      setImpactDocs((idRes.data ?? []) as ImpactDoc[]);
     });
   }, []);
 
@@ -433,7 +464,8 @@ export function NetworkExplorer({
             {distributors.length} distributors · {processors.length}{" "}
             processors · {recoveryNodes.length} recovery · {enablers.length}{" "}
             enablers · {persons.length} people · {regions.length} regions ·{" "}
-            {relationships.length} connections · {farmCrops.length} crop links
+            {relationships.length} connections · {farmCrops.length} crop links ·{" "}
+            {impactDocs.length} impact docs
           </div>
         </>
       )}
@@ -643,6 +675,7 @@ export function NetworkExplorer({
                 enablers={filteredEnablers}
                 regions={regions}
                 farmCrops={farmCrops}
+                impactDocs={impactDocs}
                 selected={selectedEntity}
                 onSelect={setSelectedEntity}
               />
@@ -655,6 +688,7 @@ export function NetworkExplorer({
                 enablers={filteredEnablers}
                 regions={regions}
                 farmCrops={farmCrops}
+                impactDocs={impactDocs}
                 selected={selectedEntity}
                 onSelect={setSelectedEntity}
               />
@@ -667,6 +701,7 @@ export function NetworkExplorer({
                 enablers={filteredEnablers}
                 regions={regions}
                 farmCrops={farmCrops}
+                impactDocs={impactDocs}
                 selected={selectedEntity}
                 onSelect={setSelectedEntity}
               />
@@ -679,6 +714,7 @@ export function NetworkExplorer({
                 enablers={filteredEnablers}
                 regions={regions}
                 farmCrops={farmCrops}
+                impactDocs={impactDocs}
                 selected={selectedEntity}
                 onSelect={setSelectedEntity}
               />

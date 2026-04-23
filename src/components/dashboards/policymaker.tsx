@@ -17,12 +17,14 @@ import type {
   Enabler,
   Region,
   FarmCrop,
+  ImpactDoc,
   NetworkEntity,
 } from "../farms/network-explorer";
 import {
   PolicymakerMap,
   type ChoroplethMetric,
 } from "./policymaker-map";
+import { ImpactCards } from "./impact-cards";
 
 type Props = {
   farms: Farm[];
@@ -32,6 +34,7 @@ type Props = {
   enablers: Enabler[];
   regions: Region[];
   farmCrops: FarmCrop[];
+  impactDocs: ImpactDoc[];
   selected: NetworkEntity | null;
   onSelect: (e: NetworkEntity | null) => void;
 };
@@ -103,6 +106,7 @@ export function PolicymakerDashboard({
   enablers,
   regions,
   farmCrops,
+  impactDocs,
   selected,
   onSelect,
 }: Props) {
@@ -218,6 +222,25 @@ export function PolicymakerDashboard({
     [enablers, selectedCounty, counties],
   );
 
+  // Regenerative acres in the selected county — sums crop acres where the
+  // production_method is any of the regenerative / organic variants.
+  const regenAcresCounty = useMemo(() => {
+    const regenSet = new Set([
+      "certified_organic",
+      "transitional_organic",
+      "certified_regenerative",
+      "beyond_organic",
+      "pasture_raised",
+    ]);
+    let total = 0;
+    for (const c of countyCrops) {
+      if (c.production_method && regenSet.has(c.production_method)) {
+        total += c.acres ?? 0;
+      }
+    }
+    return total;
+  }, [countyCrops]);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -240,6 +263,9 @@ export function PolicymakerDashboard({
             <ToggleGroupItem value="farm_count">Farms</ToggleGroupItem>
             <ToggleGroupItem value="enrolled_pct">Enrolled %</ToggleGroupItem>
             <ToggleGroupItem value="food_deserts">Food deserts</ToggleGroupItem>
+            <ToggleGroupItem value="regenerative_acres">
+              Regen acres
+            </ToggleGroupItem>
           </ToggleGroup>
         </div>
         <div className="flex items-center gap-3">
@@ -264,6 +290,7 @@ export function PolicymakerDashboard({
       <PolicymakerMap
         regions={regions}
         farms={farms}
+        farmCrops={farmCrops}
         markets={markets}
         processors={processors}
         recoveryNodes={recoveryNodes}
@@ -283,6 +310,38 @@ export function PolicymakerDashboard({
           <div className="font-display text-[24px] font-semibold text-moss leading-tight">
             {selectedCounty || "Pick a county above"}
           </div>
+          {county && countyFarms.length > 0 ? (
+            <div className="mt-3 text-[13px] text-charcoal leading-relaxed max-w-prose italic border-l-2 border-moss-light pl-3">
+              {/* Placeholder hero copy — Kelsey + advisory panel will finalize. */}
+              {countyFarms.length}{" "}
+              {countyFarms.length === 1 ? "farm" : "farms"} in production across{" "}
+              <b className="not-italic">
+                {Math.round(totalAcresInProd).toLocaleString()}
+              </b>{" "}
+              acres.{" "}
+              {totalAcresInProd > 0 ? (
+                <>
+                  <b className="not-italic">
+                    {Math.round(regenAcresCounty).toLocaleString()} ac
+                  </b>{" "}
+                  under regenerative or organic practice
+                  {regenAcresCounty > 0 && totalAcresInProd > 0
+                    ? ` (${Math.round(
+                        (regenAcresCounty / totalAcresInProd) * 100,
+                      )}%)`
+                    : null}
+                  .{" "}
+                </>
+              ) : null}
+              {countyRecovery.length > 0 ? (
+                <>
+                  {countyRecovery.length}{" "}
+                  {countyRecovery.length === 1 ? "recovery node" : "recovery nodes"}{" "}
+                  rescuing food from the waste stream.
+                </>
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
         {county ? (
@@ -436,6 +495,14 @@ export function PolicymakerDashboard({
           </>
         ) : null}
       </section>
+
+      <ImpactCards
+        farms={countyFarms}
+        farmCrops={countyCrops}
+        recoveryNodes={countyRecovery}
+        impactDocs={impactDocs}
+        scopeLabel={selectedCounty || "selected county"}
+      />
 
       <section className="rounded-[14px] border border-dashed border-cream-shadow bg-bone/40 p-6 text-sm text-charcoal-soft leading-relaxed">
         <b className="text-charcoal">More cards in progress.</b> This view

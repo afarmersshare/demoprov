@@ -17,12 +17,14 @@ import type {
   Enabler,
   Region,
   FarmCrop,
+  ImpactDoc,
   NetworkEntity,
 } from "../farms/network-explorer";
 import {
   PolicymakerMap,
   type ChoroplethMetric,
 } from "./policymaker-map";
+import { ImpactCards } from "./impact-cards";
 
 type Props = {
   farms: Farm[];
@@ -32,6 +34,7 @@ type Props = {
   enablers: Enabler[];
   regions: Region[];
   farmCrops: FarmCrop[];
+  impactDocs: ImpactDoc[];
   selected: NetworkEntity | null;
   onSelect: (e: NetworkEntity | null) => void;
 };
@@ -92,6 +95,7 @@ export function BuyerDashboard({
   enablers,
   regions,
   farmCrops,
+  impactDocs,
   selected,
   onSelect,
 }: Props) {
@@ -223,6 +227,15 @@ export function BuyerDashboard({
     (f) => f.afs_member_status === "enrolled",
   ).length;
 
+  const recoveryWithinRadius = useMemo(() => {
+    if (!countyCenter) return [] as RecoveryNode[];
+    return recoveryNodes.filter((r) => {
+      const pt = r.geom_point?.coordinates;
+      if (!pt) return false;
+      return haversineMiles(countyCenter, pt) <= SOURCING_MILES;
+    });
+  }, [recoveryNodes, countyCenter]);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -245,6 +258,9 @@ export function BuyerDashboard({
               Food insecurity
             </ToggleGroupItem>
             <ToggleGroupItem value="food_deserts">Food deserts</ToggleGroupItem>
+            <ToggleGroupItem value="regenerative_acres">
+              Regen acres
+            </ToggleGroupItem>
           </ToggleGroup>
         </div>
         <div className="flex items-center gap-3">
@@ -269,6 +285,7 @@ export function BuyerDashboard({
       <PolicymakerMap
         regions={regions}
         farms={farms}
+        farmCrops={farmCrops}
         markets={markets}
         processors={processors}
         recoveryNodes={recoveryNodes}
@@ -437,6 +454,14 @@ export function BuyerDashboard({
           )}
         </div>
       </section>
+
+      <ImpactCards
+        farms={farmsWithinRadius}
+        farmCrops={cropsInRadius}
+        recoveryNodes={recoveryWithinRadius}
+        impactDocs={impactDocs}
+        scopeLabel={`within ${SOURCING_MILES} mi`}
+      />
     </div>
   );
 }

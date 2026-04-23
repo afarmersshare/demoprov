@@ -11,6 +11,7 @@ import MapGL, {
 import "maplibre-gl/dist/maplibre-gl.css";
 import type {
   Farm,
+  FarmCrop,
   Market,
   Processor,
   RecoveryNode,
@@ -23,7 +24,16 @@ export type ChoroplethMetric =
   | "food_insecurity"
   | "farm_count"
   | "enrolled_pct"
-  | "food_deserts";
+  | "food_deserts"
+  | "regenerative_acres";
+
+const REGENERATIVE_METHODS = new Set([
+  "certified_organic",
+  "transitional_organic",
+  "certified_regenerative",
+  "beyond_organic",
+  "pasture_raised",
+]);
 
 const PIN_COLOR = {
   farm: "#2f4a3a",
@@ -81,11 +91,21 @@ const METRIC_CONFIG: Record<
     highColor: "#b86b4b",
     fmt: (v) => `${Math.round(v)}`,
   },
+  regenerative_acres: {
+    label: "Acres under regen / organic practice",
+    property: "regenerative_acres",
+    lowStop: 0,
+    highStop: 800,
+    lowColor: "#f7f3eb",
+    highColor: "#2f4a3a",
+    fmt: (v) => `${Math.round(v).toLocaleString()} ac`,
+  },
 };
 
 type Props = {
   regions: Region[];
   farms: Farm[];
+  farmCrops: FarmCrop[];
   markets: Market[];
   processors: Processor[];
   recoveryNodes: RecoveryNode[];
@@ -100,6 +120,7 @@ type Props = {
 export function PolicymakerMap({
   regions,
   farms,
+  farmCrops,
   markets,
   processors,
   recoveryNodes,
@@ -120,6 +141,30 @@ export function PolicymakerMap({
       const list = farmsByCounty.get(c);
       if (list) list.push(f);
       else farmsByCounty.set(c, [f]);
+    }
+    // Sum of regenerative / organic acres per county, from farm_crops.
+    const regenAcresByCounty = new Map<string, number>();
+    {
+      const farmToCounty = new Map<string, string>();
+      for (const f of farms) {
+        const c =
+          (f.attributes as { county_name?: string } | null)?.county_name ?? "";
+        if (c) farmToCounty.set(f.upid, c);
+      }
+      for (const crop of farmCrops) {
+        if (
+          !crop.production_method ||
+          !REGENERATIVE_METHODS.has(crop.production_method)
+        ) {
+          continue;
+        }
+        const cname = farmToCounty.get(crop.farm_upid);
+        if (!cname) continue;
+        regenAcresByCounty.set(
+          cname,
+          (regenAcresByCounty.get(cname) ?? 0) + (crop.acres ?? 0),
+        );
+      }
     }
     let minV = Infinity;
     let maxV = -Infinity;
@@ -147,6 +192,7 @@ export function PolicymakerMap({
             typeof attrs.food_desert_tract_count === "number"
               ? attrs.food_desert_tract_count
               : 0,
+          regenerative_acres: regenAcresByCounty.get(c.name) ?? 0,
         };
         const v = props[METRIC_CONFIG[metric].property as keyof typeof props];
         if (typeof v === "number") {
@@ -166,7 +212,7 @@ export function PolicymakerMap({
         max: isFinite(maxV) ? maxV : 0,
       },
     };
-  }, [regions, farms, metric]);
+  }, [regions, farms, farmCrops, metric]);
 
   const cfg = METRIC_CONFIG[metric];
 

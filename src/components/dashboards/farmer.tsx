@@ -17,12 +17,14 @@ import type {
   Enabler,
   Region,
   FarmCrop,
+  ImpactDoc,
   NetworkEntity,
 } from "../farms/network-explorer";
 import {
   PolicymakerMap,
   type ChoroplethMetric,
 } from "./policymaker-map";
+import { ImpactCards } from "./impact-cards";
 
 type Props = {
   farms: Farm[];
@@ -32,6 +34,7 @@ type Props = {
   enablers: Enabler[];
   regions: Region[];
   farmCrops: FarmCrop[];
+  impactDocs: ImpactDoc[];
   selected: NetworkEntity | null;
   onSelect: (e: NetworkEntity | null) => void;
 };
@@ -92,6 +95,7 @@ export function FarmerDashboard({
   enablers,
   regions,
   farmCrops,
+  impactDocs,
   selected,
   onSelect,
 }: Props) {
@@ -237,6 +241,30 @@ export function FarmerDashboard({
     return farmCrops.filter((c) => farmUpids.has(c.farm_upid));
   }, [farmCrops, countyFarms]);
 
+  // Farms and recovery nodes within the farmer's sourcing ring — feeds ImpactCards.
+  const farmsWithinRadius = useMemo(() => {
+    if (!countyCenter) return [] as Farm[];
+    return farms.filter((f) => {
+      const pt = f.geom_point?.coordinates;
+      if (!pt) return false;
+      return haversineMiles(countyCenter, pt) <= WITHIN_MILES;
+    });
+  }, [farms, countyCenter]);
+
+  const cropsWithinRadius = useMemo(() => {
+    const farmUpids = new Set(farmsWithinRadius.map((f) => f.upid));
+    return farmCrops.filter((c) => farmUpids.has(c.farm_upid));
+  }, [farmCrops, farmsWithinRadius]);
+
+  const recoveryWithinRadius = useMemo(() => {
+    if (!countyCenter) return [] as RecoveryNode[];
+    return recoveryNodes.filter((r) => {
+      const pt = r.geom_point?.coordinates;
+      if (!pt) return false;
+      return haversineMiles(countyCenter, pt) <= WITHIN_MILES;
+    });
+  }, [recoveryNodes, countyCenter]);
+
   const cropRollup = useMemo(() => {
     const map = new Map<string, number>();
     for (const c of countyCrops) {
@@ -267,6 +295,9 @@ export function FarmerDashboard({
               Food insecurity
             </ToggleGroupItem>
             <ToggleGroupItem value="food_deserts">Food deserts</ToggleGroupItem>
+            <ToggleGroupItem value="regenerative_acres">
+              Regen acres
+            </ToggleGroupItem>
           </ToggleGroup>
         </div>
         <div className="flex items-center gap-3">
@@ -291,6 +322,7 @@ export function FarmerDashboard({
       <PolicymakerMap
         regions={regions}
         farms={farms}
+        farmCrops={farmCrops}
         markets={markets}
         processors={processors}
         recoveryNodes={recoveryNodes}
@@ -473,6 +505,14 @@ export function FarmerDashboard({
           )}
         </div>
       </section>
+
+      <ImpactCards
+        farms={farmsWithinRadius}
+        farmCrops={cropsWithinRadius}
+        recoveryNodes={recoveryWithinRadius}
+        impactDocs={impactDocs}
+        scopeLabel={`within ${WITHIN_MILES} mi`}
+      />
     </div>
   );
 }
