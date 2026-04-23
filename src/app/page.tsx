@@ -5,15 +5,8 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { NetworkExplorer } from "@/components/farms/network-explorer";
 import { Landing } from "@/components/landing";
+import { PersonaSwitcher } from "@/components/persona-switcher";
 import type { Persona } from "@/components/farms/network-explorer";
-
-const PERSONA_LABEL: Record<Persona, string> = {
-  policymaker: "Policymaker view",
-  afs: "A Farmer's Share view",
-  farmer: "Farmer view",
-  buyer: "Buyer view",
-  explore: "Just exploring",
-};
 
 function isPersona(v: string | null): v is Persona {
   return (
@@ -41,15 +34,10 @@ function PageBody() {
             Provender<span className="text-amber">.</span>
           </Link>
           {persona ? (
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 rounded-full border border-cream-shadow bg-white px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-charcoal-soft hover:text-moss hover:border-moss transition-colors"
-            >
-              <span>← {PERSONA_LABEL[persona]}</span>
-            </Link>
+            <PersonaSwitcher persona={persona} />
           ) : (
             <div className="inline-flex items-center gap-2 rounded-full bg-bone px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-charcoal-soft">
-              <span className="inline-block h-2 w-2 rounded-full bg-amber" />
+              <span className="inline-block h-2 w-2 rounded-full bg-region-badge" />
               Louisville &amp; Kentuckiana
             </div>
           )}

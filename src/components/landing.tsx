@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { PERSONA_COLOR } from "@/lib/palette";
 
 type PersonaCard = {
   id: string;
@@ -9,6 +10,7 @@ type PersonaCard = {
   questions: string[];
   status: "live" | "coming_soon";
   color: string;
+  href?: string;
 };
 
 const PERSONAS: PersonaCard[] = [
@@ -22,7 +24,7 @@ const PERSONAS: PersonaCard[] = [
       "How does my county compare across the foodshed?",
     ],
     status: "live",
-    color: "#2f4a3a",
+    color: PERSONA_COLOR.policymaker,
   },
   {
     id: "afs",
@@ -34,7 +36,7 @@ const PERSONAS: PersonaCard[] = [
       "Where are processor capacity bottlenecks?",
     ],
     status: "live",
-    color: "#c77f2a",
+    color: PERSONA_COLOR.afs,
   },
   {
     id: "farmer",
@@ -46,7 +48,7 @@ const PERSONAS: PersonaCard[] = [
       "Which support orgs — lenders, certifiers, extension — are in my county?",
     ],
     status: "live",
-    color: "#6b9370",
+    color: PERSONA_COLOR.farmer,
   },
   {
     id: "buyer",
@@ -58,7 +60,20 @@ const PERSONAS: PersonaCard[] = [
       "How do peer institutions source locally?",
     ],
     status: "live",
-    color: "#a14a2a",
+    color: PERSONA_COLOR.buyer,
+  },
+  {
+    id: "funder",
+    label: "I'm a funder or researcher",
+    headline: "Evidence for where the gaps are — and what would close them.",
+    questions: [
+      "Where is the network strong — and where are the infrastructure gaps?",
+      "How are regenerative claims verified, and how many farms are covered?",
+      "What share of the regional food flow is closing the loop through recovery?",
+    ],
+    status: "live",
+    color: PERSONA_COLOR.funder,
+    href: "/?persona=policymaker",
   },
   {
     id: "explore",
@@ -68,7 +83,7 @@ const PERSONAS: PersonaCard[] = [
       "Map, force-directed graph, flow diagram, county breakdown, directory — all of it, raw.",
     ],
     status: "live",
-    color: "#4a524e",
+    color: PERSONA_COLOR.explore,
   },
 ];
 
@@ -93,7 +108,7 @@ export function Landing() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {PERSONAS.map((p) => {
           const isLive = p.status === "live";
-          const href = `/?persona=${p.id}`;
+          const href = p.href ?? `/?persona=${p.id}`;
           return (
             <Link key={p.id} href={href} className="block h-full">
               <div

@@ -13,25 +13,29 @@ import type {
   Person,
   NetworkEntity,
 } from "./network-explorer";
+import {
+  MOSS,
+  MARKET,
+  CREAM,
+  CREAM_SHADOW,
+  CHARCOAL,
+  SAGE,
+} from "@/lib/palette";
 
 const ForceGraph2D = dynamic(() => import("react-force-graph-2d"), {
   ssr: false,
 }) as unknown as React.ComponentType<Record<string, unknown>>;
 
 const KIND_COLOR = {
-  farm: "#2f4a3a",
-  market: "#c77f2a",
+  farm: MOSS,
+  market: MARKET,
   distributor: "#7a8aa0",
   processor: "#a14a2a",
   recovery_node: "#6b9370",
   enabler: "#bfa98a",
-  afs: "#1f2421",
+  afs: SAGE,
   person: "#8a8072",
 } as const;
-
-const CREAM = "#f7f3eb";
-const CREAM_SHADOW = "#e3dcc7";
-const CHARCOAL = "#1f2421";
 
 const AFS_ID = "__afs__";
 
@@ -514,7 +518,7 @@ export function NetworkGraph({
           }}
           onBackgroundClick={() => onSelect(null)}
           nodeCanvasObjectMode={(n: GraphNode) => {
-            if (n.kind === "afs") return "before";
+            if (n.kind === "afs") return "replace";
             if (
               n.kind !== "person" &&
               selected &&
@@ -528,16 +532,24 @@ export function NetworkGraph({
             const x = n.x ?? 0;
             const y = n.y ?? 0;
             if (n.kind === "afs") {
-              const r = Math.sqrt(36) * 4 + 5;
+              const dim = !isNeighborOfActive(n.id);
+              const ringAlpha = dim ? 0.35 : 1;
+              const r = 26;
               ctx.beginPath();
               ctx.arc(x, y, r, 0, Math.PI * 2);
               ctx.fillStyle = CREAM;
               ctx.fill();
               ctx.beginPath();
               ctx.arc(x, y, r, 0, Math.PI * 2);
-              ctx.strokeStyle = CREAM_SHADOW;
-              ctx.lineWidth = 1;
+              ctx.strokeStyle = SAGE;
+              ctx.globalAlpha = ringAlpha;
+              ctx.lineWidth = 2.5;
               ctx.stroke();
+              ctx.beginPath();
+              ctx.arc(x, y, 3, 0, Math.PI * 2);
+              ctx.fillStyle = SAGE;
+              ctx.fill();
+              ctx.globalAlpha = 1;
               return;
             }
             if (
@@ -570,7 +582,7 @@ export function NetworkGraph({
         <div className="flex items-center gap-2.5">
           <span
             className="inline-block w-3 h-3 rounded-full"
-            style={{ background: KIND_COLOR.afs, border: `2px solid ${CREAM}` }}
+            style={{ background: CREAM, border: `2px solid ${SAGE}` }}
           />
           A Farmer&apos;s Share
         </div>
