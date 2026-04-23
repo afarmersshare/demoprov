@@ -13,14 +13,23 @@ import type {
   Farm,
   Market,
   Distributor,
+  Processor,
+  RecoveryNode,
   Relationship,
 } from "./network-explorer";
 
+// Column palette.
+// Recovery nodes split by diversion category — visually distinct so viewers
+// see that "diversion" is three different outcomes, not one.
 const KIND_COLOR = {
   farm: "#2f4a3a",
-  market: "#c77f2a",
+  processor: "#a14a2a",
   distributor: "#7a8aa0",
   afs: "#1f2421",
+  market: "#c77f2a",
+  recovery_plates: "#6b9370",
+  recovery_soil: "#bfa98a",
+  recovery_energy: "#b86b4b",
 } as const;
 
 const CHARCOAL = "#1f2421";
@@ -30,6 +39,8 @@ type Props = {
   farms: Farm[];
   markets: Market[];
   distributors: Distributor[];
+  processors: Processor[];
+  recoveryNodes: RecoveryNode[];
   relationships: Relationship[];
 };
 
@@ -37,13 +48,14 @@ type NodeDatum = {
   key: string;
   name: string;
   color: string;
-  column: 0 | 1 | 2;
+  group: "farm" | "processor" | "intermediary" | "market" | "recovery";
 };
 
 type LinkDatum = {
   source: number;
   target: number;
   value: number;
+  synthetic: boolean;
 };
 
 type LaidNode = SankeyNode<NodeDatum, LinkDatum>;
@@ -71,10 +83,52 @@ function formatLbs(v: number): string {
   return Math.round(v).toLocaleString() + " lbs/yr";
 }
 
+// Map a farm_type to the processor type(s) that naturally handle it.
+// Used to keep synthesized farm→processor flows plausible rather than
+// flat-distributed. Unknown farm types fall back to co_packer.
+function suggestedProcessorTypes(ft: string | null): string[] {
+  switch (ft) {
+    case "vegetable_mixed":
+    case "vegetable_specialty":
+    case "orchard":
+    case "berry":
+      return ["produce_packhouse", "central_kitchen"];
+    case "livestock":
+    case "poultry":
+    case "mixed_crop_livestock":
+    case "swine":
+    case "beef":
+      return ["meat_butchery"];
+    case "dairy":
+      return ["dairy_processing"];
+    case "grain":
+    case "row_crop":
+      return ["grain_mill"];
+    default:
+      return ["co_packer"];
+  }
+}
+
+function recoveryColorFor(cat: string): string {
+  if (cat === "to_human_consumption") return KIND_COLOR.recovery_plates;
+  if (cat === "to_soil_amendment") return KIND_COLOR.recovery_soil;
+  if (cat === "to_energy_and_digestate") return KIND_COLOR.recovery_energy;
+  return "#cfc4a9";
+}
+
+function recoveryCategoryLabel(cat: string): string {
+  if (cat === "to_human_consumption") return "To plates (food rescue)";
+  if (cat === "to_soil_amendment") return "To soil (compost)";
+  if (cat === "to_energy_and_digestate") return "To energy (biogas)";
+  return prettify(cat);
+}
+
 export function NetworkFlows({
   farms,
   markets,
   distributors,
+  processors,
+  recoveryNodes,
   relationships,
 }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -93,34 +147,78 @@ export function NetworkFlows({
   }, []);
 
   const layout = useMemo(() => {
-    type Resolved = {
-      kind: "farm" | "market" | "distributor";
-      farm_type?: string | null;
-      market_type?: string | null;
-    };
+    // One resolved record per entity upid, so edges built from the
+    // relationships table can be classified by both endpoints' kind.
+    type Resolved =
+      | { kind: "farm"; farm_type: string | null }
+      | { kind: "processor"; processor_type: string | null }
+      | { kind: "distributor" }
+      | { kind: "market"; market_type: string | null }
+      | { kind: "recovery"; diversion_category: string };
+
     const byUpid = new Map<string, Resolved>();
     for (const f of farms)
       byUpid.set(f.upid, { kind: "farm", farm_type: f.farm_type });
+    for (const p of processors)
+      byUpid.set(p.upid, {
+        kind: "processor",
+        processor_type: p.processor_type,
+      });
+    for (const d of distributors) byUpid.set(d.upid, { kind: "distributor" });
     for (const m of markets)
       byUpid.set(m.upid, { kind: "market", market_type: m.market_type });
-    for (const d of distributors) byUpid.set(d.upid, { kind: "distributor" });
+    for (const r of recoveryNodes) {
+      const cat =
+        ((r.attributes ?? {}) as { diversion_category?: string })
+          .diversion_category ?? "unknown";
+      byUpid.set(r.upid, { kind: "recovery", diversion_category: cat });
+    }
 
-    const rank = { farm: 0, distributor: 1, market: 2 } as const;
+    // Flow direction always left→right by rank. Two nodes at the same
+    // rank (market + recovery) can both be terminals — real edges between
+    // them are rare but allowed.
+    const rank: Record<Resolved["kind"], number> = {
+      farm: 0,
+      processor: 1,
+      distributor: 2,
+      market: 3,
+      recovery: 3,
+    };
+
     const keyFor = (upid: string): string | null => {
       const x = byUpid.get(upid);
       if (!x) return null;
       if (x.kind === "farm") return "F:" + (x.farm_type ?? "other");
+      if (x.kind === "processor") return "P:" + (x.processor_type ?? "other");
+      if (x.kind === "distributor") return "MID:DST";
       if (x.kind === "market") return "M:" + (x.market_type ?? "other");
-      return "MID:DST";
+      return "R:" + x.diversion_category;
     };
 
-    const flows = new Map<string, number>();
-    const addFlow = (src: string, dst: string, v: number) => {
+    // Flow map: src_key → dst_key, with accumulating value + sticky
+    // synthetic flag. If any real edge contributes, the ribbon is rendered
+    // solid (real signal wins over synthesized signal).
+    type FlowMeta = { value: number; synthetic: boolean };
+    const flows = new Map<string, FlowMeta>();
+    const addFlow = (
+      src: string,
+      dst: string,
+      v: number,
+      synthetic: boolean,
+    ) => {
       if (src === dst) return;
+      if (v <= 0) return;
       const k = src + "||" + dst;
-      flows.set(k, (flows.get(k) ?? 0) + v);
+      const existing = flows.get(k);
+      if (existing) {
+        existing.value += v;
+        if (!synthetic) existing.synthetic = false;
+      } else {
+        flows.set(k, { value: v, synthetic });
+      }
     };
 
+    // -------- 1. Real edges from the relationships table --------
     for (const r of relationships) {
       const a = byUpid.get(r.node_a_upid);
       const b = byUpid.get(r.node_b_upid);
@@ -134,10 +232,13 @@ export function NetworkFlows({
       const sk = keyFor(src);
       const dk = keyFor(dst);
       if (!sk || !dk) continue;
-      addFlow(sk, dk, relVolume(r));
+      addFlow(sk, dk, relVolume(r), false);
     }
 
-    const enrolledFarms = farms.filter((f) => f.afs_member_status === "enrolled");
+    // -------- 2. Synthesized AFS brokerage (from existing design) --------
+    const enrolledFarms = farms.filter(
+      (f) => f.afs_member_status === "enrolled",
+    );
     const afsMarkets = markets.filter(
       (m) =>
         m.afs_member_status === "enrolled" ||
@@ -147,7 +248,7 @@ export function NetworkFlows({
       let totalIn = 0;
       for (const f of enrolledFarms) {
         const v = Math.max(1000, (f.acres_total ?? 50) * 50);
-        addFlow("F:" + (f.farm_type ?? "other"), "MID:AFS", v);
+        addFlow("F:" + (f.farm_type ?? "other"), "MID:AFS", v, true);
         totalIn += v;
       }
       const weights = afsMarkets.map((m) => {
@@ -165,10 +266,76 @@ export function NetworkFlows({
       const totalW = weights.reduce((s, x) => s + x.w, 0) || 1;
       for (const { m, w } of weights) {
         const v = (totalIn * w) / totalW;
-        addFlow("MID:AFS", "M:" + (m.market_type ?? "other"), v);
+        addFlow("MID:AFS", "M:" + (m.market_type ?? "other"), v, true);
       }
     }
 
+    // -------- 3. Synthesized farm → processor flows --------
+    // Each enrolled/engaged farm sends a small estimated slice of output
+    // through a processor type that matches its farm_type. Lets the middle
+    // column actually have traffic — without faking dollars or tonnage.
+    const processorTypePresence = new Set(
+      processors.map((p) => p.processor_type).filter(Boolean) as string[],
+    );
+    for (const f of farms) {
+      if (
+        f.afs_member_status !== "enrolled" &&
+        f.afs_member_status !== "engaged"
+      ) {
+        continue;
+      }
+      const suggested = suggestedProcessorTypes(f.farm_type).filter((t) =>
+        processorTypePresence.has(t),
+      );
+      if (suggested.length === 0) continue;
+      const base = Math.max(600, (f.acres_total ?? 30) * 18);
+      const per = base / suggested.length;
+      for (const pt of suggested) {
+        addFlow("F:" + (f.farm_type ?? "other"), "P:" + pt, per, true);
+      }
+    }
+
+    // -------- 4. Synthesized processor → distributor / AFS flows --------
+    // Processors need an onward flow or the middle column is a dead end.
+    // Route ~70% of processor inflow toward the distributors bucket and
+    // ~30% toward AFS (rough stand-in for "sold to an aggregator").
+    const processorInflow = new Map<string, number>();
+    flows.forEach((meta, k) => {
+      const [, dst] = k.split("||");
+      if (dst.startsWith("P:")) {
+        processorInflow.set(dst, (processorInflow.get(dst) ?? 0) + meta.value);
+      }
+    });
+    processorInflow.forEach((totalIn, processorKey) => {
+      addFlow(processorKey, "MID:DST", totalIn * 0.7, true);
+      if (enrolledFarms.length > 0) {
+        addFlow(processorKey, "MID:AFS", totalIn * 0.3, true);
+      }
+    });
+
+    // -------- 5. Synthesized food rescue — market → recovery (plates) --------
+    // Every market type kicks a small estimated slice into the food-rescue
+    // channel. The number is small by design: we don't want to imply that
+    // food rescue is a primary flow, just that it exists.
+    const marketKeysSeen = new Set<string>();
+    flows.forEach((_, k) => {
+      const [s, d] = k.split("||");
+      if (s.startsWith("M:")) marketKeysSeen.add(s);
+      if (d.startsWith("M:")) marketKeysSeen.add(d);
+    });
+    const platesKey = "R:to_human_consumption";
+    const hasPlatesCategory = recoveryNodes.some(
+      (r) =>
+        ((r.attributes ?? {}) as { diversion_category?: string })
+          .diversion_category === "to_human_consumption",
+    );
+    if (hasPlatesCategory) {
+      for (const mk of marketKeysSeen) {
+        addFlow(mk, platesKey, 4500, true);
+      }
+    }
+
+    // -------- Assemble nodes + links --------
     const keys = new Set<string>();
     flows.forEach((_, k) => {
       const [s, d] = k.split("||");
@@ -178,49 +345,68 @@ export function NetworkFlows({
 
     if (keys.size === 0) return null;
 
-    const meta: Record<string, { name: string; color: string; column: 0 | 1 | 2 }> = {
-      "MID:AFS": {
-        name: "A Farmer's Share",
-        color: KIND_COLOR.afs,
-        column: 1,
-      },
-      "MID:DST": {
-        name: "Distributors",
-        color: KIND_COLOR.distributor,
-        column: 1,
-      },
+    const nameFor = (k: string): { name: string; color: string; group: NodeDatum["group"] } => {
+      if (k === "MID:AFS")
+        return {
+          name: "A Farmer's Share",
+          color: KIND_COLOR.afs,
+          group: "intermediary",
+        };
+      if (k === "MID:DST")
+        return {
+          name: "Distributors",
+          color: KIND_COLOR.distributor,
+          group: "intermediary",
+        };
+      if (k.startsWith("F:"))
+        return {
+          name: prettify(k.slice(2)),
+          color: KIND_COLOR.farm,
+          group: "farm",
+        };
+      if (k.startsWith("P:"))
+        return {
+          name: prettify(k.slice(2)),
+          color: KIND_COLOR.processor,
+          group: "processor",
+        };
+      if (k.startsWith("M:"))
+        return {
+          name: prettify(k.slice(2)),
+          color: KIND_COLOR.market,
+          group: "market",
+        };
+      // Recovery
+      const cat = k.slice(2);
+      return {
+        name: recoveryCategoryLabel(cat),
+        color: recoveryColorFor(cat),
+        group: "recovery",
+      };
     };
 
     const nodes: NodeDatum[] = [];
     const idx: Record<string, number> = {};
     Array.from(keys).forEach((k) => {
-      let name: string, color: string, column: 0 | 1 | 2;
-      if (k.startsWith("F:")) {
-        name = prettify(k.slice(2));
-        color = KIND_COLOR.farm;
-        column = 0;
-      } else if (k.startsWith("M:")) {
-        name = prettify(k.slice(2));
-        color = KIND_COLOR.market;
-        column = 2;
-      } else {
-        name = meta[k].name;
-        color = meta[k].color;
-        column = meta[k].column;
-      }
+      const m = nameFor(k);
       idx[k] = nodes.length;
-      nodes.push({ key: k, name, color, column });
+      nodes.push({ key: k, name: m.name, color: m.color, group: m.group });
     });
 
-    const links: LinkDatum[] = Array.from(flows.entries()).map(([k, v]) => {
+    const links: LinkDatum[] = Array.from(flows.entries()).map(([k, meta]) => {
       const [s, d] = k.split("||");
-      return { source: idx[s], target: idx[d], value: Math.max(1, v) };
+      return {
+        source: idx[s],
+        target: idx[d],
+        value: Math.max(1, meta.value),
+        synthetic: meta.synthetic,
+      };
     });
 
     if (links.length === 0) return null;
 
-    const height = 560;
-    const margin = { top: 36, right: 180, bottom: 16, left: 20 };
+    const height = 620;
+    const margin = { top: 42, right: 200, bottom: 16, left: 20 };
     const effWidth = Math.max(width, 520);
 
     const layoutFn = sankey<NodeDatum, LinkDatum>()
@@ -247,7 +433,7 @@ export function NetworkFlows({
       height,
       margin,
     };
-  }, [farms, markets, distributors, relationships, width]);
+  }, [farms, markets, distributors, processors, recoveryNodes, relationships, width]);
 
   return (
     <div
@@ -255,7 +441,7 @@ export function NetworkFlows({
       className="relative w-full rounded-[14px] overflow-hidden border border-cream-shadow bg-white"
     >
       {layout === null ? (
-        <div className="flex items-center justify-center h-[560px] text-sm text-charcoal-soft px-6 text-center">
+        <div className="flex items-center justify-center h-[620px] text-sm text-charcoal-soft px-6 text-center">
           No flows match these filters — broaden the member-status filter above.
         </div>
       ) : (
@@ -267,7 +453,7 @@ export function NetworkFlows({
         >
           <text
             x={layout.margin.left}
-            y={20}
+            y={22}
             fontSize={11}
             fontWeight={700}
             fill={CHARCOAL_SOFT}
@@ -276,26 +462,37 @@ export function NetworkFlows({
             Farms · by type
           </text>
           <text
-            x={layout.width / 2}
-            y={20}
+            x={layout.width * 0.33}
+            y={22}
             fontSize={11}
             fontWeight={700}
             fill={CHARCOAL_SOFT}
             textAnchor="middle"
             style={{ letterSpacing: "0.1em", textTransform: "uppercase" }}
           >
-            Intermediaries
+            Processors · by type
+          </text>
+          <text
+            x={layout.width * 0.58}
+            y={22}
+            fontSize={11}
+            fontWeight={700}
+            fill={CHARCOAL_SOFT}
+            textAnchor="middle"
+            style={{ letterSpacing: "0.1em", textTransform: "uppercase" }}
+          >
+            Aggregators
           </text>
           <text
             x={layout.width - layout.margin.right}
-            y={20}
+            y={22}
             fontSize={11}
             fontWeight={700}
             fill={CHARCOAL_SOFT}
             textAnchor="end"
             style={{ letterSpacing: "0.1em", textTransform: "uppercase" }}
           >
-            Buyers · by type
+            Outcomes · markets &amp; recovery
           </text>
 
           <g fill="none" style={{ mixBlendMode: "multiply" }}>
@@ -312,25 +509,37 @@ export function NetworkFlows({
                 (sourceNode.key === hoveredNode ||
                   targetNode.key === hoveredNode);
               const opacity = active
-                ? 0.6
+                ? 0.65
                 : nodeHoverMatches
                   ? 0.5
                   : anyHover
                     ? 0.08
                     : 0.28;
               const d = layout.pathGen(l) ?? "";
+              // Recovery ribbons take the recovery color so "what happens to
+              // diverted food" reads from color alone, not just column position.
+              const ribbonColor = targetNode.key.startsWith("R:")
+                ? targetNode.color
+                : sourceNode.color;
+              // Synthetic ribbons render dashed. When zoomed out this reads
+              // as a subtle texture — honest signal without being loud.
+              const dashArray = l.synthetic ? "5 4" : undefined;
               return (
                 <path
                   key={id}
                   d={d}
-                  stroke={sourceNode.color}
+                  stroke={ribbonColor}
                   strokeOpacity={opacity}
                   strokeWidth={Math.max(1, l.width ?? 1)}
-                  style={{ cursor: "pointer", transition: "stroke-opacity 0.15s" }}
+                  strokeDasharray={dashArray}
+                  style={{
+                    cursor: "pointer",
+                    transition: "stroke-opacity 0.15s",
+                  }}
                   onMouseEnter={() => setHoveredLink(id)}
                   onMouseLeave={() => setHoveredLink(null)}
                 >
-                  <title>{`${sourceNode.name} → ${targetNode.name}\n${formatLbs(l.value ?? 0)}`}</title>
+                  <title>{`${sourceNode.name} → ${targetNode.name}\n${formatLbs(l.value ?? 0)}\n${l.synthetic ? "Estimated flow" : "Observed edge"}`}</title>
                 </path>
               );
             })}
@@ -391,11 +600,38 @@ export function NetworkFlows({
         </svg>
       )}
 
-      <div className="border-t border-cream-shadow bg-cream-deep/40 px-4 py-2.5 text-[11px] text-charcoal-soft leading-snug">
-        Ribbon thickness is product volume. Real farm↔market and farm↔distributor
-        connections come from the seed; the A Farmer&apos;s Share brokerage flows
-        are illustrative — proportional to enrolled-farm acreage and engaged
-        buyer demand. Hover any ribbon or block to trace the flow.
+      <div className="border-t border-cream-shadow bg-cream-deep/40 px-4 py-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] text-charcoal-soft leading-snug">
+        <span className="inline-flex items-center gap-2">
+          <svg width="28" height="6" className="shrink-0">
+            <line x1="0" y1="3" x2="28" y2="3" stroke={CHARCOAL_SOFT} strokeWidth="2" />
+          </svg>
+          <span>
+            <b className="text-charcoal">Solid ribbon</b> = observed edge in
+            the network (farm↔market, farm↔recovery, distributor↔market).
+          </span>
+        </span>
+        <span className="inline-flex items-center gap-2">
+          <svg width="28" height="6" className="shrink-0">
+            <line
+              x1="0"
+              y1="3"
+              x2="28"
+              y2="3"
+              stroke={CHARCOAL_SOFT}
+              strokeWidth="2"
+              strokeDasharray="5 4"
+            />
+          </svg>
+          <span>
+            <b className="text-charcoal">Dashed ribbon</b> = estimated
+            aggregate flow. Used for value-add processing, AFS brokerage, and
+            food-rescue channels where per-edge data isn&rsquo;t yet captured.
+          </span>
+        </span>
+        <span className="basis-full text-[10.5px] italic">
+          Ribbon thickness is directional, not audited. Hover any ribbon or
+          block to trace the flow.
+        </span>
       </div>
     </div>
   );

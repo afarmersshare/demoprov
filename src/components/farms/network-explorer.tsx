@@ -610,6 +610,8 @@ export function NetworkExplorer({
             farms={filteredFarms}
             markets={filteredMarkets}
             distributors={filteredDistributors}
+            processors={filteredProcessors}
+            recoveryNodes={filteredRecoveryNodes}
             relationships={relationships}
           />
         </TabsContent>
