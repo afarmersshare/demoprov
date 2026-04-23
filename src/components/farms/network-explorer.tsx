@@ -24,7 +24,9 @@ import { NetworkDirectory } from "./network-directory";
 import { NetworkGraph } from "./network-graph";
 import { NetworkFlows } from "./network-flows";
 import { PolicymakerDashboard } from "../dashboards/policymaker";
-import { ComingSoonDashboard } from "../dashboards/coming-soon";
+import { AfsDashboard } from "../dashboards/afs";
+import { FarmerDashboard } from "../dashboards/farmer";
+import { BuyerDashboard } from "../dashboards/buyer";
 
 export type Persona =
   | "policymaker"
@@ -631,8 +633,44 @@ export function NetworkExplorer({
           </div>
         </TabsContent>
         <TabsContent value="dashboard" className="mt-4">
-          {persona === "policymaker" || persona === "explore" ? (
-            <div className="md:grid md:grid-cols-[1fr_340px] md:gap-5 md:items-start">
+          <div className="md:grid md:grid-cols-[1fr_340px] md:gap-5 md:items-start">
+            {persona === "afs" ? (
+              <AfsDashboard
+                farms={farmsForByCounty}
+                markets={filteredMarkets}
+                processors={filteredProcessors}
+                recoveryNodes={filteredRecoveryNodes}
+                enablers={filteredEnablers}
+                regions={regions}
+                farmCrops={farmCrops}
+                selected={selectedEntity}
+                onSelect={setSelectedEntity}
+              />
+            ) : persona === "farmer" ? (
+              <FarmerDashboard
+                farms={farmsForByCounty}
+                markets={filteredMarkets}
+                processors={filteredProcessors}
+                recoveryNodes={filteredRecoveryNodes}
+                enablers={filteredEnablers}
+                regions={regions}
+                farmCrops={farmCrops}
+                selected={selectedEntity}
+                onSelect={setSelectedEntity}
+              />
+            ) : persona === "buyer" ? (
+              <BuyerDashboard
+                farms={farmsForByCounty}
+                markets={filteredMarkets}
+                processors={filteredProcessors}
+                recoveryNodes={filteredRecoveryNodes}
+                enablers={filteredEnablers}
+                regions={regions}
+                farmCrops={farmCrops}
+                selected={selectedEntity}
+                onSelect={setSelectedEntity}
+              />
+            ) : (
               <PolicymakerDashboard
                 farms={farmsForByCounty}
                 markets={filteredMarkets}
@@ -644,48 +682,15 @@ export function NetworkExplorer({
                 selected={selectedEntity}
                 onSelect={setSelectedEntity}
               />
-              <div className="hidden md:block md:sticky md:top-4">
-                <EntityDetailPanel
-                  entity={selectedEntity}
-                  entityCount={mapPinCount}
-                  hintToClick="Click any pin on the map to see that entity's details."
-                />
-              </div>
+            )}
+            <div className="hidden md:block md:sticky md:top-4">
+              <EntityDetailPanel
+                entity={selectedEntity}
+                entityCount={mapPinCount}
+                hintToClick="Click any pin on the map to see that entity's details."
+              />
             </div>
-          ) : persona === "afs" ? (
-            <ComingSoonDashboard
-              personaLabel="A Farmer's Share operations"
-              headline="Operational view across the prospect → enrolled pipeline."
-              willInclude={[
-                "Prospect / engaged / enrolled conversion funnel, per-county recruitment coverage map",
-                "Processor capacity bottlenecks — where farm supply exceeds local processing",
-                "Contract-renewal calendar for institutional buyers, 30-month horizon",
-                "Priority-tier distribution across the current roster",
-              ]}
-            />
-          ) : persona === "farmer" ? (
-            <ComingSoonDashboard
-              personaLabel="Farmer / producer"
-              headline="Buyers and infrastructure within reach."
-              willInclude={[
-                "Buyers in delivery radius actively sourcing my product categories",
-                "Processing access map — slaughter, dairy, value-added, shared-use",
-                "Support infrastructure in my county: lenders (CDFI), certifiers, extension, land trusts",
-                "Contract terms and minimums for nearby institutional buyers",
-              ]}
-            />
-          ) : persona === "buyer" ? (
-            <ComingSoonDashboard
-              personaLabel="Buyer / institution"
-              headline="Local supply for your product needs."
-              willInclude={[
-                "Farms within my sourcing radius growing the product categories I buy",
-                "Aggregation partners who can hit my volume and delivery minimums",
-                "Peer-institution sourcing patterns (school district, healthcare, university)",
-                "Seasonality + crop calendar for the foodshed",
-              ]}
-            />
-          ) : null}
+          </div>
         </TabsContent>
       </Tabs>
 
