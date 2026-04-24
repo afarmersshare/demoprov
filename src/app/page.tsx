@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { NetworkExplorer } from "@/components/farms/network-explorer";
 import { Landing } from "@/components/landing";
 import { PersonaSwitcher } from "@/components/persona-switcher";
+import { EntryBanner } from "@/components/entry-banner";
 import type { Persona } from "@/components/farms/network-explorer";
 
 function isPersona(v: string | null): v is Persona {
@@ -22,9 +23,34 @@ function PageBody() {
   const params = useSearchParams();
   const raw = params.get("persona");
   const persona: Persona | null = isPersona(raw) ? raw : null;
+  const embedMode = params.get("mode") === "embed";
+  const fromAfs = params.get("ref") === "afs";
+
+  // Embed mode: skip landing, skip persona switcher, lock to an explorer surface.
+  if (embedMode) {
+    return (
+      <main className="min-h-screen bg-cream text-charcoal">
+        <nav className="border-b border-cream-shadow bg-cream/85 backdrop-blur-md sticky top-0 z-20">
+          <div className="mx-auto max-w-7xl flex items-center justify-between px-6 sm:px-10 py-3.5">
+            <div className="font-display text-[26px] font-bold tracking-[-0.02em] leading-none text-moss">
+              Provender<span className="text-amber">.</span>
+            </div>
+            <div className="inline-flex items-center gap-2 rounded-full bg-bone px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-charcoal-soft">
+              <span className="inline-block h-2 w-2 rounded-full bg-region-badge" />
+              Louisville &amp; Kentuckiana
+            </div>
+          </div>
+        </nav>
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-4 pb-24">
+          <NetworkExplorer persona="explore" embedMode />
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-cream text-charcoal">
+      {fromAfs ? <EntryBanner /> : null}
       <nav className="border-b border-cream-shadow bg-cream/85 backdrop-blur-md sticky top-0 z-20">
         <div className="mx-auto max-w-7xl flex items-center justify-between px-6 sm:px-10 py-3.5">
           <Link

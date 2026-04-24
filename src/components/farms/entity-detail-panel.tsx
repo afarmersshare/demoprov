@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { X } from "lucide-react";
+import { Lock, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import type { NetworkEntity } from "./network-explorer";
 import { LiteracyHook } from "@/components/ui/literacy-hook";
@@ -28,6 +28,46 @@ const KIND_LABEL: Record<NetworkEntity["kind"], string> = {
   recovery_node: "Recovery Node",
   enabler: "Enabler",
 };
+
+// Row labels that are always treated as premium in embed mode — regardless
+// of any contact_visibility setting on the entity. These are business fields
+// (capacity, internal priority ranking, financials) that the Layer 1 public
+// tier doesn't get. Contact-gated labels below handle the additional case
+// where an entity with a contact_visibility column is set above 'public'.
+const ALWAYS_PREMIUM_LABELS: Record<NetworkEntity["kind"], Set<string>> = {
+  farm: new Set(["Acres", "Priority tier"]),
+  market: new Set(["Priority tier"]),
+  distributor: new Set(["Priority tier"]),
+  processor: new Set(["Capacity", "Shared space", "Priority tier"]),
+  recovery_node: new Set<string>(),
+  enabler: new Set<string>(),
+};
+
+const CONTACT_GATED_LABELS: {
+  recovery_node: Set<string>;
+  enabler: Set<string>;
+} = {
+  recovery_node: new Set(["Capacity", "Cold storage", "Freezer"]),
+  enabler: new Set(["Staff", "Annual budget"]),
+};
+
+function isRowPremium(
+  entity: NetworkEntity,
+  label: string,
+  embedMode: boolean,
+): boolean {
+  if (!embedMode) return false;
+  if (ALWAYS_PREMIUM_LABELS[entity.kind].has(label)) return true;
+  // Farm revenue row labels include a year — "Revenue (2024)" etc.
+  if (entity.kind === "farm" && label.startsWith("Revenue")) return true;
+  if (entity.kind === "recovery_node" || entity.kind === "enabler") {
+    const vis = entity.data.contact_visibility;
+    if (vis && vis !== "public") {
+      return CONTACT_GATED_LABELS[entity.kind].has(label);
+    }
+  }
+  return false;
+}
 
 export function statusPillClasses(status: string | null | undefined): string {
   if (status === "enrolled") return "bg-moss text-cream";
@@ -547,10 +587,12 @@ function Body({
   entity,
   entityCount,
   hintToClick,
+  embedMode = false,
 }: {
   entity: NetworkEntity | null;
   entityCount: number;
   hintToClick: string;
+  embedMode?: boolean;
 }) {
   if (!entity) {
     return (
@@ -571,7 +613,16 @@ function Body({
     );
   }
 
-  const sub = subhead(entity);
+  // In embed mode, suppress the address subhead for market/distributor/processor
+  // — address is a direct contact pathway that the public tier doesn't get.
+  const rawSub = subhead(entity);
+  const suppressAddressSub =
+    embedMode &&
+    (entity.kind === "market" ||
+      entity.kind === "distributor" ||
+      entity.kind === "processor");
+  const sub = suppressAddressSub ? null : rawSub;
+
   const st = status(entity);
   const rows = detailRows(entity);
 
@@ -600,17 +651,32 @@ function Body({
       ) : null}
 
       <dl className="mt-6 space-y-0">
-        {rows.map(([label, value]) => (
-          <div
-            key={label}
-            className="flex justify-between gap-4 border-t border-cream-shadow py-3 first:border-t-0 first:pt-0 text-sm"
-          >
-            <dt className="text-charcoal-soft">{label}</dt>
-            <dd className="m-0 text-charcoal font-semibold text-right">
-              {value}
-            </dd>
-          </div>
-        ))}
+        {rows.map(([label, value]) => {
+          const locked = isRowPremium(entity, label, embedMode);
+          return (
+            <div
+              key={label}
+              className="flex justify-between gap-4 border-t border-cream-shadow py-3 first:border-t-0 first:pt-0 text-sm"
+            >
+              <dt className="text-charcoal-soft">{label}</dt>
+              <dd className="m-0 text-right">
+                {locked ? (
+                  <span
+                    className="inline-flex items-center gap-1.5 text-charcoal-soft/70"
+                    title="Available on subscriber tiers"
+                  >
+                    <Lock className="w-3 h-3" />
+                    <span className="text-[11px] uppercase tracking-[0.06em] font-medium">
+                      Subscribers
+                    </span>
+                  </span>
+                ) : (
+                  <span className="text-charcoal font-semibold">{value}</span>
+                )}
+              </dd>
+            </div>
+          );
+        })}
       </dl>
 
       <PracticesSection entity={entity} />
@@ -623,10 +689,12 @@ export function EntityDetailPanel({
   entity,
   entityCount,
   hintToClick = "Click any marker on the map to see details.",
+  embedMode = false,
 }: {
   entity: NetworkEntity | null;
   entityCount: number;
   hintToClick?: string;
+  embedMode?: boolean;
 }) {
   return (
     <div className="rounded-[14px] border border-cream-shadow bg-white p-6 h-[600px] overflow-y-auto flex flex-col">
@@ -634,6 +702,7 @@ export function EntityDetailPanel({
         entity={entity}
         entityCount={entityCount}
         hintToClick={hintToClick}
+        embedMode={embedMode}
       />
     </div>
   );
@@ -643,10 +712,12 @@ export function EntityDetailOverlay({
   entity,
   entityCount,
   onClose,
+  embedMode = false,
 }: {
   entity: NetworkEntity | null;
   entityCount: number;
   onClose: () => void;
+  embedMode?: boolean;
 }) {
   if (!entity) return null;
   return (
@@ -664,7 +735,12 @@ export function EntityDetailOverlay({
         >
           <X className="w-4 h-4" />
         </button>
-        <Body entity={entity} entityCount={entityCount} hintToClick="" />
+        <Body
+          entity={entity}
+          entityCount={entityCount}
+          hintToClick=""
+          embedMode={embedMode}
+        />
       </div>
     </div>
   );

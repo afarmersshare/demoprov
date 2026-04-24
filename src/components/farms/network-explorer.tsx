@@ -27,6 +27,7 @@ import { PolicymakerDashboard } from "../dashboards/policymaker";
 import { AfsDashboard } from "../dashboards/afs";
 import { FarmerDashboard } from "../dashboards/farmer";
 import { BuyerDashboard } from "../dashboards/buyer";
+import { EmbedCta } from "../embed-cta";
 
 export type Persona =
   | "policymaker"
@@ -183,8 +184,10 @@ function prettify(raw: string): string {
 
 export function NetworkExplorer({
   persona = "explore",
+  embedMode = false,
 }: {
   persona?: Persona;
+  embedMode?: boolean;
 }) {
   const [farms, setFarms] = useState<Farm[]>([]);
   const [markets, setMarkets] = useState<Market[]>([]);
@@ -203,7 +206,7 @@ export function NetworkExplorer({
   const [typeFilter, setTypeFilter] = useState<string>(ALL_TYPES);
   const [countyFilter, setCountyFilter] = useState<string>(ALL_COUNTIES);
   const [activeTab, setActiveTab] = useState<string>(
-    persona === "explore" ? "map" : "dashboard",
+    embedMode ? "map" : persona === "explore" ? "map" : "dashboard",
   );
   const [selectedEntity, setSelectedEntity] = useState<NetworkEntity | null>(
     null,
@@ -555,10 +558,14 @@ export function NetworkExplorer({
           <TabsTrigger value="map">Map</TabsTrigger>
           <TabsTrigger value="network">Network</TabsTrigger>
           <TabsTrigger value="flows">Flows</TabsTrigger>
-          <TabsTrigger value="list">List</TabsTrigger>
-          <TabsTrigger value="directory">Directory</TabsTrigger>
-          <TabsTrigger value="county">By county</TabsTrigger>
-          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+          {embedMode ? null : (
+            <>
+              <TabsTrigger value="list">List</TabsTrigger>
+              <TabsTrigger value="directory">Directory</TabsTrigger>
+              <TabsTrigger value="county">By county</TabsTrigger>
+              <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+            </>
+          )}
         </TabsList>
         <TabsContent value="map" className="mt-4">
           <div className="md:grid md:grid-cols-[1fr_340px] md:gap-5">
@@ -578,6 +585,7 @@ export function NetworkExplorer({
                 entity={selectedEntity}
                 entityCount={mapPinCount}
                 hintToClick="Click any marker on the map to see details."
+                embedMode={embedMode}
               />
             </div>
           </div>
@@ -601,6 +609,7 @@ export function NetworkExplorer({
                 entity={selectedEntity}
                 entityCount={mapPinCount}
                 hintToClick="Click any node in the graph to see details."
+                embedMode={embedMode}
               />
             </div>
           </div>
@@ -662,6 +671,7 @@ export function NetworkExplorer({
                 entity={selectedEntity}
                 entityCount={mapPinCount}
                 hintToClick="Expand a county and click any entity name to see details."
+                embedMode={embedMode}
               />
             </div>
           </div>
@@ -726,6 +736,7 @@ export function NetworkExplorer({
                 entity={selectedEntity}
                 entityCount={mapPinCount}
                 hintToClick="Click any pin on the map to see that entity's details."
+                embedMode={embedMode}
               />
             </div>
           </div>
@@ -736,7 +747,10 @@ export function NetworkExplorer({
         entity={selectedEntity}
         entityCount={mapPinCount}
         onClose={() => setSelectedEntity(null)}
+        embedMode={embedMode}
       />
+
+      {embedMode ? <EmbedCta /> : null}
     </div>
   );
 }
