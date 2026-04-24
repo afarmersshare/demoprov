@@ -60,14 +60,14 @@ export function GapAnalysis({
           <div className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft mb-1">
             Gap analysis — supply vs demand by county
           </div>
-          <div className="font-display text-[20px] font-semibold text-moss leading-tight">
+          <div className="font-display text-[20px] font-semibold text-slate-blue leading-tight">
             Where the system has unmet need.
           </div>
           <div className="mt-1 text-[12px] text-charcoal-soft leading-relaxed max-w-prose">
             Enrolled farms per county versus illustrative institutional
-            and food-insecurity demand. Counties in red show where demand
-            exceeds the supply currently enrolled with AFS —{" "}
-            <b className="text-terracotta font-semibold">
+            and food-insecurity demand. Rows are ordered worst-gap first so
+            counties with unmet demand surface at the top —{" "}
+            <b className="text-mid-gray font-semibold">
               {countiesWithGap} of {rows.length}
             </b>{" "}
             counties have a measurable gap.
@@ -86,11 +86,11 @@ export function GapAnalysis({
 
       <div className="mt-6 pt-4 border-t border-cream-shadow flex gap-6 flex-wrap text-[11px]">
         <div className="flex items-center gap-2">
-          <span className="inline-block h-3 w-6 bg-moss/90 rounded-sm" />
+          <span className="inline-block h-3 w-6 bg-forest-sage/90 rounded-sm" />
           <span className="text-charcoal-soft">Supply — enrolled farms</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="inline-block h-3 w-6 bg-terracotta/60 rounded-sm" />
+          <span className="inline-block h-3 w-6 bg-slate-mid rounded-sm" />
           <span className="text-charcoal-soft">Unmet demand</span>
         </div>
         <div className="flex items-center gap-2 text-charcoal-soft/70 italic">
@@ -123,15 +123,15 @@ function GapRow({
           className="absolute inset-y-0 left-0 bg-cream-shadow/60 rounded-sm"
           style={{ width: `${demandWidth}%` }}
         />
-        {/* Supply bar (always moss) */}
+        {/* Supply bar (always slate-blue) */}
         <div
-          className="absolute inset-y-0 left-0 bg-moss/90 rounded-sm"
+          className="absolute inset-y-0 left-0 bg-forest-sage/90 rounded-sm"
           style={{ width: `${supplyWidth}%` }}
         />
-        {/* Gap extension (terracotta) only when supply < demand */}
+        {/* Gap extension (neutral slate) only when supply < demand */}
         {isGap ? (
           <div
-            className="absolute inset-y-0 bg-terracotta/60 rounded-sm"
+            className="absolute inset-y-0 bg-slate-mid rounded-sm"
             style={{
               left: `${supplyWidth}%`,
               width: `${Math.max(demandWidth - supplyWidth, 0)}%`,
@@ -141,7 +141,7 @@ function GapRow({
       </div>
       <span
         className={`text-[12px] font-semibold tabular-nums text-right ${
-          isGap ? "text-terracotta" : "text-moss"
+          isGap ? "text-mid-gray" : "text-forest-sage"
         }`}
       >
         {isGap ? "" : "+"}

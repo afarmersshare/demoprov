@@ -70,7 +70,7 @@ export function GapAnalysisReport() {
   if (error) {
     return (
       <ReportShell title="Gap Analysis Report">
-        <p className="text-terracotta">
+        <p className="text-accent-amber">
           Error loading report data: {error}
         </p>
       </ReportShell>
@@ -93,17 +93,17 @@ export function GapAnalysisReport() {
         <p className="text-[14px] text-charcoal-soft leading-relaxed mb-4">
           Of <b className="text-charcoal">{rows.length} counties</b> in the
           demo region,{" "}
-          <b className="text-terracotta">{gapCounties.length}</b> show a
+          <b className="text-mid-gray">{gapCounties.length}</b> show a
           measurable gap between institutional / food-insecurity demand and
           the farm supply currently enrolled.{" "}
-          <b className="text-moss">{surplusCounties.length}</b> counties are
+          <b className="text-forest-sage">{surplusCounties.length}</b> counties are
           at or above their demand indicator.
         </p>
         {worstGap ? (
           <p className="text-[14px] text-charcoal-soft leading-relaxed">
             The largest single gap is in{" "}
             <b className="text-charcoal">{worstGap.name}</b> at{" "}
-            <b className="text-terracotta">
+            <b className="text-mid-gray">
               {(worstGap.gapPct * 100).toFixed(0)}%
             </b>{" "}
             under demand — roughly{" "}
@@ -143,7 +143,7 @@ export function GapAnalysisReport() {
                   {Math.round(r.demand)}
                 </span>
                 <span
-                  className={`text-right tabular-nums font-semibold ${isGap ? "text-terracotta" : "text-moss"}`}
+                  className={`text-right tabular-nums font-semibold ${isGap ? "text-mid-gray" : "text-forest-sage"}`}
                 >
                   {isGap ? "" : "+"}
                   {(r.gapPct * 100).toFixed(0)}%

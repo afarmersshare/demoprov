@@ -52,7 +52,7 @@ export function PersonaSwitcher({ persona }: Props) {
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="inline-flex items-center gap-2 rounded-full border border-cream-shadow bg-white px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-charcoal-soft hover:text-moss hover:border-moss transition-colors"
+        className="inline-flex items-center gap-2 rounded-full border border-cream-shadow bg-white px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-charcoal-soft hover:text-slate-blue hover:border-slate-blue transition-colors"
       >
         <span
           className="inline-block h-2 w-2 rounded-full"
@@ -91,7 +91,7 @@ export function PersonaSwitcher({ persona }: Props) {
               href={`/?persona=${p.id}`}
               role="menuitem"
               onClick={() => setOpen(false)}
-              className="flex items-center gap-2.5 px-3.5 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-charcoal-soft hover:text-moss hover:bg-surface-subtle transition-colors"
+              className="flex items-center gap-2.5 px-3.5 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-charcoal-soft hover:text-slate-blue hover:bg-surface-subtle transition-colors"
             >
               <span
                 className="inline-block h-2 w-2 rounded-full"
@@ -105,7 +105,7 @@ export function PersonaSwitcher({ persona }: Props) {
               href="/"
               role="menuitem"
               onClick={() => setOpen(false)}
-              className="flex items-center gap-2.5 px-3.5 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-charcoal-soft hover:text-moss hover:bg-surface-subtle transition-colors"
+              className="flex items-center gap-2.5 px-3.5 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-charcoal-soft hover:text-slate-blue hover:bg-surface-subtle transition-colors"
             >
               ← Back to landing
             </Link>

@@ -125,7 +125,7 @@ export function RegionalSupplyReport() {
   if (error) {
     return (
       <ReportShell title="Regional Supply Snapshot">
-        <p className="text-terracotta">
+        <p className="text-accent-amber">
           Error loading report data: {error}
         </p>
       </ReportShell>
@@ -197,9 +197,9 @@ export function RegionalSupplyReport() {
           liability insurance.
         </p>
         <div className="grid grid-cols-3 gap-3">
-          <ReadinessCell label="Buyer-ready" n={summary.buyerReady} tint="moss" />
-          <ReadinessCell label="1–2 docs short" n={summary.close} tint="amber" />
-          <ReadinessCell label="Needs work" n={summary.needsWork} tint="terracotta" />
+          <ReadinessCell label="Buyer-ready" n={summary.buyerReady} tint="ready" />
+          <ReadinessCell label="1–2 docs short" n={summary.close} tint="close" />
+          <ReadinessCell label="Needs work" n={summary.needsWork} tint="needs_work" />
         </div>
       </ReportSection>
     </ReportShell>
@@ -256,7 +256,7 @@ function Table({
             <span className="text-charcoal truncate">{label}</span>
             <div className="flex-1 h-1 bg-cream-shadow/50 rounded-full min-w-[40px] max-w-[200px]">
               <div
-                className="h-full bg-moss/70 rounded-full"
+                className="h-full bg-slate-blue/70 rounded-full"
                 style={{ width: `${(value / max) * 100}%` }}
               />
             </div>
@@ -277,14 +277,14 @@ function ReadinessCell({
 }: {
   label: string;
   n: number;
-  tint: "moss" | "amber" | "terracotta";
+  tint: "ready" | "close" | "needs_work";
 }) {
   const colorClass =
-    tint === "moss"
-      ? "text-moss border-moss/30 bg-moss/5"
-      : tint === "amber"
-        ? "text-amber border-amber/30 bg-amber/5"
-        : "text-terracotta border-terracotta/30 bg-terracotta/5";
+    tint === "ready"
+      ? "text-forest-sage border-forest-sage/30 bg-forest-sage/5"
+      : tint === "close"
+        ? "text-accent-amber border-accent-amber/30 bg-accent-amber/5"
+        : "text-mid-gray border-mid-gray/30 bg-mid-gray/5";
   return (
     <div className={`rounded-[8px] border p-4 text-center ${colorClass}`}>
       <div className="font-display text-[32px] font-semibold leading-none tabular-nums">

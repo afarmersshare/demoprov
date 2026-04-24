@@ -19,7 +19,7 @@ export function LiteracyHook({ topic, label = "What does this mean?" }: Props) {
     <button
       type="button"
       title={`Literacy page coming: ${topic}`}
-      className="group mt-3 inline-flex items-center gap-1 text-[11px] text-charcoal-soft hover:text-moss transition-colors cursor-help"
+      className="group mt-3 inline-flex items-center gap-1 text-[11px] text-charcoal-soft hover:text-slate-blue transition-colors cursor-help"
       onClick={(e) => {
         // Placeholder — no navigation yet. Kelsey's advisory panel will
         // define where this links. For now, we keep the hook visually
@@ -33,7 +33,7 @@ export function LiteracyHook({ topic, label = "What does this mean?" }: Props) {
       >
         ←
       </span>
-      <span className="underline underline-offset-2 decoration-charcoal-soft/30 group-hover:decoration-moss">
+      <span className="underline underline-offset-2 decoration-charcoal-soft/30 group-hover:decoration-slate-blue">
         {label}
       </span>
     </button>

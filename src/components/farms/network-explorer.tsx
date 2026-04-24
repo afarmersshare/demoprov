@@ -652,7 +652,7 @@ export function NetworkExplorer({
               setCountyFilter(ALL_COUNTIES);
               setComplianceFilter(ALL_COMPLIANCE);
             }}
-            className="ml-auto text-xs text-charcoal-soft underline underline-offset-2 hover:text-moss"
+            className="ml-auto text-xs text-charcoal-soft underline underline-offset-2 hover:text-slate-blue"
           >
             Clear filters
           </button>
@@ -660,8 +660,8 @@ export function NetworkExplorer({
       </div>
 
       {complianceFilter !== ALL_COMPLIANCE ? (
-        <div className="mb-4 -mt-1 inline-flex items-center gap-2 rounded-full bg-moss/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-moss">
-          <span className="inline-block h-1.5 w-1.5 rounded-full bg-moss" />
+        <div className="mb-4 -mt-1 inline-flex items-center gap-2 rounded-full bg-slate-blue/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-blue">
+          <span className="inline-block h-1.5 w-1.5 rounded-full bg-slate-blue" />
           Compliance filter: {filteredFarms.length}{" "}
           {complianceFilter === "buyer_ready"
             ? "buyer-ready"

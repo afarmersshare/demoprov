@@ -31,13 +31,13 @@ export function EntryBanner() {
   return (
     <div className="w-full bg-cream-deep border-b border-cream-shadow">
       <div className="mx-auto max-w-7xl flex items-start gap-4 px-6 sm:px-10 py-3">
-        <p className="flex-1 text-[13px] leading-snug text-moss">
+        <p className="flex-1 text-[13px] leading-snug text-slate-blue">
           You&rsquo;re exploring the Louisville&ndash;Kentuckiana region dataset
           &mdash; a live Provender demo. This is real infrastructure, not a
           mockup.{" "}
           <a
             href="mailto:hello@afarmersshare.com"
-            className="underline underline-offset-2 font-semibold hover:text-moss-light"
+            className="underline underline-offset-2 font-semibold hover:text-slate-blue-light"
           >
             Contact us to discuss your region.
           </a>
@@ -46,7 +46,7 @@ export function EntryBanner() {
           type="button"
           onClick={handleDismiss}
           aria-label="Dismiss banner"
-          className="shrink-0 w-6 h-6 rounded-full text-moss/70 hover:text-moss hover:bg-cream-shadow flex items-center justify-center transition-colors"
+          className="shrink-0 w-6 h-6 rounded-full text-slate-blue/70 hover:text-slate-blue hover:bg-cream-shadow flex items-center justify-center transition-colors"
         >
           <X className="w-3.5 h-3.5" />
         </button>

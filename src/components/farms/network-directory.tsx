@@ -51,12 +51,12 @@ const KIND_LABEL: Record<EntityKind, string> = {
 };
 
 const KIND_COLOR: Record<EntityKind, string> = {
-  farm: "#2f4a3a",
-  market: "#c77f2a",
-  distributor: "#7a8aa0",
-  processor: "#a14a2a",
-  recovery_node: "#6b9370",
-  enabler: "#bfa98a",
+  farm: "#5B7B8A",
+  market: "#B8860B",
+  distributor: "#2C2A27",
+  processor: "#4A6741",
+  recovery_node: "#7A9BAD",
+  enabler: "#6B6763",
 };
 
 const STATUS_ORDER: Record<string, number> = {
@@ -240,7 +240,7 @@ export function NetworkDirectory({
         className={
           "w-full text-left text-[11px] font-bold uppercase tracking-[0.08em] " +
           (active ? "text-charcoal" : "text-charcoal-soft") +
-          " hover:text-moss transition-colors"
+          " hover:text-slate-blue transition-colors"
         }
       >
         {label}
@@ -264,7 +264,7 @@ export function NetworkDirectory({
                   "text-[11px] px-2.5 py-1 rounded-full border transition-colors " +
                   (active
                     ? "text-cream border-transparent"
-                    : "bg-bone text-charcoal-soft border-cream-shadow hover:border-moss")
+                    : "bg-slate-pale text-charcoal-soft border-cream-shadow hover:border-slate-blue")
                 }
                 style={
                   active ? { background: KIND_COLOR[k], borderColor: KIND_COLOR[k] } : undefined
@@ -280,7 +280,7 @@ export function NetworkDirectory({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search by name, type, or location…"
-            className="flex-1 min-w-[160px] bg-white border border-cream-shadow rounded-[8px] px-3 py-1.5 text-sm text-charcoal placeholder:text-charcoal-soft/70 focus:outline-none focus:border-moss"
+            className="flex-1 min-w-[160px] bg-white border border-cream-shadow rounded-[8px] px-3 py-1.5 text-sm text-charcoal placeholder:text-charcoal-soft/70 focus:outline-none focus:border-slate-blue"
           />
 
           <span className="text-xs text-charcoal-soft tabular-nums whitespace-nowrap">

@@ -1,35 +1,55 @@
 // Central palette for JS/canvas-drawn surfaces.
-// CSS/Tailwind surfaces should prefer the `--color-*` tokens in globals.css,
-// which mirror the values below. Keep the two in sync.
+// Mirrors the Pell brand tokens in globals.css (April 2026). The legacy
+// export names (MOSS, AMBER, TERRACOTTA, BONE) are retained so that canvas
+// and SVG components keep rendering — the hex values behind them now come
+// from the Pell palette. Component-level Tailwind classes (bg-slate-blue,
+// text-forest-sage, etc.) reach globals.css directly; this file is for
+// anything drawn via inline style or canvas context.
 
-// Semantic data-viz colors (preserved under the main-site chrome swap — Option A).
-export const MOSS = "#2f4a3a";
-export const MOSS_LIGHT = "#456658";
-export const AMBER = "#c77f2a";
-export const AMBER_LIGHT = "#dca154";
-export const TERRACOTTA = "#b86b4b";
-export const CREAM = "#f7f3eb";
+// Pell canonical palette, exported with both Pell names and legacy aliases.
+export const SLATE_BLUE = "#5B7B8A";
+export const SLATE_BLUE_LIGHT = "#7A9BAD";
+export const SLATE_MID = "#D0DDE3";
+export const SLATE_PALE = "#EEF3F5";
+export const FOREST_SAGE = "#4A6741";
+export const WARM_CREAM = "#F7F3EC";
+export const WARM_WHITE = "#FDFAF5";
+export const WARM_CHARCOAL = "#2C2A27";
+export const MID_GRAY = "#6B6763";
+export const ACCENT_AMBER = "#B8860B";
+export const RULE = "#D4CEC5";
+
+// Legacy names preserved for canvas/svg consumers.
+// Each points at its Pell equivalent per the Phase 4 palette mapping
+// (moss→slate-blue, amber→accent-amber, terracotta→forest-sage, bone→rule).
+export const MOSS = SLATE_BLUE;
+export const MOSS_LIGHT = SLATE_BLUE_LIGHT;
+export const AMBER = ACCENT_AMBER;
+export const AMBER_LIGHT = "#D4A44E";
+export const TERRACOTTA = FOREST_SAGE;
+export const CREAM = WARM_CREAM;
 export const CREAM_SHADOW = "#e3dcc7";
-export const BONE = "#e8e1d2";
-export const CHARCOAL = "#1f2421";
-export const CHARCOAL_SOFT = "#4a524e";
+export const BONE = RULE;
+export const CHARCOAL = WARM_CHARCOAL;
+export const CHARCOAL_SOFT = MID_GRAY;
 
 // Named aliases for amber's two brand-accent jobs.
-// Both currently resolve to AMBER; split them if you ever want to drift one.
-export const MARKET = AMBER;
-export const REGION_BADGE = AMBER;
+export const MARKET = ACCENT_AMBER;
+export const REGION_BADGE = ACCENT_AMBER;
 
 // Hub-node ring color — reads as centrality, not hierarchy.
-export const SAGE = "#9caf88";
+export const SAGE = FOREST_SAGE;
 
-// Persona accent colors — one per landing-card lens.
+// Persona accent colors — one per landing-card lens. Reassigned to Pell
+// palette (April 2026); funder keeps its mauve since Pell has no mauve-ish
+// equivalent and the hue is distinct enough to stay readable.
 export const PERSONA_COLOR = {
-  policymaker: MOSS,
-  afs: AMBER,
-  farmer: "#6b9370",
-  buyer: "#a14a2a",
+  policymaker: SLATE_BLUE,
+  afs: FOREST_SAGE,
+  farmer: SLATE_BLUE_LIGHT,
+  buyer: ACCENT_AMBER,
   funder: "#bda2b9",
-  explore: CHARCOAL_SOFT,
+  explore: MID_GRAY,
 } as const;
 
 // Main-site brand neutrals (mirrored from globals.css for canvas contexts).

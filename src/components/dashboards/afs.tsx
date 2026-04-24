@@ -292,7 +292,7 @@ export function AfsDashboard({
           <div className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft mb-1">
             Operational view
           </div>
-          <div className="font-display text-[24px] font-semibold text-moss leading-tight">
+          <div className="font-display text-[24px] font-semibold text-slate-blue leading-tight">
             {selectedCounty || "Pick a county above"}
           </div>
         </div>
@@ -324,7 +324,7 @@ export function AfsDashboard({
               </div>
             </div>
             {countyFarms.length > 0 && enrolledInCounty === 0 ? (
-              <div className="mt-4 text-xs text-terracotta leading-relaxed">
+              <div className="mt-4 text-xs text-forest-sage leading-relaxed">
                 <b>Recruitment gap:</b> {countyFarms.length} farms here, zero
                 enrolled yet.
               </div>
@@ -383,7 +383,7 @@ export function AfsDashboard({
               </span>
             </div>
             {countyProcessors.length === 0 && countyFarms.length > 0 ? (
-              <div className="mt-4 text-xs text-terracotta leading-relaxed">
+              <div className="mt-4 text-xs text-forest-sage leading-relaxed">
                 <b>Processing bottleneck:</b> farms but no processor in-county.
                 All throughput has to travel.
               </div>
@@ -407,7 +407,7 @@ export function AfsDashboard({
           <div className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft mb-3">
             Counties with zero enrolled farms
           </div>
-          <div className="font-display text-[20px] font-semibold text-moss mb-4">
+          <div className="font-display text-[20px] font-semibold text-slate-blue mb-4">
             Recruitment opportunities
           </div>
           <ul className="space-y-1.5">
@@ -419,7 +419,7 @@ export function AfsDashboard({
                 <button
                   type="button"
                   onClick={() => setSelectedCounty(r.name)}
-                  className="text-charcoal hover:text-moss hover:underline text-left"
+                  className="text-charcoal hover:text-slate-blue hover:underline text-left"
                 >
                   {r.name}
                 </button>
@@ -458,38 +458,38 @@ function FunnelBar({
       <div className="flex h-3 w-full rounded-full overflow-hidden bg-cream-deep mb-3">
         {enrolled > 0 ? (
           <div
-            className="bg-moss"
+            className="bg-forest-sage"
             style={{ width: `${(enrolled / total) * 100}%` }}
           />
         ) : null}
         {engaged > 0 ? (
           <div
-            className="bg-amber"
+            className="bg-accent-amber"
             style={{ width: `${(engaged / total) * 100}%` }}
           />
         ) : null}
         {prospect > 0 ? (
           <div
-            className="bg-terracotta"
+            className="bg-slate-blue-light"
             style={{ width: `${(prospect / total) * 100}%` }}
           />
         ) : null}
       </div>
       <div className="space-y-1 text-sm">
         <FunnelRow
-          dot="bg-moss"
+          dot="bg-forest-sage"
           label="Enrolled"
           count={enrolled}
           pct={pct(enrolled)}
         />
         <FunnelRow
-          dot="bg-amber"
+          dot="bg-accent-amber"
           label="Engaged"
           count={engaged}
           pct={pct(engaged)}
         />
         <FunnelRow
-          dot="bg-terracotta"
+          dot="bg-slate-blue-light"
           label="Prospect"
           count={prospect}
           pct={pct(prospect)}

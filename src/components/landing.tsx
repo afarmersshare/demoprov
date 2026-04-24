@@ -94,7 +94,7 @@ export function Landing() {
         <div className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft mb-3">
           Louisville &amp; Kentuckiana · Demo
         </div>
-        <h1 className="font-display text-[44px] sm:text-[56px] font-semibold text-moss leading-[1.02] tracking-[-0.02em]">
+        <h1 className="font-display text-[44px] sm:text-[56px] font-semibold text-slate-blue leading-[1.02] tracking-[-0.02em]">
           One data layer. Many ways in.
         </h1>
         <p className="mt-5 text-[17px] leading-relaxed text-charcoal-soft">
@@ -115,12 +115,12 @@ export function Landing() {
                 className={
                   "group relative h-full rounded-[14px] border bg-white p-6 transition-all cursor-pointer " +
                   (isLive
-                    ? "border-cream-shadow hover:border-moss hover:shadow-md"
+                    ? "border-cream-shadow hover:border-slate-blue hover:shadow-md"
                     : "border-cream-shadow hover:border-cream-shadow hover:shadow-sm")
                 }
               >
                 {!isLive ? (
-                  <span className="absolute top-4 right-4 inline-block px-2 py-0.5 rounded-full bg-bone text-[10px] font-medium uppercase tracking-[0.08em] text-charcoal-soft">
+                  <span className="absolute top-4 right-4 inline-block px-2 py-0.5 rounded-full bg-slate-pale text-[10px] font-medium uppercase tracking-[0.08em] text-charcoal-soft">
                     Dashboard coming soon
                   </span>
                 ) : null}
@@ -142,7 +142,7 @@ export function Landing() {
                     </li>
                   ))}
                 </ul>
-                <div className="mt-5 text-xs font-medium text-moss group-hover:translate-x-0.5 transition-transform">
+                <div className="mt-5 text-xs font-medium text-slate-blue group-hover:translate-x-0.5 transition-transform">
                   {isLive ? "Open this view →" : "Explore the raw network →"}
                 </div>
               </div>

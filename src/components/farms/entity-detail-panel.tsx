@@ -70,11 +70,11 @@ function isRowPremium(
 }
 
 export function statusPillClasses(status: string | null | undefined): string {
-  if (status === "enrolled") return "bg-moss text-cream";
-  if (status === "engaged") return "bg-amber text-cream";
-  if (status === "prospect") return "bg-terracotta text-cream";
-  if (status === "afs_active") return "bg-moss-light text-charcoal";
-  return "bg-bone text-charcoal";
+  if (status === "enrolled") return "bg-forest-sage text-warm-cream";
+  if (status === "engaged") return "bg-accent-amber text-warm-cream";
+  if (status === "prospect") return "bg-slate-blue-light text-warm-cream";
+  if (status === "afs_active") return "bg-slate-blue-light text-warm-charcoal";
+  return "bg-slate-pale text-charcoal";
 }
 
 function subhead(e: NetworkEntity): string | null {
@@ -285,15 +285,15 @@ function docTypeLabel(type: string): string {
 function docStatusPillClasses(status: string): string {
   switch (status) {
     case "current":
-      return "bg-moss/10 text-moss";
+      return "bg-forest-sage/10 text-forest-sage";
     case "expiring_soon":
-      return "bg-amber/15 text-amber";
+      return "bg-accent-amber/15 text-accent-amber";
     case "expired":
-      return "bg-terracotta/15 text-terracotta";
+      return "bg-mid-gray/25 text-mid-gray";
     case "superseded":
       return "bg-charcoal-soft/15 text-charcoal-soft";
     default:
-      return "bg-bone text-charcoal-soft";
+      return "bg-slate-pale text-charcoal-soft";
   }
 }
 
@@ -332,11 +332,11 @@ const CLAIM_PILL_LABEL: Record<string, string> = {
 };
 
 function claimPillClasses(claim: string): string {
-  if (claim.startsWith("third_party")) return "bg-moss/15 text-moss";
-  if (claim === "transitional") return "bg-moss-light/30 text-moss";
-  if (claim === "pending_verification") return "bg-amber/15 text-amber";
-  if (claim === "self_reported") return "bg-amber-light/40 text-charcoal";
-  return "bg-bone text-charcoal-soft";
+  if (claim.startsWith("third_party")) return "bg-forest-sage/15 text-forest-sage";
+  if (claim === "transitional") return "bg-slate-blue-light/25 text-slate-blue";
+  if (claim === "pending_verification") return "bg-accent-amber/15 text-accent-amber";
+  if (claim === "self_reported") return "bg-accent-amber/20 text-charcoal";
+  return "bg-slate-pale text-charcoal-soft";
 }
 
 const PLATFORM_SHORT: Record<string, string> = {
@@ -397,7 +397,7 @@ function FarmPracticesBlock({
           {flags.map((fl) => (
             <span
               key={fl}
-              className="inline-block px-2 py-0.5 rounded-full text-[10px] font-medium bg-terracotta/15 text-terracotta"
+              className="inline-block px-2 py-0.5 rounded-full text-[10px] font-medium bg-accent-amber/15 text-accent-amber"
               title={prettify(fl)}
             >
               {prettify(fl)}
@@ -515,7 +515,7 @@ function DocumentsSection({ entityUpid }: { entityUpid: string }) {
 
   if (error) {
     return (
-      <div className="mt-6 text-xs text-terracotta">
+      <div className="mt-6 text-xs text-accent-amber">
         Couldn&rsquo;t load documents: {error}
       </div>
     );
@@ -635,7 +635,7 @@ function LockedFieldModal({
 
         <a
           href="mailto:hello@afarmersshare.com?subject=Inquiry%20from%20Provender%20demo"
-          className="inline-flex items-center gap-2 rounded-full bg-moss px-4 py-2 text-[12px] font-semibold uppercase tracking-[0.1em] text-cream transition-colors hover:bg-moss-light"
+          className="inline-flex items-center gap-2 rounded-full bg-slate-blue px-4 py-2 text-[12px] font-semibold uppercase tracking-[0.1em] text-warm-cream transition-colors hover:bg-slate-blue-light"
         >
           hello@afarmersshare.com
         </a>
@@ -647,10 +647,10 @@ function LockedFieldModal({
 function ComplianceRow({ info }: { info: ComplianceInfo }) {
   const valueColor =
     info.status === "buyer_ready"
-      ? "text-moss"
+      ? "text-forest-sage"
       : info.status === "close"
-        ? "text-amber"
-        : "text-terracotta";
+        ? "text-accent-amber"
+        : "text-accent-amber";
   const valueText =
     info.status === "buyer_ready"
       ? "Buyer-ready"
@@ -722,7 +722,7 @@ function Body({
         {KIND_LABEL[entity.kind]}
       </div>
 
-      <div className="font-display text-[24px] font-semibold text-moss leading-[1.2] tracking-[-0.015em]">
+      <div className="font-display text-[24px] font-semibold text-slate-blue leading-[1.2] tracking-[-0.015em]">
         {entity.data.name}
       </div>
       {sub ? <div className="mt-1 text-sm text-charcoal-soft">{sub}</div> : null}

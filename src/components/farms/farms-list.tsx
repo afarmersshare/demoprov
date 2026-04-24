@@ -11,10 +11,10 @@ function prettify(raw: string | null): string {
 }
 
 function statusPillClasses(status: string | null): string {
-  if (status === "enrolled") return "bg-moss text-cream";
-  if (status === "engaged") return "bg-amber text-cream";
-  if (status === "prospect") return "bg-terracotta text-cream";
-  return "bg-bone text-charcoal";
+  if (status === "enrolled") return "bg-forest-sage text-warm-cream";
+  if (status === "engaged") return "bg-accent-amber text-warm-cream";
+  if (status === "prospect") return "bg-slate-blue-light text-warm-cream";
+  return "bg-slate-pale text-charcoal";
 }
 
 type SortKey = "name" | "county" | "type" | "acres" | "status";
@@ -108,7 +108,7 @@ export function FarmsList({ farms, selected, onSelect }: Props) {
         className={
           "w-full text-[11px] font-bold uppercase tracking-[0.08em] " +
           (active ? "text-charcoal" : "text-charcoal-soft") +
-          " hover:text-moss transition-colors " +
+          " hover:text-slate-blue transition-colors " +
           (align === "right" ? "text-right" : "text-left")
         }
       >
@@ -131,7 +131,7 @@ export function FarmsList({ farms, selected, onSelect }: Props) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search farms by name, county, or type…"
-          className="flex-1 min-w-0 bg-white border border-cream-shadow rounded-[8px] px-3 py-1.5 text-sm text-charcoal placeholder:text-charcoal-soft/70 focus:outline-none focus:border-moss"
+          className="flex-1 min-w-0 bg-white border border-cream-shadow rounded-[8px] px-3 py-1.5 text-sm text-charcoal placeholder:text-charcoal-soft/70 focus:outline-none focus:border-slate-blue"
         />
         <span className="text-xs text-charcoal-soft tabular-nums whitespace-nowrap">
           {sorted.length} of {farms.length}

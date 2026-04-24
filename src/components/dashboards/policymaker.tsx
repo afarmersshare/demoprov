@@ -308,11 +308,11 @@ export function PolicymakerDashboard({
           <div className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft mb-1">
             Food system snapshot
           </div>
-          <div className="font-display text-[24px] font-semibold text-moss leading-tight">
+          <div className="font-display text-[24px] font-semibold text-slate-blue leading-tight">
             {selectedCounty || "Pick a county above"}
           </div>
           {county && countyFarms.length > 0 ? (
-            <div className="mt-3 text-[13px] text-charcoal leading-relaxed max-w-prose italic border-l-2 border-moss-light pl-3">
+            <div className="mt-3 text-[13px] text-charcoal leading-relaxed max-w-prose italic border-l-2 border-slate-blue-light pl-3">
               {/* Placeholder hero copy — Kelsey + advisory panel will finalize. */}
               {countyFarms.length}{" "}
               {countyFarms.length === 1 ? "farm" : "farms"} in production across{" "}
@@ -472,7 +472,7 @@ export function PolicymakerDashboard({
                   value={fmtInt(countyEnablers.length)}
                 />
                 {countyProcessors.length === 0 && countyFarms.length > 0 ? (
-                  <div className="mt-4 pt-4 border-t border-cream-shadow text-xs text-terracotta leading-relaxed">
+                  <div className="mt-4 pt-4 border-t border-cream-shadow text-xs text-forest-sage leading-relaxed">
                     <b>Processing gap:</b> {countyFarms.length} farms producing
                     locally, zero processors in-county.
                   </div>
@@ -480,7 +480,7 @@ export function PolicymakerDashboard({
                 {countyRecovery.length === 0 &&
                 typeof countyAttrs.food_insecurity_rate === "number" &&
                 (countyAttrs.food_insecurity_rate as number) > 0.12 ? (
-                  <div className="mt-3 text-xs text-terracotta leading-relaxed">
+                  <div className="mt-3 text-xs text-forest-sage leading-relaxed">
                     <b>Food-access gap:</b>{" "}
                     {fmtPct(countyAttrs.food_insecurity_rate as number)} food
                     insecurity with no recovery infrastructure here.
@@ -507,7 +507,7 @@ export function PolicymakerDashboard({
 
       <GapAnalysis farms={farms} regions={regions} />
 
-      <section className="rounded-[14px] border border-dashed border-cream-shadow bg-bone/40 p-6 text-sm text-charcoal-soft leading-relaxed">
+      <section className="rounded-[14px] border border-dashed border-cream-shadow bg-slate-pale/60 p-6 text-sm text-charcoal-soft leading-relaxed">
         <b className="text-charcoal">More cards in progress.</b> Planned:
         infrastructure investment opportunities by county, and the
         Community Wealth Score ranking.

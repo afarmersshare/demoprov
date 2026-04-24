@@ -90,12 +90,12 @@ export function MyFarmCard({
           <div className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft mb-1">
             My farm card
           </div>
-          <div className="font-display text-[22px] font-semibold text-moss leading-tight">
+          <div className="font-display text-[22px] font-semibold text-forest-sage leading-tight">
             {farm.name}
           </div>
         </div>
-        <span className="inline-flex items-center gap-2 rounded-full bg-moss/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-moss">
-          <span className="inline-block h-1.5 w-1.5 rounded-full bg-moss" />
+        <span className="inline-flex items-center gap-2 rounded-full bg-forest-sage/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-forest-sage">
+          <span className="inline-block h-1.5 w-1.5 rounded-full bg-forest-sage" />
           {stats.statusLabel}
         </span>
       </div>
@@ -159,7 +159,7 @@ export function MyFarmCard({
           </div>
           <div className="mt-2 h-1 rounded-full bg-cream-shadow/60 overflow-hidden">
             <div
-              className="h-full bg-moss/80 rounded-full transition-all"
+              className="h-full bg-forest-sage/80 rounded-full transition-all"
               style={{ width: `${docProgress * 100}%` }}
             />
           </div>
@@ -169,20 +169,20 @@ export function MyFarmCard({
         <div
           className={`rounded-[10px] border p-4 ${
             hasCompliance
-              ? "border-moss/30 bg-moss/5"
-              : "border-terracotta/30 bg-terracotta/5"
+              ? "border-forest-sage/30 bg-forest-sage/5"
+              : "border-accent-amber/30 bg-accent-amber/5"
           }`}
         >
           <div
             className={`font-display text-[28px] font-semibold leading-none tabular-nums ${
-              hasCompliance ? "text-moss" : "text-terracotta"
+              hasCompliance ? "text-forest-sage" : "text-accent-amber"
             }`}
           >
             {gapCount}
           </div>
           <div
             className={`mt-2 text-[11px] font-bold uppercase tracking-[0.1em] ${
-              hasCompliance ? "text-moss" : "text-terracotta"
+              hasCompliance ? "text-forest-sage" : "text-accent-amber"
             }`}
           >
             {hasCompliance ? "Buyer-ready" : "Compliance gap"}
@@ -196,7 +196,7 @@ export function MyFarmCard({
           <div className="mt-2 h-1 rounded-full bg-cream-shadow/60 overflow-hidden">
             <div
               className={`h-full rounded-full transition-all ${
-                hasCompliance ? "bg-moss/80" : "bg-terracotta/60"
+                hasCompliance ? "bg-forest-sage/80" : "bg-accent-amber/60"
               }`}
               style={{
                 width: `${hasCompliance ? 100 : (gapCount / 3) * 90 + 10}%`,

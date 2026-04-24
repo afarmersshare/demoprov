@@ -393,7 +393,7 @@ export function FarmerDashboard({
           <div className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft mb-1">
             If I farm in this county
           </div>
-          <div className="font-display text-[24px] font-semibold text-moss leading-tight">
+          <div className="font-display text-[24px] font-semibold text-slate-blue leading-tight">
             {selectedCounty || "Pick a county above"}
           </div>
           <div className="mt-1.5 text-xs text-charcoal-soft">
@@ -468,7 +468,7 @@ export function FarmerDashboard({
                 Processor types nearby
               </div>
               {processorsByType.length === 0 ? (
-                <div className="text-xs text-terracotta leading-relaxed">
+                <div className="text-xs text-forest-sage leading-relaxed">
                   No processors in the ring. Any value-add travels.
                 </div>
               ) : (
@@ -511,7 +511,7 @@ export function FarmerDashboard({
                 Types of support available
               </div>
               {enablersByType.length === 0 ? (
-                <div className="text-xs text-terracotta leading-relaxed">
+                <div className="text-xs text-forest-sage leading-relaxed">
                   No support orgs in the ring — potential gap in the
                   ecosystem here.
                 </div>
@@ -547,7 +547,7 @@ export function FarmerDashboard({
               {cropRollup.slice(0, 10).map(([c, count]) => (
                 <span
                   key={c}
-                  className="inline-flex items-baseline gap-1.5 px-3 py-1 rounded-full bg-bone text-sm text-charcoal"
+                  className="inline-flex items-baseline gap-1.5 px-3 py-1 rounded-full bg-slate-pale text-sm text-charcoal"
                 >
                   {prettify(c)}
                   <span className="text-[11px] text-charcoal-soft tabular-nums font-mono">

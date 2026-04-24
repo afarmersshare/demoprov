@@ -302,7 +302,7 @@ export function BuyerDashboard({
           <div className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft mb-1">
             If I buy from this county
           </div>
-          <div className="font-display text-[24px] font-semibold text-moss leading-tight">
+          <div className="font-display text-[24px] font-semibold text-slate-blue leading-tight">
             {selectedCounty || "Pick a county above"}
           </div>
           <div className="mt-1.5 text-xs text-charcoal-soft">
@@ -334,7 +334,7 @@ export function BuyerDashboard({
               value={fmtInt(Math.round(acresInRadius))}
             />
             {farmsWithinRadius.length === 0 ? (
-              <div className="mt-4 text-xs text-terracotta leading-relaxed">
+              <div className="mt-4 text-xs text-forest-sage leading-relaxed">
                 <b>Supply gap:</b> zero farms in the sourcing ring. This
                 county is a buyer without nearby producers.
               </div>

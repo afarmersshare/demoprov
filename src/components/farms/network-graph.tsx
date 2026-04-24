@@ -604,7 +604,7 @@ export function NetworkGraph({
             type="checkbox"
             checked={showPeople}
             onChange={(e) => setShowPeople(e.target.checked)}
-            className="accent-moss h-3 w-3 cursor-pointer"
+            className="accent-slate-blue h-3 w-3 cursor-pointer"
           />
           <span className="text-charcoal">
             Show people{" "}

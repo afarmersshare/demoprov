@@ -18,10 +18,10 @@ function formatCurrency(amount: number | null): string {
 }
 
 function statusPillClasses(status: string | null): string {
-  if (status === "enrolled") return "bg-moss text-cream";
-  if (status === "engaged") return "bg-amber text-cream";
-  if (status === "prospect") return "bg-terracotta text-cream";
-  return "bg-bone text-charcoal";
+  if (status === "enrolled") return "bg-forest-sage text-warm-cream";
+  if (status === "engaged") return "bg-accent-amber text-warm-cream";
+  if (status === "prospect") return "bg-slate-blue-light text-warm-cream";
+  return "bg-slate-pale text-charcoal";
 }
 
 function FarmDetailContent({
@@ -61,7 +61,7 @@ function FarmDetailContent({
         Farm details
       </div>
 
-      <div className="font-display text-[24px] font-semibold text-moss leading-[1.2] tracking-[-0.015em]">
+      <div className="font-display text-[24px] font-semibold text-slate-blue leading-[1.2] tracking-[-0.015em]">
         {farm.name}
       </div>
       {countyName ? (

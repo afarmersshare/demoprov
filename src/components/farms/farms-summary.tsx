@@ -76,7 +76,7 @@ function Card({
 }) {
   return (
     <div className="rounded-[14px] border border-cream-shadow bg-white px-6 py-6 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(31,36,33,0.06)]">
-      <div className="font-mono text-[40px] font-bold leading-none text-moss tabular-nums">
+      <div className="font-mono text-[40px] font-bold leading-none text-slate-blue tabular-nums">
         {value}
       </div>
       <div className="mt-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-charcoal-soft">

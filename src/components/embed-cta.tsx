@@ -10,7 +10,7 @@ export function EmbedCta() {
           href="/?ref=afs"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 rounded-full bg-moss text-cream px-5 py-2 text-[12px] font-semibold uppercase tracking-[0.08em] hover:bg-moss-light transition-colors"
+          className="inline-flex items-center gap-2 rounded-full bg-slate-blue text-cream px-5 py-2 text-[12px] font-semibold uppercase tracking-[0.08em] hover:bg-slate-blue-light transition-colors"
         >
           Explore the full demo
           <ArrowRight className="w-3.5 h-3.5" />

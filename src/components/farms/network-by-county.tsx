@@ -58,12 +58,12 @@ const KIND_LABEL_PLURAL: Record<Kind, string> = {
 };
 
 const KIND_COLOR_BG: Record<Kind, string> = {
-  farm: "bg-moss",
-  market: "bg-amber",
-  distributor: "bg-charcoal-soft",
-  processor: "bg-terracotta",
-  recovery_node: "bg-moss-light",
-  enabler: "bg-bone",
+  farm: "bg-slate-blue",
+  market: "bg-accent-amber",
+  distributor: "bg-warm-charcoal",
+  processor: "bg-forest-sage",
+  recovery_node: "bg-slate-blue-light",
+  enabler: "bg-mid-gray",
 };
 
 function haversineMiles(
@@ -242,7 +242,7 @@ export function NetworkByCounty({
                 className="w-full text-left group"
               >
                 <div className="flex items-baseline justify-between mb-1.5 gap-4">
-                  <div className="text-sm font-medium text-charcoal group-hover:text-moss transition-colors">
+                  <div className="text-sm font-medium text-charcoal group-hover:text-slate-blue transition-colors">
                     {isOpen ? "▾ " : "▸ "}
                     {row.name}
                   </div>
@@ -297,7 +297,7 @@ export function NetworkByCounty({
                                   ev.stopPropagation();
                                   onSelect(toEntity(k, item));
                                 }}
-                                className="text-sm text-charcoal hover:text-moss hover:underline text-left"
+                                className="text-sm text-charcoal hover:text-slate-blue hover:underline text-left"
                               >
                                 {item.name}
                               </button>

@@ -31,7 +31,7 @@ export function ReportShell({
         <div className="mx-auto max-w-[900px] px-6 py-3 flex items-center justify-between">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-[12px] font-semibold text-charcoal-soft hover:text-moss"
+            className="inline-flex items-center gap-2 text-[12px] font-semibold text-charcoal-soft hover:text-slate-blue"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             Back to demo
@@ -39,7 +39,7 @@ export function ReportShell({
           <button
             type="button"
             onClick={handlePrint}
-            className="inline-flex items-center gap-1.5 rounded-full bg-moss text-cream px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] hover:bg-moss-light transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-full bg-slate-blue text-cream px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] hover:bg-slate-blue-light transition-colors"
           >
             <Printer className="w-3 h-3" />
             Print / Save PDF
@@ -50,7 +50,7 @@ export function ReportShell({
       {/* Report body */}
       <div className="report-page mx-auto max-w-[900px] px-6 py-10 sm:px-10 sm:py-14">
         <header className="mb-10 pb-6 border-b border-cream-shadow">
-          <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-moss mb-3">
+          <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-blue mb-3">
             Provender · A Farmer&apos;s Share Corporation
           </div>
           <h1 className="font-display text-[36px] sm:text-[42px] font-semibold leading-[1.15] text-charcoal tracking-tight">
@@ -111,7 +111,7 @@ export function ReportSection({
 }) {
   return (
     <section className="report-section mb-10">
-      <h2 className="font-display text-[22px] font-semibold text-moss leading-tight mb-1">
+      <h2 className="font-display text-[22px] font-semibold text-slate-blue leading-tight mb-1">
         {title}
       </h2>
       <div className="mt-4">{children}</div>

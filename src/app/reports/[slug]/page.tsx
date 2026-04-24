@@ -54,7 +54,7 @@ export default async function ReportPage({
           This report currently ships as a CSV export only. Open the demo,
           navigate to the <b className="text-charcoal">Reports</b> tab, and
           click{" "}
-          <span className="rounded bg-moss/10 px-1.5 py-0.5 font-mono text-[12px] text-moss">
+          <span className="rounded bg-slate-blue/10 px-1.5 py-0.5 font-mono text-[12px] text-slate-blue">
             Download CSV
           </span>{" "}
           on the {report.name} card to download the current data.
@@ -75,13 +75,13 @@ export default async function ReportPage({
 
       <ReportSection title="Next steps">
         <p className="text-[14px] text-charcoal-soft leading-relaxed">
-          <Link href="/" className="underline text-moss font-semibold">
+          <Link href="/" className="underline text-slate-blue font-semibold">
             Return to the demo
           </Link>{" "}
           and open the Reports tab to download the current CSV, or contact{" "}
           <a
             href="mailto:hello@afarmersshare.com"
-            className="underline text-moss font-semibold"
+            className="underline text-slate-blue font-semibold"
           >
             hello@afarmersshare.com
           </a>{" "}

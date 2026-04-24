@@ -80,10 +80,10 @@ const STAGE_LABEL: Record<PipelineStage, string> = {
 };
 
 const STAGE_COLOR: Record<PipelineStage, string> = {
-  prospect: "bg-terracotta",
-  engaged: "bg-amber",
-  enrolled: "bg-moss",
-  alumni: "bg-charcoal-soft",
+  prospect: "bg-slate-blue-light",
+  engaged: "bg-accent-amber",
+  enrolled: "bg-forest-sage",
+  alumni: "bg-mid-gray",
 };
 
 function fmtDate(iso: string | null | undefined): string {
@@ -391,21 +391,21 @@ export function PipelineDashboard({ farms, complianceByFarm }: Props) {
             <div className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft mb-1">
               Pipeline status
             </div>
-            <div className="font-display text-[22px] font-semibold text-moss leading-tight">
+            <div className="font-display text-[22px] font-semibold text-slate-blue leading-tight">
               Make the aggregation network operational
             </div>
           </div>
           <div className="flex items-center gap-3">
             {overrideCount > 0 ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-amber">
-                <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber animate-pulse" />
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-amber/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-accent-amber">
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-accent-amber animate-pulse" />
                 {overrideCount} sandbox edit{overrideCount === 1 ? "" : "s"}
               </span>
             ) : null}
             <button
               type="button"
               onClick={resetSandbox}
-              className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-charcoal-soft hover:text-terracotta transition-colors"
+              className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-charcoal-soft hover:text-accent-amber transition-colors"
               disabled={overrideCount === 0 && activity.length === 0}
             >
               <RotateCcw className="w-3 h-3" />
@@ -445,7 +445,7 @@ export function PipelineDashboard({ farms, complianceByFarm }: Props) {
             Outreach due this week
           </div>
           <div
-            className={`mt-1 text-[12px] ${metrics.pastDue > 0 ? "text-terracotta" : "text-charcoal-soft/80"}`}
+            className={`mt-1 text-[12px] ${metrics.pastDue > 0 ? "text-accent-amber" : "text-charcoal-soft/80"}`}
           >
             {metrics.pastDue > 0
               ? `${metrics.pastDue} past due — needs attention`
@@ -453,7 +453,7 @@ export function PipelineDashboard({ farms, complianceByFarm }: Props) {
           </div>
         </div>
         <div className="rounded-[14px] border border-cream-shadow bg-white p-5 shadow-sm">
-          <div className="font-display text-[36px] font-semibold text-moss leading-none tabular-nums">
+          <div className="font-display text-[36px] font-semibold text-slate-blue leading-none tabular-nums">
             {metrics.readyToActivate}
           </div>
           <div className="mt-2 text-[11px] font-bold uppercase tracking-[0.12em] text-charcoal-soft">
@@ -549,7 +549,7 @@ export function PipelineDashboard({ farms, complianceByFarm }: Props) {
             type="button"
             disabled={selectedRows.length === 0}
             onClick={() => setMutationDialog("status")}
-            className="inline-flex items-center gap-1.5 rounded-full bg-moss text-cream px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] hover:bg-moss-light transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 rounded-full bg-slate-blue text-cream px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] hover:bg-slate-blue-light transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <ArrowUpRight className="w-3 h-3" />
             Update status
@@ -586,7 +586,7 @@ export function PipelineDashboard({ farms, complianceByFarm }: Props) {
                   <button
                     type="button"
                     onClick={toggleAll}
-                    className="inline-flex items-center text-charcoal-soft hover:text-moss"
+                    className="inline-flex items-center text-charcoal-soft hover:text-slate-blue"
                     aria-label="Select all"
                   >
                     {selected.size > 0 && selected.size === filteredRows.length ? (
@@ -693,32 +693,32 @@ export function PipelineDashboard({ farms, complianceByFarm }: Props) {
                   nextDays == null
                     ? "text-charcoal-soft"
                     : nextDays < 0
-                      ? "text-terracotta font-semibold"
+                      ? "text-accent-amber font-semibold"
                       : nextDays <= 7
-                        ? "text-amber font-semibold"
+                        ? "text-accent-amber font-semibold"
                         : "text-charcoal-soft";
                 const compClass =
                   r.compliance?.status === "buyer_ready"
-                    ? "text-moss"
+                    ? "text-slate-blue"
                     : r.compliance?.status === "close"
-                      ? "text-amber"
+                      ? "text-accent-amber"
                       : r.compliance?.status === "needs_work"
-                        ? "text-terracotta"
+                        ? "text-accent-amber"
                         : "text-charcoal-soft";
                 return (
                   <tr
                     key={r.farm.upid}
-                    className={`border-t border-cream-shadow hover:bg-cream/20 transition-colors ${isSelected ? "bg-moss/5" : ""}`}
+                    className={`border-t border-cream-shadow hover:bg-cream/20 transition-colors ${isSelected ? "bg-slate-blue/5" : ""}`}
                   >
                     <td className="p-3">
                       <button
                         type="button"
                         onClick={() => toggleOne(r.farm.upid)}
-                        className="inline-flex items-center text-charcoal-soft hover:text-moss"
+                        className="inline-flex items-center text-charcoal-soft hover:text-slate-blue"
                         aria-label={`Select ${r.farm.name}`}
                       >
                         {isSelected ? (
-                          <CheckSquare className="w-4 h-4 text-moss" />
+                          <CheckSquare className="w-4 h-4 text-slate-blue" />
                         ) : (
                           <Square className="w-4 h-4" />
                         )}
@@ -728,7 +728,7 @@ export function PipelineDashboard({ farms, complianceByFarm }: Props) {
                       {r.farm.name}
                       {r.hasOverride ? (
                         <span
-                          className="ml-2 inline-block w-1.5 h-1.5 rounded-full bg-amber"
+                          className="ml-2 inline-block w-1.5 h-1.5 rounded-full bg-accent-amber"
                           title="Sandbox edit"
                         />
                       ) : null}
@@ -983,7 +983,7 @@ export function PipelineDashboard({ farms, complianceByFarm }: Props) {
               .map((r) => (
                 <div key={r.farm.upid} className="py-0.5 text-charcoal">
                   <b>{r.farm.name}</b>{" "}
-                  <span className="text-terracotta">
+                  <span className="text-accent-amber">
                     — {r.compliance?.missing.join(", ")}
                   </span>
                 </div>
@@ -991,7 +991,7 @@ export function PipelineDashboard({ farms, complianceByFarm }: Props) {
             {selectedRows.filter(
               (r) => r.compliance && r.compliance.missing.length > 0,
             ).length === 0 ? (
-              <div className="text-moss italic">
+              <div className="text-slate-blue italic">
                 No gaps — all selected farms are buyer-ready.
               </div>
             ) : null}
@@ -1029,7 +1029,7 @@ function KanbanColumn({
   return (
     <div
       ref={setNodeRef}
-      className={`rounded-[14px] border-2 ${isOver ? "border-moss bg-moss/5" : "border-cream-shadow bg-cream/20"} transition-colors`}
+      className={`rounded-[14px] border-2 ${isOver ? "border-slate-blue bg-slate-blue/5" : "border-cream-shadow bg-cream/20"} transition-colors`}
     >
       <div className="px-4 py-3 border-b border-cream-shadow flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -1104,13 +1104,13 @@ function KanbanCardVisual({
     nextDays == null
       ? "text-charcoal-soft"
       : nextDays < 0
-        ? "text-terracotta"
+        ? "text-accent-amber"
         : nextDays <= 7
-          ? "text-amber"
+          ? "text-accent-amber"
           : "text-charcoal-soft";
   return (
     <div
-      className={`rounded-[8px] border bg-white p-3 hover:border-moss/40 hover:shadow-sm transition-all ${isSelected ? "border-moss ring-1 ring-moss/30" : "border-cream-shadow"} ${isOverlay ? "shadow-lg rotate-1" : ""}`}
+      className={`rounded-[8px] border bg-white p-3 hover:border-slate-blue/40 hover:shadow-sm transition-all ${isSelected ? "border-slate-blue ring-1 ring-slate-blue/30" : "border-cream-shadow"} ${isOverlay ? "shadow-lg rotate-1" : ""}`}
     >
       <div className="flex items-start gap-2 mb-1.5">
         <button
@@ -1120,12 +1120,12 @@ function KanbanCardVisual({
             onToggleSelect?.();
           }}
           onPointerDown={(e) => e.stopPropagation()}
-          className="mt-0.5 flex-shrink-0 text-charcoal-soft hover:text-moss"
+          className="mt-0.5 flex-shrink-0 text-charcoal-soft hover:text-slate-blue"
           aria-label={`Select ${row.farm.name}`}
           tabIndex={isOverlay ? -1 : 0}
         >
           {isSelected ? (
-            <CheckSquare className="w-3.5 h-3.5 text-moss" />
+            <CheckSquare className="w-3.5 h-3.5 text-slate-blue" />
           ) : (
             <Square className="w-3.5 h-3.5" />
           )}
@@ -1135,7 +1135,7 @@ function KanbanCardVisual({
             {row.farm.name}
             {row.hasOverride ? (
               <span
-                className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-amber align-middle"
+                className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-accent-amber align-middle"
                 title="Sandbox edit"
               />
             ) : null}
@@ -1149,11 +1149,11 @@ function KanbanCardVisual({
         <span
           className={
             row.compliance?.status === "buyer_ready"
-              ? "text-moss font-semibold"
+              ? "text-slate-blue font-semibold"
               : row.compliance?.status === "close"
-                ? "text-amber"
+                ? "text-accent-amber"
                 : row.compliance?.status === "needs_work"
-                  ? "text-terracotta"
+                  ? "text-accent-amber"
                   : "text-charcoal-soft"
           }
         >
@@ -1192,7 +1192,7 @@ function SortHeader({
       <button
         type="button"
         onClick={() => onSort(column)}
-        className={`inline-flex items-center gap-1 ${active ? "text-moss" : "text-charcoal-soft hover:text-moss"}`}
+        className={`inline-flex items-center gap-1 ${active ? "text-slate-blue" : "text-charcoal-soft hover:text-slate-blue"}`}
       >
         {label}
         {active ? (
@@ -1258,7 +1258,7 @@ function DialogActions({
       <button
         type="button"
         onClick={onConfirm}
-        className="rounded-full bg-moss text-cream px-4 py-1.5 text-[12px] font-semibold uppercase tracking-[0.08em] hover:bg-moss-light transition-colors"
+        className="rounded-full bg-slate-blue text-cream px-4 py-1.5 text-[12px] font-semibold uppercase tracking-[0.08em] hover:bg-slate-blue-light transition-colors"
       >
         {confirmLabel}
       </button>

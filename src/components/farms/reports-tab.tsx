@@ -121,7 +121,7 @@ export function ReportsTab({
             <div className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft mb-1">
               Reports
             </div>
-            <div className="font-display text-[22px] font-semibold text-moss leading-tight">
+            <div className="font-display text-[22px] font-semibold text-slate-blue leading-tight">
               Generate &amp; export
             </div>
           </div>
@@ -146,7 +146,7 @@ export function ReportsTab({
             className="rounded-[14px] border border-cream-shadow bg-white p-6 shadow-sm flex flex-col"
           >
             <div className="flex items-start gap-3 mb-3">
-              <div className="flex-shrink-0 w-9 h-9 rounded-[8px] bg-moss/10 flex items-center justify-center text-moss">
+              <div className="flex-shrink-0 w-9 h-9 rounded-[8px] bg-slate-blue/10 flex items-center justify-center text-slate-blue">
                 <FileText className="w-4 h-4" />
               </div>
               <div className="flex-1 min-w-0">
@@ -169,7 +169,7 @@ export function ReportsTab({
               <button
                 type="button"
                 onClick={() => handleDownload(report.slug)}
-                className="inline-flex items-center gap-1.5 rounded-full bg-moss text-cream px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] hover:bg-moss-light transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-full bg-slate-blue text-cream px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] hover:bg-slate-blue-light transition-colors"
               >
                 <Download className="w-3 h-3" />
                 Download CSV
