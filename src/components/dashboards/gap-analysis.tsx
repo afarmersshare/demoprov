@@ -2,27 +2,7 @@
 
 import { useMemo } from "react";
 import type { Farm, Region } from "../farms/network-explorer";
-
-// Illustrative demand indicators per county in the Louisville–Kentuckiana
-// demo region. Real pipeline pulls from USDA food access data, institutional
-// procurement commitments, and county food policy council surveys. For the
-// demo, these values are hardcoded to show the shape of the tool; any county
-// missing from this map falls back to a 1.1× multiplier on supply (so it
-// displays a small "close to balanced" surplus/gap).
-const COUNTY_DEMAND_INDICATOR: Record<string, number> = {
-  Jefferson: 14,
-  Oldham: 5,
-  Bullitt: 11,
-  Shelby: 5,
-  Henry: 7,
-  Spencer: 8,
-  Anderson: 6,
-  Nelson: 12,
-  Trimble: 4,
-  Carroll: 3,
-  "Floyd (IN)": 9,
-  "Clark (IN)": 11,
-};
+import { COUNTY_DEMAND_INDICATOR } from "@/lib/reports/csv-generators";
 
 type CountyGapRow = {
   county: string;

@@ -149,4 +149,31 @@
   html {
     @apply font-sans;
   }
+
+  /* Print styles — used by /reports/* pages. User triggers via browser's
+     Ctrl+P or Cmd+P and gets a clean PDF of just the report body. */
+  @media print {
+    .print\:hidden,
+    .no-print {
+      display: none !important;
+    }
+    body {
+      background: white !important;
+      color: #1f2421 !important;
+    }
+    .report-page {
+      padding: 0 !important;
+      max-width: none !important;
+      box-shadow: none !important;
+    }
+    .report-page section,
+    .report-page .report-section {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    a {
+      color: inherit !important;
+      text-decoration: none !important;
+    }
+  }
 }
