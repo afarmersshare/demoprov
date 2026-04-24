@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Lock, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import type { NetworkEntity } from "./network-explorer";
+import type { NetworkEntity, ComplianceInfo } from "./network-explorer";
 import { LiteracyHook } from "@/components/ui/literacy-hook";
 
 export function prettify(raw: string | null | undefined): string {
@@ -644,16 +644,43 @@ function LockedFieldModal({
   );
 }
 
+function ComplianceRow({ info }: { info: ComplianceInfo }) {
+  const valueColor =
+    info.status === "buyer_ready"
+      ? "text-moss"
+      : info.status === "close"
+        ? "text-amber"
+        : "text-terracotta";
+  const valueText =
+    info.status === "buyer_ready"
+      ? "Buyer-ready"
+      : info.missing.length === 1
+        ? `1 gap · ${info.missing[0].toLowerCase()}`
+        : `${info.missing.length} gaps · ${info.missing
+            .map((m) => m.toLowerCase())
+            .join(", ")}`;
+  return (
+    <div className="flex justify-between gap-4 border-t border-cream-shadow py-3 first:border-t-0 first:pt-0 text-sm">
+      <dt className="text-charcoal-soft">Compliance</dt>
+      <dd className={`m-0 text-right font-semibold ${valueColor}`}>
+        {valueText}
+      </dd>
+    </div>
+  );
+}
+
 function Body({
   entity,
   entityCount,
   hintToClick,
   embedMode = false,
+  complianceByFarm,
 }: {
   entity: NetworkEntity | null;
   entityCount: number;
   hintToClick: string;
   embedMode?: boolean;
+  complianceByFarm?: Map<string, ComplianceInfo>;
 }) {
   const [lockedModalOpen, setLockedModalOpen] = useState(false);
 
@@ -714,6 +741,9 @@ function Body({
       ) : null}
 
       <dl className="mt-6 space-y-0">
+        {entity.kind === "farm" && complianceByFarm?.get(entity.data.upid) ? (
+          <ComplianceRow info={complianceByFarm.get(entity.data.upid)!} />
+        ) : null}
         {rows.map(([label, value]) => {
           const locked = isRowPremium(entity, label, embedMode);
           return (
@@ -763,11 +793,13 @@ export function EntityDetailPanel({
   entityCount,
   hintToClick = "Click any marker on the map to see details.",
   embedMode = false,
+  complianceByFarm,
 }: {
   entity: NetworkEntity | null;
   entityCount: number;
   hintToClick?: string;
   embedMode?: boolean;
+  complianceByFarm?: Map<string, ComplianceInfo>;
 }) {
   return (
     <div className="rounded-[14px] border border-cream-shadow bg-white p-6 h-[600px] overflow-y-auto flex flex-col">
@@ -776,6 +808,7 @@ export function EntityDetailPanel({
         entityCount={entityCount}
         hintToClick={hintToClick}
         embedMode={embedMode}
+        complianceByFarm={complianceByFarm}
       />
     </div>
   );
@@ -786,11 +819,13 @@ export function EntityDetailOverlay({
   entityCount,
   onClose,
   embedMode = false,
+  complianceByFarm,
 }: {
   entity: NetworkEntity | null;
   entityCount: number;
   onClose: () => void;
   embedMode?: boolean;
+  complianceByFarm?: Map<string, ComplianceInfo>;
 }) {
   if (!entity) return null;
   return (
@@ -813,6 +848,7 @@ export function EntityDetailOverlay({
           entityCount={entityCount}
           hintToClick=""
           embedMode={embedMode}
+          complianceByFarm={complianceByFarm}
         />
       </div>
     </div>

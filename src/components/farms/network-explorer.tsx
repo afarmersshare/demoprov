@@ -166,6 +166,61 @@ const IMPACT_DOC_TYPES = [
   "usda_grant_award",
 ];
 
+// Compliance readiness checks whether a farm has the core paperwork
+// institutional buyers ask for. Three categories, each satisfied by any one
+// current doc from the list below. A farm with all three categories covered
+// is "buyer-ready"; missing 1–2 is "close"; missing all three is "needs work".
+const COMPLIANCE_CATEGORIES: Array<{ label: string; types: string[] }> = [
+  {
+    label: "Food safety",
+    types: [
+      "food_safety_plan",
+      "gap_cert",
+      "gfsi_sqf",
+      "gfsi_brc",
+      "gfsi_primus",
+      "haccp_plan",
+    ],
+  },
+  { label: "Water test", types: ["water_test"] },
+  {
+    label: "Liability insurance",
+    types: ["liability_insurance", "product_liability_insurance"],
+  },
+];
+
+const COMPLIANCE_DOC_TYPES = Array.from(
+  new Set(COMPLIANCE_CATEGORIES.flatMap((c) => c.types)),
+);
+
+const ALL_RELEVANT_DOC_TYPES = Array.from(
+  new Set([...IMPACT_DOC_TYPES, ...COMPLIANCE_DOC_TYPES]),
+);
+
+export type ComplianceStatus = "buyer_ready" | "close" | "needs_work";
+
+export type ComplianceInfo = {
+  status: ComplianceStatus;
+  missing: string[]; // category labels the farm is missing
+};
+
+function computeComplianceInfo(
+  farmUpid: string,
+  docs: ImpactDoc[],
+): ComplianceInfo {
+  const farmDocTypes = new Set(
+    docs.filter((d) => d.node_upid === farmUpid).map((d) => d.document_type),
+  );
+  const missing = COMPLIANCE_CATEGORIES.filter(
+    (c) => !c.types.some((t) => farmDocTypes.has(t)),
+  ).map((c) => c.label);
+  let status: ComplianceStatus;
+  if (missing.length === 0) status = "buyer_ready";
+  else if (missing.length <= 2) status = "close";
+  else status = "needs_work";
+  return { status, missing };
+}
+
 export type NetworkEntity =
   | { kind: "farm"; data: Farm }
   | { kind: "market"; data: Market }
@@ -175,8 +230,10 @@ export type NetworkEntity =
   | { kind: "enabler"; data: Enabler };
 
 type StatusFilter = "all" | "enrolled" | "engaged" | "prospect";
+type ComplianceFilter = "all" | "buyer_ready" | "close" | "needs_work";
 const ALL_TYPES = "__all__";
 const ALL_COUNTIES = "__all_counties__";
+const ALL_COMPLIANCE = "all";
 
 function prettify(raw: string): string {
   return raw.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
@@ -205,6 +262,8 @@ export function NetworkExplorer({
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [typeFilter, setTypeFilter] = useState<string>(ALL_TYPES);
   const [countyFilter, setCountyFilter] = useState<string>(ALL_COUNTIES);
+  const [complianceFilter, setComplianceFilter] =
+    useState<ComplianceFilter>(ALL_COMPLIANCE);
   const [activeTab, setActiveTab] = useState<string>(
     embedMode ? "map" : persona === "explore" ? "map" : "dashboard",
   );
@@ -268,7 +327,7 @@ export function NetworkExplorer({
       supabase
         .from("v_document_status")
         .select("node_upid, document_type, expires_date")
-        .in("document_type", IMPACT_DOC_TYPES)
+        .in("document_type", ALL_RELEVANT_DOC_TYPES)
         .eq("is_current", true),
     ]).then((results) => {
       setLoading(false);
@@ -322,6 +381,14 @@ export function NetworkExplorer({
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [farms]);
 
+  const complianceByFarm = useMemo(() => {
+    const map = new Map<string, ComplianceInfo>();
+    for (const f of farms) {
+      map.set(f.upid, computeComplianceInfo(f.upid, impactDocs));
+    }
+    return map;
+  }, [farms, impactDocs]);
+
   const filteredFarms = useMemo(() => {
     return farms.filter((f) => {
       if (statusFilter !== "all" && f.afs_member_status !== statusFilter) {
@@ -335,14 +402,34 @@ export function NetworkExplorer({
           ?.county_name;
         if (county !== countyFilter) return false;
       }
+      if (complianceFilter !== ALL_COMPLIANCE) {
+        const info = complianceByFarm.get(f.upid);
+        if (!info || info.status !== complianceFilter) return false;
+      }
       return true;
     });
-  }, [farms, statusFilter, typeFilter, countyFilter]);
+  }, [
+    farms,
+    statusFilter,
+    typeFilter,
+    countyFilter,
+    complianceFilter,
+    complianceByFarm,
+  ]);
 
   const filterActive =
     statusFilter !== "all" ||
     typeFilter !== ALL_TYPES ||
-    countyFilter !== ALL_COUNTIES;
+    countyFilter !== ALL_COUNTIES ||
+    complianceFilter !== ALL_COMPLIANCE;
+
+  const buyerReadyCount = useMemo(() => {
+    let n = 0;
+    for (const info of complianceByFarm.values()) {
+      if (info.status === "buyer_ready") n += 1;
+    }
+    return n;
+  }, [complianceByFarm]);
 
   // Non-farm entities aren't affected by the farm-type or county filters,
   // only by the global status filter. Recovery nodes and enablers don't
@@ -534,6 +621,26 @@ export function NetworkExplorer({
           </div>
         ) : null}
 
+        <div className="flex items-center gap-3">
+          <label className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft">
+            Compliance
+          </label>
+          <Select
+            value={complianceFilter}
+            onValueChange={(v) => setComplianceFilter(v as ComplianceFilter)}
+          >
+            <SelectTrigger className="min-w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL_COMPLIANCE}>All farms</SelectItem>
+              <SelectItem value="buyer_ready">Buyer-ready</SelectItem>
+              <SelectItem value="close">1–2 docs short</SelectItem>
+              <SelectItem value="needs_work">Needs work</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         {filterActive ? (
           <button
             type="button"
@@ -541,6 +648,7 @@ export function NetworkExplorer({
               setStatusFilter("all");
               setTypeFilter(ALL_TYPES);
               setCountyFilter(ALL_COUNTIES);
+              setComplianceFilter(ALL_COMPLIANCE);
             }}
             className="ml-auto text-xs text-charcoal-soft underline underline-offset-2 hover:text-moss"
           >
@@ -548,6 +656,21 @@ export function NetworkExplorer({
           </button>
         ) : null}
       </div>
+
+      {complianceFilter !== ALL_COMPLIANCE ? (
+        <div className="mb-4 -mt-1 inline-flex items-center gap-2 rounded-full bg-moss/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-moss">
+          <span className="inline-block h-1.5 w-1.5 rounded-full bg-moss" />
+          Compliance filter: {filteredFarms.length}{" "}
+          {complianceFilter === "buyer_ready"
+            ? "buyer-ready"
+            : complianceFilter === "close"
+              ? "close to ready"
+              : "need work"}
+          {complianceFilter === "buyer_ready" && buyerReadyCount !== filteredFarms.length
+            ? ` (of ${buyerReadyCount} in region)`
+            : null}
+        </div>
+      ) : null}
 
       <Tabs
         value={activeTab}
@@ -586,6 +709,7 @@ export function NetworkExplorer({
                 entityCount={mapPinCount}
                 hintToClick="Click any marker on the map to see details."
                 embedMode={embedMode}
+                complianceByFarm={complianceByFarm}
               />
             </div>
           </div>
@@ -610,6 +734,7 @@ export function NetworkExplorer({
                 entityCount={mapPinCount}
                 hintToClick="Click any node in the graph to see details."
                 embedMode={embedMode}
+                complianceByFarm={complianceByFarm}
               />
             </div>
           </div>
@@ -672,6 +797,7 @@ export function NetworkExplorer({
                 entityCount={mapPinCount}
                 hintToClick="Expand a county and click any entity name to see details."
                 embedMode={embedMode}
+                complianceByFarm={complianceByFarm}
               />
             </div>
           </div>
@@ -737,6 +863,7 @@ export function NetworkExplorer({
                 entityCount={mapPinCount}
                 hintToClick="Click any pin on the map to see that entity's details."
                 embedMode={embedMode}
+                complianceByFarm={complianceByFarm}
               />
             </div>
           </div>
@@ -748,6 +875,7 @@ export function NetworkExplorer({
         entityCount={mapPinCount}
         onClose={() => setSelectedEntity(null)}
         embedMode={embedMode}
+        complianceByFarm={complianceByFarm}
       />
 
       {embedMode ? <EmbedCta /> : null}
