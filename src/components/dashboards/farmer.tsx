@@ -25,6 +25,7 @@ import {
   type ChoroplethMetric,
 } from "./policymaker-map";
 import { ImpactCards } from "./impact-cards";
+import { MyFarmCard } from "./my-farm-card";
 
 type Props = {
   farms: Farm[];
@@ -101,6 +102,29 @@ export function FarmerDashboard({
 }: Props) {
   const [selectedCounty, setSelectedCounty] = useState<string>("");
   const [metric, setMetric] = useState<ChoroplethMetric>("farm_count");
+  const [myFarmUpid, setMyFarmUpid] = useState<string>("");
+
+  // Enrolled farms are the pool the demo farmer persona can "be". Once real
+  // auth + per-user persona assignment ships (Phase 4), this becomes a single
+  // farm tied to the logged-in user; for now it's a picker.
+  const enrolledFarms = useMemo(
+    () =>
+      farms
+        .filter((f) => f.afs_member_status === "enrolled")
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    [farms],
+  );
+
+  useEffect(() => {
+    if (!myFarmUpid && enrolledFarms.length > 0) {
+      setMyFarmUpid(enrolledFarms[0].upid);
+    }
+  }, [enrolledFarms, myFarmUpid]);
+
+  const myFarm = useMemo(
+    () => enrolledFarms.find((f) => f.upid === myFarmUpid) ?? null,
+    [enrolledFarms, myFarmUpid],
+  );
 
   const counties = useMemo(
     () =>
@@ -275,6 +299,36 @@ export function FarmerDashboard({
 
   return (
     <div className="space-y-6">
+      {myFarm ? (
+        <>
+          <div className="flex items-center gap-3 flex-wrap">
+            <label className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft">
+              Viewing as
+            </label>
+            <Select value={myFarmUpid} onValueChange={setMyFarmUpid}>
+              <SelectTrigger className="min-w-[260px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {enrolledFarms.map((f) => (
+                  <SelectItem key={f.upid} value={f.upid}>
+                    {f.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="text-[11px] text-charcoal-soft/70 italic">
+              Demo only — real product uses your logged-in farm.
+            </span>
+          </div>
+          <MyFarmCard
+            farm={myFarm}
+            farmCrops={farmCrops}
+            impactDocs={impactDocs}
+          />
+        </>
+      ) : null}
+
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3 flex-wrap">
           <label className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft">

@@ -170,7 +170,7 @@ const IMPACT_DOC_TYPES = [
 // institutional buyers ask for. Three categories, each satisfied by any one
 // current doc from the list below. A farm with all three categories covered
 // is "buyer-ready"; missing 1–2 is "close"; missing all three is "needs work".
-const COMPLIANCE_CATEGORIES: Array<{ label: string; types: string[] }> = [
+export const COMPLIANCE_CATEGORIES: Array<{ label: string; types: string[] }> = [
   {
     label: "Food safety",
     types: [
@@ -204,7 +204,7 @@ export type ComplianceInfo = {
   missing: string[]; // category labels the farm is missing
 };
 
-function computeComplianceInfo(
+export function computeComplianceInfo(
   farmUpid: string,
   docs: ImpactDoc[],
 ): ComplianceInfo {
