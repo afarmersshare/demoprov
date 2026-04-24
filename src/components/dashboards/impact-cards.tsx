@@ -643,7 +643,95 @@ export function ImpactCards({
           />
         </div>
       </div>
+
+      <ImpactTrends />
     </section>
+  );
+}
+
+// Quarter-over-quarter trend strip. Illustrative values synthesized for the
+// demo — investors want to see whether each impact metric is moving the right
+// direction over time, not just a snapshot. Once the real data pipeline has
+// quarterly snapshots, swap these constants for a props-driven version.
+const TREND_DATA: Array<{
+  label: string;
+  quarters: [number, number, number, number];
+  delta: string;
+  accent: string;
+}> = [
+  {
+    label: "Regenerative footprint",
+    quarters: [48, 58, 68, 78],
+    delta: "+24%",
+    accent: "bg-moss",
+  },
+  {
+    label: "Measurement & verification",
+    quarters: [32, 42, 50, 62],
+    delta: "+18%",
+    accent: "bg-amber",
+  },
+  {
+    label: "Food recovery & circular flow",
+    quarters: [40, 50, 58, 68],
+    delta: "+14%",
+    accent: "bg-terracotta",
+  },
+  {
+    label: "Economic sovereignty",
+    quarters: [28, 34, 44, 56],
+    delta: "+22%",
+    accent: "bg-moss-light",
+  },
+];
+
+function ImpactTrends() {
+  return (
+    <div className="mt-8 rounded-[10px] border border-cream-shadow bg-cream/30 p-5">
+      <div className="mb-4 flex items-baseline justify-between flex-wrap gap-2">
+        <div>
+          <div className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft mb-0.5">
+            Quarter-over-quarter trend
+          </div>
+          <div className="text-[12px] text-charcoal-soft leading-relaxed">
+            Each impact metric, last four quarters. Snapshot data alone
+            doesn&rsquo;t tell the growth story.
+          </div>
+        </div>
+        <span className="inline-block text-[10px] text-charcoal-soft/70 italic border border-cream-shadow rounded-full px-2.5 py-1">
+          Illustrative — synthesized trend
+        </span>
+      </div>
+
+      <div className="space-y-3">
+        {TREND_DATA.map((row) => (
+          <div
+            key={row.label}
+            className="grid grid-cols-[1fr_auto_auto] items-center gap-4"
+          >
+            <span className="text-[12px] text-charcoal font-medium">
+              {row.label}
+            </span>
+            <div className="flex items-end gap-1 h-8" title={`Q1→Q4 trend for ${row.label}`}>
+              {row.quarters.map((v, i) => (
+                <div
+                  key={i}
+                  className={`${row.accent} rounded-sm w-3`}
+                  style={{ height: `${v}%` }}
+                  aria-label={`Quarter ${i + 1}`}
+                />
+              ))}
+            </div>
+            <span className="text-[12px] font-semibold tabular-nums text-moss min-w-[52px] text-right">
+              {row.delta}
+            </span>
+          </div>
+        ))}
+      </div>
+      <div className="mt-3 text-[10px] text-charcoal-soft/60 italic">
+        Each row shows quarters 1 through 4, left to right.
+      </div>
+    </div>
   );
 }
 
