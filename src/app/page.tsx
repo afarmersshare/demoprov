@@ -63,9 +63,9 @@ function PageBody() {
   }
 
   return (
-    <main className="min-h-screen bg-cream text-charcoal">
+    <main className="min-h-screen bg-chrome text-charcoal">
       {fromAfs ? <EntryBanner /> : null}
-      <nav className="border-b border-cream-shadow bg-cream/85 backdrop-blur-md sticky top-0 z-20">
+      <nav className="border-b border-cream-shadow bg-chrome/85 backdrop-blur-md sticky top-0 z-20">
         <div className="mx-auto max-w-7xl flex items-center justify-between px-6 sm:px-10 py-3.5">
           <Link
             href="/"
