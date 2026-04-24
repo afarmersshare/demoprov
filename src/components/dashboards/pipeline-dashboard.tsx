@@ -19,6 +19,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  TouchSensor,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from "@dnd-kit/core";
 import type {
   Farm,
   ComplianceInfo,
@@ -105,7 +117,7 @@ export function PipelineDashboard({ farms, complianceByFarm }: Props) {
   const [sort, setSort] = useState<SortKey>("next");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [viewMode, setViewMode] = useState<"list" | "kanban">("list");
-  const [dragOverStage, setDragOverStage] = useState<PipelineStage | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [mutationDialog, setMutationDialog] = useState<
     null | "status" | "outreach" | "flag"
   >(null);
@@ -311,6 +323,34 @@ export function PipelineDashboard({ farms, complianceByFarm }: Props) {
     });
     setActivity(updated);
   };
+
+  // Drag-and-drop: pointer for desktop (8px activation distance so clicks
+  // on interior buttons still register), touch for mobile (250ms long-press
+  // so scrolling doesn't accidentally drag).
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 250, tolerance: 5 },
+    }),
+  );
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(String(event.active.id));
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    setActiveId(null);
+    const { active, over } = event;
+    if (!over) return;
+    const toStage = String(over.id) as PipelineStage;
+    moveFarmToStage(String(active.id), toStage);
+  };
+
+  const handleDragCancel = () => setActiveId(null);
+
+  const activeRow = activeId
+    ? rows.find((r) => r.farm.upid === activeId) ?? null
+    : null;
 
   const applyFlagCompliance = () => {
     const withGaps = selectedRows.filter(
@@ -751,139 +791,50 @@ export function PipelineDashboard({ farms, complianceByFarm }: Props) {
 
       {/* Kanban board */}
       {viewMode === "kanban" ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
-          {(["prospect", "engaged", "enrolled", "alumni"] as PipelineStage[]).map(
-            (stage) => {
-              const stageRows = rows.filter((r) => r.stage === stage);
-              const isTarget = dragOverStage === stage;
-              return (
-                <div
-                  key={stage}
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    if (dragOverStage !== stage) setDragOverStage(stage);
-                  }}
-                  onDragLeave={() => {
-                    if (dragOverStage === stage) setDragOverStage(null);
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    const upid = e.dataTransfer.getData("text/plain");
-                    if (upid) moveFarmToStage(upid, stage);
-                    setDragOverStage(null);
-                  }}
-                  className={`rounded-[14px] border-2 ${isTarget ? "border-moss bg-moss/5" : "border-cream-shadow bg-cream/20"} transition-colors`}
-                >
-                  <div
-                    className={`px-4 py-3 border-b border-cream-shadow flex items-center justify-between`}
+        <DndContext
+          sensors={sensors}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          onDragCancel={handleDragCancel}
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+            {(["prospect", "engaged", "enrolled", "alumni"] as PipelineStage[]).map(
+              (stage) => {
+                const stageRows = rows.filter((r) => r.stage === stage);
+                return (
+                  <KanbanColumn
+                    key={stage}
+                    stage={stage}
+                    count={stageRows.length}
                   >
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`inline-block w-2.5 h-2.5 rounded-sm ${STAGE_COLOR[stage]}`}
+                    {stageRows.map((r) => (
+                      <KanbanCard
+                        key={r.farm.upid}
+                        row={r}
+                        isSelected={selected.has(r.farm.upid)}
+                        onToggleSelect={() => toggleOne(r.farm.upid)}
                       />
-                      <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-charcoal">
-                        {STAGE_LABEL[stage]}
-                      </span>
-                    </div>
-                    <span className="text-[11px] font-mono tabular-nums text-charcoal-soft">
-                      {stageRows.length}
-                    </span>
-                  </div>
-                  <div className="p-2 space-y-2 min-h-[200px] max-h-[600px] overflow-y-auto">
-                    {stageRows.map((r) => {
-                      const isSelected = selected.has(r.farm.upid);
-                      const now = new Date().toISOString();
-                      const nextDays = r.nextContactDueAt
-                        ? daysBetween(now, r.nextContactDueAt)
-                        : null;
-                      const nextClass =
-                        nextDays == null
-                          ? "text-charcoal-soft"
-                          : nextDays < 0
-                            ? "text-terracotta"
-                            : nextDays <= 7
-                              ? "text-amber"
-                              : "text-charcoal-soft";
-                      return (
-                        <div
-                          key={r.farm.upid}
-                          draggable
-                          onDragStart={(e) => {
-                            e.dataTransfer.setData("text/plain", r.farm.upid);
-                            e.dataTransfer.effectAllowed = "move";
-                          }}
-                          className={`rounded-[8px] border bg-white p-3 cursor-grab active:cursor-grabbing hover:border-moss/40 hover:shadow-sm transition-all ${isSelected ? "border-moss ring-1 ring-moss/30" : "border-cream-shadow"}`}
-                        >
-                          <div className="flex items-start gap-2 mb-1.5">
-                            <button
-                              type="button"
-                              onClick={() => toggleOne(r.farm.upid)}
-                              className="mt-0.5 flex-shrink-0 text-charcoal-soft hover:text-moss"
-                              aria-label={`Select ${r.farm.name}`}
-                            >
-                              {isSelected ? (
-                                <CheckSquare className="w-3.5 h-3.5 text-moss" />
-                              ) : (
-                                <Square className="w-3.5 h-3.5" />
-                              )}
-                            </button>
-                            <div className="flex-1 min-w-0">
-                              <div className="text-[13px] font-semibold text-charcoal leading-tight truncate">
-                                {r.farm.name}
-                                {r.hasOverride ? (
-                                  <span
-                                    className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-amber align-middle"
-                                    title="Sandbox edit"
-                                  />
-                                ) : null}
-                              </div>
-                              <div className="text-[11px] text-charcoal-soft/80 truncate">
-                                {countyOf(r.farm)}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between text-[11px]">
-                            <span
-                              className={
-                                r.compliance?.status === "buyer_ready"
-                                  ? "text-moss font-semibold"
-                                  : r.compliance?.status === "close"
-                                    ? "text-amber"
-                                    : r.compliance?.status === "needs_work"
-                                      ? "text-terracotta"
-                                      : "text-charcoal-soft"
-                              }
-                            >
-                              {r.compliance?.status === "buyer_ready"
-                                ? "Buyer-ready"
-                                : r.compliance?.status === "close"
-                                  ? `${r.compliance.missing.length} gap${r.compliance.missing.length === 1 ? "" : "s"}`
-                                  : r.compliance?.status === "needs_work"
-                                    ? "Needs work"
-                                    : "—"}
-                            </span>
-                            <span
-                              className={`tabular-nums font-medium ${nextClass}`}
-                            >
-                              {r.nextContactDueAt
-                                ? fmtRelative(r.nextContactDueAt)
-                                : "—"}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
+                    ))}
                     {stageRows.length === 0 ? (
                       <div className="text-center text-[12px] text-charcoal-soft/60 italic py-6">
                         Drag a card here
                       </div>
                     ) : null}
-                  </div>
-                </div>
-              );
-            },
-          )}
-        </div>
+                  </KanbanColumn>
+                );
+              },
+            )}
+          </div>
+          <DragOverlay>
+            {activeRow ? (
+              <KanbanCardVisual
+                row={activeRow}
+                isSelected={selected.has(activeRow.farm.upid)}
+                isOverlay
+              />
+            ) : null}
+          </DragOverlay>
+        </DndContext>
       ) : null}
 
       {viewMode === "kanban" ? (
@@ -1052,6 +1003,172 @@ export function PipelineDashboard({ farms, complianceByFarm }: Props) {
           />
         </Dialog>
       ) : null}
+    </div>
+  );
+}
+
+type PipelineRow = {
+  farm: Farm;
+  stage: PipelineStage;
+  lastContactAt: string;
+  nextContactDueAt: string | null;
+  compliance: ComplianceInfo | null;
+  hasOverride: boolean;
+};
+
+function KanbanColumn({
+  stage,
+  count,
+  children,
+}: {
+  stage: PipelineStage;
+  count: number;
+  children: React.ReactNode;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: stage });
+  return (
+    <div
+      ref={setNodeRef}
+      className={`rounded-[14px] border-2 ${isOver ? "border-moss bg-moss/5" : "border-cream-shadow bg-cream/20"} transition-colors`}
+    >
+      <div className="px-4 py-3 border-b border-cream-shadow flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span
+            className={`inline-block w-2.5 h-2.5 rounded-sm ${STAGE_COLOR[stage]}`}
+          />
+          <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-charcoal">
+            {STAGE_LABEL[stage]}
+          </span>
+        </div>
+        <span className="text-[11px] font-mono tabular-nums text-charcoal-soft">
+          {count}
+        </span>
+      </div>
+      <div className="p-2 space-y-2 min-h-[200px] max-h-[600px] overflow-y-auto">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function KanbanCard({
+  row,
+  isSelected,
+  onToggleSelect,
+}: {
+  row: PipelineRow;
+  isSelected: boolean;
+  onToggleSelect: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } =
+    useDraggable({ id: row.farm.upid });
+  const style = transform
+    ? {
+        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+        touchAction: "none" as const,
+      }
+    : { touchAction: "none" as const };
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className={`cursor-grab active:cursor-grabbing ${isDragging ? "opacity-40" : ""}`}
+    >
+      <KanbanCardVisual
+        row={row}
+        isSelected={isSelected}
+        onToggleSelect={onToggleSelect}
+      />
+    </div>
+  );
+}
+
+function KanbanCardVisual({
+  row,
+  isSelected,
+  onToggleSelect,
+  isOverlay = false,
+}: {
+  row: PipelineRow;
+  isSelected: boolean;
+  onToggleSelect?: () => void;
+  isOverlay?: boolean;
+}) {
+  const now = new Date().toISOString();
+  const nextDays = row.nextContactDueAt
+    ? daysBetween(now, row.nextContactDueAt)
+    : null;
+  const nextClass =
+    nextDays == null
+      ? "text-charcoal-soft"
+      : nextDays < 0
+        ? "text-terracotta"
+        : nextDays <= 7
+          ? "text-amber"
+          : "text-charcoal-soft";
+  return (
+    <div
+      className={`rounded-[8px] border bg-white p-3 hover:border-moss/40 hover:shadow-sm transition-all ${isSelected ? "border-moss ring-1 ring-moss/30" : "border-cream-shadow"} ${isOverlay ? "shadow-lg rotate-1" : ""}`}
+    >
+      <div className="flex items-start gap-2 mb-1.5">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleSelect?.();
+          }}
+          onPointerDown={(e) => e.stopPropagation()}
+          className="mt-0.5 flex-shrink-0 text-charcoal-soft hover:text-moss"
+          aria-label={`Select ${row.farm.name}`}
+          tabIndex={isOverlay ? -1 : 0}
+        >
+          {isSelected ? (
+            <CheckSquare className="w-3.5 h-3.5 text-moss" />
+          ) : (
+            <Square className="w-3.5 h-3.5" />
+          )}
+        </button>
+        <div className="flex-1 min-w-0">
+          <div className="text-[13px] font-semibold text-charcoal leading-tight truncate">
+            {row.farm.name}
+            {row.hasOverride ? (
+              <span
+                className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-amber align-middle"
+                title="Sandbox edit"
+              />
+            ) : null}
+          </div>
+          <div className="text-[11px] text-charcoal-soft/80 truncate">
+            {countyOf(row.farm)}
+          </div>
+        </div>
+      </div>
+      <div className="flex items-center justify-between text-[11px]">
+        <span
+          className={
+            row.compliance?.status === "buyer_ready"
+              ? "text-moss font-semibold"
+              : row.compliance?.status === "close"
+                ? "text-amber"
+                : row.compliance?.status === "needs_work"
+                  ? "text-terracotta"
+                  : "text-charcoal-soft"
+          }
+        >
+          {row.compliance?.status === "buyer_ready"
+            ? "Buyer-ready"
+            : row.compliance?.status === "close"
+              ? `${row.compliance.missing.length} gap${row.compliance.missing.length === 1 ? "" : "s"}`
+              : row.compliance?.status === "needs_work"
+                ? "Needs work"
+                : "—"}
+        </span>
+        <span className={`tabular-nums font-medium ${nextClass}`}>
+          {row.nextContactDueAt ? fmtRelative(row.nextContactDueAt) : "—"}
+        </span>
+      </div>
     </div>
   );
 }
