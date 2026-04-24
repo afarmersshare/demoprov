@@ -29,6 +29,7 @@ import { FarmerDashboard } from "../dashboards/farmer";
 import { BuyerDashboard } from "../dashboards/buyer";
 import { EmbedCta } from "../embed-cta";
 import { ReportsTab } from "./reports-tab";
+import { PipelineDashboard } from "../dashboards/pipeline-dashboard";
 
 export type Persona =
   | "policymaker"
@@ -688,6 +689,7 @@ export function NetworkExplorer({
               <TabsTrigger value="directory">Directory</TabsTrigger>
               <TabsTrigger value="county">By county</TabsTrigger>
               <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+              <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
               <TabsTrigger value="reports">Reports</TabsTrigger>
             </>
           )}
@@ -869,6 +871,12 @@ export function NetworkExplorer({
               />
             </div>
           </div>
+        </TabsContent>
+        <TabsContent value="pipeline" className="mt-4">
+          <PipelineDashboard
+            farms={filteredFarms}
+            complianceByFarm={complianceByFarm}
+          />
         </TabsContent>
         <TabsContent value="reports" className="mt-4">
           <ReportsTab
