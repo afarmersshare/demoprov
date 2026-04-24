@@ -27,6 +27,20 @@
   --color-sage: #9caf88;
   --color-accent-mustard: #e8d833;
   --color-accent-mauve: #bda2b9;
+  /* Provender brand palette (Pell v1.0, April 2026). Slate blue is the
+     Provender identity; forest sage is AFS support structure. Existing
+     moss/amber/cream tokens above remain for unmigrated components. */
+  --color-slate-blue: #5B7B8A;
+  --color-slate-blue-light: #7A9BAD;
+  --color-slate-mid: #D0DDE3;
+  --color-slate-pale: #EEF3F5;
+  --color-forest-sage: #4A6741;
+  --color-warm-cream: #F7F3EC;
+  --color-warm-white: #FDFAF5;
+  --color-warm-charcoal: #2C2A27;
+  --color-mid-gray: #6B6763;
+  --color-accent-amber: #B8860B;
+  --color-rule: #D4CEC5;
   --color-ink: #041215;
   --color-ink-soft: #141414;
   --color-ink-muted: #6c6c89;

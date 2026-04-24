@@ -322,7 +322,7 @@ export function ImpactCards({
           <div className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft mb-1">
             Impact — {scopeLabel}
           </div>
-          <div className="font-display text-[20px] font-semibold text-moss leading-tight">
+          <div className="font-display text-[20px] font-semibold text-slate-blue leading-tight">
             What good is this food system doing?
           </div>
           <div className="mt-1 text-[12px] text-charcoal-soft leading-relaxed max-w-prose">
@@ -340,8 +340,8 @@ export function ImpactCards({
         {/* =========================================================
             Card 1 — Regenerative footprint
             ========================================================= */}
-        <div className="rounded-[10px] border-l-4 border-l-moss border border-cream-shadow bg-cream/40 p-5">
-          <div className="text-[11px] font-bold uppercase tracking-[0.1em] text-moss mb-2">
+        <div className="rounded-[10px] border-l-4 border-l-forest-sage border border-cream-shadow bg-cream/40 p-5">
+          <div className="text-[11px] font-bold uppercase tracking-[0.1em] text-forest-sage mb-2">
             Regenerative footprint
           </div>
           <div className="font-display text-[22px] font-semibold text-charcoal leading-tight">
@@ -361,37 +361,37 @@ export function ImpactCards({
               label="Third-party certified"
               count={regen.groups.certified}
               total={regen.farmCount}
-              dotClass="bg-moss"
+              dotClass="bg-forest-sage"
             />
             <ClaimRow
               label="In transition"
               count={regen.groups.transitional}
               total={regen.farmCount}
-              dotClass="bg-moss-light"
+              dotClass="bg-slate-blue-light"
             />
             <ClaimRow
               label="Audit pending"
               count={regen.groups.pending}
               total={regen.farmCount}
-              dotClass="bg-amber"
+              dotClass="bg-accent-amber"
             />
             <ClaimRow
               label="Self-reported"
               count={regen.groups.self_reported}
               total={regen.farmCount}
-              dotClass="bg-amber-light"
+              dotClass="bg-slate-mid"
             />
             <ClaimRow
               label="No regen claim"
               count={regen.groups.none}
               total={regen.farmCount}
-              dotClass="bg-bone"
+              dotClass="bg-rule"
             />
           </div>
 
           {regen.claimDetail.length > 0 ? (
             <details className="mt-3 group">
-              <summary className="cursor-pointer list-none text-[11px] text-charcoal-soft hover:text-moss">
+              <summary className="cursor-pointer list-none text-[11px] text-charcoal-soft hover:text-slate-blue">
                 <span className="inline-block transition-transform group-open:rotate-90">
                   ▸
                 </span>{" "}
@@ -419,8 +419,8 @@ export function ImpactCards({
         {/* =========================================================
             Card 2 — Measurement & verification
             ========================================================= */}
-        <div className="rounded-[10px] border-l-4 border-l-amber border border-cream-shadow bg-cream/40 p-5">
-          <div className="text-[11px] font-bold uppercase tracking-[0.1em] text-amber mb-2">
+        <div className="rounded-[10px] border-l-4 border-l-slate-blue border border-cream-shadow bg-cream/40 p-5">
+          <div className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-blue mb-2">
             Measurement &amp; verification
           </div>
           <div className="font-display text-[22px] font-semibold text-charcoal leading-tight">
@@ -458,7 +458,7 @@ export function ImpactCards({
           </div>
 
           {measure.risk_regen > 0 || measure.risk_scope3 > 0 ? (
-            <div className="mt-3 text-[11px] text-terracotta leading-relaxed">
+            <div className="mt-3 text-[11px] text-mid-gray leading-relaxed">
               {measure.risk_regen > 0 ? (
                 <div>
                   <b>{measure.risk_regen}</b> regen claim
@@ -477,7 +477,7 @@ export function ImpactCards({
 
           {measure.platformDetail.length > 0 ? (
             <details className="mt-3 group">
-              <summary className="cursor-pointer list-none text-[11px] text-charcoal-soft hover:text-moss">
+              <summary className="cursor-pointer list-none text-[11px] text-charcoal-soft hover:text-slate-blue">
                 <span className="inline-block transition-transform group-open:rotate-90">
                   ▸
                 </span>{" "}
@@ -505,8 +505,8 @@ export function ImpactCards({
         {/* =========================================================
             Card 3 — Food recovery & circular flow
             ========================================================= */}
-        <div className="rounded-[10px] border-l-4 border-l-terracotta border border-cream-shadow bg-cream/40 p-5">
-          <div className="text-[11px] font-bold uppercase tracking-[0.1em] text-terracotta mb-2">
+        <div className="rounded-[10px] border-l-4 border-l-accent-amber border border-cream-shadow bg-cream/40 p-5">
+          <div className="text-[11px] font-bold uppercase tracking-[0.1em] text-accent-amber mb-2">
             Food recovery &amp; circular flow
           </div>
           <div className="font-display text-[22px] font-semibold text-charcoal leading-tight">
@@ -525,19 +525,19 @@ export function ImpactCards({
               lbs={recovery.byCategory.to_human_consumption.lbs}
               meals={recovery.byCategory.to_human_consumption.meals}
               nodes={recovery.byCategory.to_human_consumption.nodes}
-              dotClass="bg-moss"
+              dotClass="bg-forest-sage"
             />
             <CategoryRow
               label="To soil"
               lbs={recovery.byCategory.to_soil_amendment.lbs}
               nodes={recovery.byCategory.to_soil_amendment.nodes}
-              dotClass="bg-amber"
+              dotClass="bg-accent-amber"
             />
             <CategoryRow
               label="To energy"
               lbs={recovery.byCategory.to_energy_and_digestate.lbs}
               nodes={recovery.byCategory.to_energy_and_digestate.nodes}
-              dotClass="bg-terracotta"
+              dotClass="bg-mid-gray"
             />
           </div>
 
@@ -553,7 +553,7 @@ export function ImpactCards({
 
           {recovery.typeBreakdown.length > 0 ? (
             <details className="mt-3 group">
-              <summary className="cursor-pointer list-none text-[11px] text-charcoal-soft hover:text-moss">
+              <summary className="cursor-pointer list-none text-[11px] text-charcoal-soft hover:text-slate-blue">
                 <span className="inline-block transition-transform group-open:rotate-90">
                   ▸
                 </span>{" "}
@@ -583,8 +583,8 @@ export function ImpactCards({
         {/* =========================================================
             Card 4 — Economic sovereignty
             ========================================================= */}
-        <div className="rounded-[10px] border-l-4 border-l-moss-light border border-cream-shadow bg-cream/40 p-5">
-          <div className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal mb-2">
+        <div className="rounded-[10px] border-l-4 border-l-slate-blue-light border border-cream-shadow bg-cream/40 p-5">
+          <div className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-blue-light mb-2">
             Economic sovereignty
           </div>
           <div className="font-display text-[22px] font-semibold text-charcoal leading-tight">
@@ -663,25 +663,25 @@ const TREND_DATA: Array<{
     label: "Regenerative footprint",
     quarters: [48, 58, 68, 78],
     delta: "+24%",
-    accent: "bg-moss",
+    accent: "bg-forest-sage",
   },
   {
     label: "Measurement & verification",
     quarters: [32, 42, 50, 62],
     delta: "+18%",
-    accent: "bg-amber",
+    accent: "bg-slate-blue",
   },
   {
     label: "Food recovery & circular flow",
     quarters: [40, 50, 58, 68],
     delta: "+14%",
-    accent: "bg-terracotta",
+    accent: "bg-accent-amber",
   },
   {
     label: "Economic sovereignty",
     quarters: [28, 34, 44, 56],
     delta: "+22%",
-    accent: "bg-moss-light",
+    accent: "bg-slate-blue-light",
   },
 ];
 
@@ -722,7 +722,7 @@ function ImpactTrends() {
                 />
               ))}
             </div>
-            <span className="text-[12px] font-semibold tabular-nums text-moss min-w-[52px] text-right">
+            <span className="text-[12px] font-semibold tabular-nums text-slate-blue min-w-[52px] text-right">
               {row.delta}
             </span>
           </div>
