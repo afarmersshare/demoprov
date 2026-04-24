@@ -8,6 +8,8 @@ import {
   AlertTriangle,
   RotateCcw,
   ArrowUpRight,
+  LayoutList,
+  Columns3,
 } from "lucide-react";
 import {
   Select,
@@ -16,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import type {
   Farm,
   ComplianceInfo,
@@ -101,6 +104,8 @@ export function PipelineDashboard({ farms, complianceByFarm }: Props) {
   const [stageFilter, setStageFilter] = useState<string>("all");
   const [sort, setSort] = useState<SortKey>("next");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [viewMode, setViewMode] = useState<"list" | "kanban">("list");
+  const [dragOverStage, setDragOverStage] = useState<PipelineStage | null>(null);
   const [mutationDialog, setMutationDialog] = useState<
     null | "status" | "outreach" | "flag"
   >(null);
@@ -285,6 +290,28 @@ export function PipelineDashboard({ farms, complianceByFarm }: Props) {
     setSelected(new Set());
   };
 
+  const moveFarmToStage = (upid: string, toStage: PipelineStage) => {
+    const row = rows.find((r) => r.farm.upid === upid);
+    if (!row || row.stage === toStage) return;
+    const nowIso = new Date().toISOString();
+    const next = {
+      ...overrides,
+      [upid]: {
+        ...overrides[upid],
+        status: toStage,
+        updatedAt: nowIso,
+      },
+    };
+    setOverrides(next);
+    saveOverrides(next);
+    const updated = appendActivity({
+      action: "status_change",
+      count: 1,
+      detail: `${row.farm.name}: ${STAGE_LABEL[row.stage]} → ${STAGE_LABEL[toStage]}`,
+    });
+    setActivity(updated);
+  };
+
   const applyFlagCompliance = () => {
     const withGaps = selectedRows.filter(
       (r) => r.compliance && r.compliance.missing.length > 0,
@@ -434,21 +461,46 @@ export function PipelineDashboard({ farms, complianceByFarm }: Props) {
       <div className="rounded-[14px] border border-cream-shadow bg-white p-4 shadow-sm flex flex-wrap items-center gap-4">
         <div className="flex items-center gap-3">
           <label className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft">
-            Stage filter
+            View
           </label>
-          <Select value={stageFilter} onValueChange={setStageFilter}>
-            <SelectTrigger className="min-w-[160px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All stages</SelectItem>
-              <SelectItem value="prospect">Prospect</SelectItem>
-              <SelectItem value="engaged">Engaged</SelectItem>
-              <SelectItem value="enrolled">Enrolled</SelectItem>
-              <SelectItem value="alumni">Alumni</SelectItem>
-            </SelectContent>
-          </Select>
+          <ToggleGroup
+            type="single"
+            variant="outline"
+            size="sm"
+            value={viewMode}
+            onValueChange={(v) => {
+              if (v) setViewMode(v as "list" | "kanban");
+            }}
+          >
+            <ToggleGroupItem value="list" aria-label="List view">
+              <LayoutList className="w-3.5 h-3.5 mr-1" />
+              List
+            </ToggleGroupItem>
+            <ToggleGroupItem value="kanban" aria-label="Kanban view">
+              <Columns3 className="w-3.5 h-3.5 mr-1" />
+              Kanban
+            </ToggleGroupItem>
+          </ToggleGroup>
         </div>
+        {viewMode === "list" ? (
+          <div className="flex items-center gap-3">
+            <label className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft">
+              Stage filter
+            </label>
+            <Select value={stageFilter} onValueChange={setStageFilter}>
+              <SelectTrigger className="min-w-[160px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All stages</SelectItem>
+                <SelectItem value="prospect">Prospect</SelectItem>
+                <SelectItem value="engaged">Engaged</SelectItem>
+                <SelectItem value="enrolled">Enrolled</SelectItem>
+                <SelectItem value="alumni">Alumni</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        ) : null}
         <div className="text-[12px] text-charcoal-soft">
           Showing <b>{filteredRows.length}</b> of {rows.length} farms
         </div>
@@ -483,7 +535,8 @@ export function PipelineDashboard({ farms, complianceByFarm }: Props) {
         </div>
       </div>
 
-      {/* Farm table */}
+      {/* Farm table — list view only */}
+      {viewMode === "list" ? (
       <div className="rounded-[14px] border border-cream-shadow bg-white shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-[13px]">
@@ -694,6 +747,152 @@ export function PipelineDashboard({ farms, complianceByFarm }: Props) {
           </table>
         </div>
       </div>
+      ) : null}
+
+      {/* Kanban board */}
+      {viewMode === "kanban" ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+          {(["prospect", "engaged", "enrolled", "alumni"] as PipelineStage[]).map(
+            (stage) => {
+              const stageRows = rows.filter((r) => r.stage === stage);
+              const isTarget = dragOverStage === stage;
+              return (
+                <div
+                  key={stage}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    if (dragOverStage !== stage) setDragOverStage(stage);
+                  }}
+                  onDragLeave={() => {
+                    if (dragOverStage === stage) setDragOverStage(null);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const upid = e.dataTransfer.getData("text/plain");
+                    if (upid) moveFarmToStage(upid, stage);
+                    setDragOverStage(null);
+                  }}
+                  className={`rounded-[14px] border-2 ${isTarget ? "border-moss bg-moss/5" : "border-cream-shadow bg-cream/20"} transition-colors`}
+                >
+                  <div
+                    className={`px-4 py-3 border-b border-cream-shadow flex items-center justify-between`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`inline-block w-2.5 h-2.5 rounded-sm ${STAGE_COLOR[stage]}`}
+                      />
+                      <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-charcoal">
+                        {STAGE_LABEL[stage]}
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-mono tabular-nums text-charcoal-soft">
+                      {stageRows.length}
+                    </span>
+                  </div>
+                  <div className="p-2 space-y-2 min-h-[200px] max-h-[600px] overflow-y-auto">
+                    {stageRows.map((r) => {
+                      const isSelected = selected.has(r.farm.upid);
+                      const now = new Date().toISOString();
+                      const nextDays = r.nextContactDueAt
+                        ? daysBetween(now, r.nextContactDueAt)
+                        : null;
+                      const nextClass =
+                        nextDays == null
+                          ? "text-charcoal-soft"
+                          : nextDays < 0
+                            ? "text-terracotta"
+                            : nextDays <= 7
+                              ? "text-amber"
+                              : "text-charcoal-soft";
+                      return (
+                        <div
+                          key={r.farm.upid}
+                          draggable
+                          onDragStart={(e) => {
+                            e.dataTransfer.setData("text/plain", r.farm.upid);
+                            e.dataTransfer.effectAllowed = "move";
+                          }}
+                          className={`rounded-[8px] border bg-white p-3 cursor-grab active:cursor-grabbing hover:border-moss/40 hover:shadow-sm transition-all ${isSelected ? "border-moss ring-1 ring-moss/30" : "border-cream-shadow"}`}
+                        >
+                          <div className="flex items-start gap-2 mb-1.5">
+                            <button
+                              type="button"
+                              onClick={() => toggleOne(r.farm.upid)}
+                              className="mt-0.5 flex-shrink-0 text-charcoal-soft hover:text-moss"
+                              aria-label={`Select ${r.farm.name}`}
+                            >
+                              {isSelected ? (
+                                <CheckSquare className="w-3.5 h-3.5 text-moss" />
+                              ) : (
+                                <Square className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-[13px] font-semibold text-charcoal leading-tight truncate">
+                                {r.farm.name}
+                                {r.hasOverride ? (
+                                  <span
+                                    className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-amber align-middle"
+                                    title="Sandbox edit"
+                                  />
+                                ) : null}
+                              </div>
+                              <div className="text-[11px] text-charcoal-soft/80 truncate">
+                                {countyOf(r.farm)}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between text-[11px]">
+                            <span
+                              className={
+                                r.compliance?.status === "buyer_ready"
+                                  ? "text-moss font-semibold"
+                                  : r.compliance?.status === "close"
+                                    ? "text-amber"
+                                    : r.compliance?.status === "needs_work"
+                                      ? "text-terracotta"
+                                      : "text-charcoal-soft"
+                              }
+                            >
+                              {r.compliance?.status === "buyer_ready"
+                                ? "Buyer-ready"
+                                : r.compliance?.status === "close"
+                                  ? `${r.compliance.missing.length} gap${r.compliance.missing.length === 1 ? "" : "s"}`
+                                  : r.compliance?.status === "needs_work"
+                                    ? "Needs work"
+                                    : "—"}
+                            </span>
+                            <span
+                              className={`tabular-nums font-medium ${nextClass}`}
+                            >
+                              {r.nextContactDueAt
+                                ? fmtRelative(r.nextContactDueAt)
+                                : "—"}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {stageRows.length === 0 ? (
+                      <div className="text-center text-[12px] text-charcoal-soft/60 italic py-6">
+                        Drag a card here
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              );
+            },
+          )}
+        </div>
+      ) : null}
+
+      {viewMode === "kanban" ? (
+        <div className="text-[11px] text-charcoal-soft/70 italic">
+          Drag a card between columns to change that farm&rsquo;s stage.
+          Changes save to the browser sandbox — &ldquo;Clear sandbox&rdquo;
+          at the top resets everything.
+        </div>
+      ) : null}
 
       {/* Activity log */}
       {activity.length > 0 ? (
