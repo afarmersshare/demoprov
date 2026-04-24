@@ -683,16 +683,12 @@ export function NetworkExplorer({
           <TabsTrigger value="map">Map</TabsTrigger>
           <TabsTrigger value="network">Network</TabsTrigger>
           <TabsTrigger value="flows">Flows</TabsTrigger>
-          {embedMode ? null : (
-            <>
-              <TabsTrigger value="list">List</TabsTrigger>
-              <TabsTrigger value="directory">Directory</TabsTrigger>
-              <TabsTrigger value="county">By county</TabsTrigger>
-              <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-              <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
-              <TabsTrigger value="reports">Reports</TabsTrigger>
-            </>
-          )}
+          <TabsTrigger value="list">List</TabsTrigger>
+          <TabsTrigger value="directory">Directory</TabsTrigger>
+          <TabsTrigger value="county">By county</TabsTrigger>
+          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+          <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
+          <TabsTrigger value="reports">Reports</TabsTrigger>
         </TabsList>
         <TabsContent value="map" className="mt-4">
           <div className="md:grid md:grid-cols-[1fr_340px] md:gap-5">

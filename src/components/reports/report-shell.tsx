@@ -25,9 +25,9 @@ export function ReportShell({
   };
 
   return (
-    <div className="min-h-screen bg-cream text-charcoal">
+    <div className="min-h-screen bg-chrome text-charcoal">
       {/* Toolbar — hidden on print */}
-      <div className="print:hidden no-print sticky top-0 z-10 border-b border-cream-shadow bg-cream/95 backdrop-blur">
+      <div className="print:hidden no-print sticky top-0 z-10 border-b border-cream-shadow bg-chrome/95 backdrop-blur">
         <div className="mx-auto max-w-[900px] px-6 py-3 flex items-center justify-between">
           <Link
             href="/"
@@ -121,7 +121,7 @@ export function ReportSection({
 
 export function ReportLoading() {
   return (
-    <div className="min-h-screen bg-cream text-charcoal flex items-center justify-center">
+    <div className="min-h-screen bg-chrome text-charcoal flex items-center justify-center">
       <div className="text-sm text-charcoal-soft">Generating report…</div>
     </div>
   );

@@ -41,6 +41,11 @@
   --color-mid-gray: #6B6763;
   --color-accent-amber: #B8860B;
   --color-rule: #D4CEC5;
+  /* Shared page chrome — matches pro-pitch's cool near-white so the demo
+     reads as the same product family when visitors land from the pitch
+     site. Applied to the main page background + sticky nav + report shell.
+     Card/section accents keep warm-cream for contrast. */
+  --color-chrome: #F7F8FA;
   --color-ink: #041215;
   --color-ink-soft: #141414;
   --color-ink-muted: #6c6c89;

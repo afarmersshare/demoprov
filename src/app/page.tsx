@@ -43,8 +43,8 @@ function PageBody() {
   // Embed mode: skip landing, skip persona switcher, lock to an explorer surface.
   if (embedMode) {
     return (
-      <main className="min-h-screen bg-cream text-charcoal">
-        <nav className="border-b border-cream-shadow bg-cream/85 backdrop-blur-md sticky top-0 z-20">
+      <main className="min-h-screen bg-chrome text-charcoal">
+        <nav className="border-b border-cream-shadow bg-chrome/85 backdrop-blur-md sticky top-0 z-20">
           <div className="mx-auto max-w-7xl flex items-center justify-between px-6 sm:px-10 py-3.5">
             <div className="font-display text-[26px] font-bold tracking-[-0.02em] leading-none text-slate-blue">
               Provender<span className="text-accent-amber">.</span>
