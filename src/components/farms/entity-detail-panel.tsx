@@ -583,6 +583,67 @@ function DocumentsSection({ entityUpid }: { entityUpid: string }) {
   );
 }
 
+function LockedFieldModal({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-charcoal/30 px-4"
+      role="dialog"
+      aria-modal="true"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-sm rounded-[14px] border border-cream-shadow bg-white p-6 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute top-3 right-3 flex h-7 w-7 items-center justify-center rounded-full bg-cream-deep text-charcoal-soft transition-colors hover:bg-cream-shadow"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+
+        <div className="mb-3 inline-flex items-center gap-2 text-charcoal-soft">
+          <Lock className="h-3.5 w-3.5" />
+          <span className="text-[11px] font-medium uppercase tracking-[0.1em]">
+            Subscriber field
+          </span>
+        </div>
+
+        <p className="font-display mb-5 text-[18px] leading-[1.4] text-charcoal">
+          This data is available for your region. Let&apos;s talk about what
+          yours looks like.
+        </p>
+
+        <a
+          href="mailto:hello@afarmersshare.com?subject=Inquiry%20from%20Provender%20demo"
+          className="inline-flex items-center gap-2 rounded-full bg-moss px-4 py-2 text-[12px] font-semibold uppercase tracking-[0.1em] text-cream transition-colors hover:bg-moss-light"
+        >
+          hello@afarmersshare.com
+        </a>
+      </div>
+    </div>
+  );
+}
+
 function Body({
   entity,
   entityCount,
@@ -594,6 +655,8 @@ function Body({
   hintToClick: string;
   embedMode?: boolean;
 }) {
+  const [lockedModalOpen, setLockedModalOpen] = useState(false);
+
   if (!entity) {
     return (
       <>
@@ -661,15 +724,20 @@ function Body({
               <dt className="text-charcoal-soft">{label}</dt>
               <dd className="m-0 text-right">
                 {locked ? (
-                  <span
-                    className="inline-flex items-center gap-1.5 text-charcoal-soft/70"
-                    title="Available on subscriber tiers"
+                  <button
+                    type="button"
+                    onClick={() => setLockedModalOpen(true)}
+                    className="group relative inline-flex items-center gap-1.5 text-charcoal-soft/70 transition-colors hover:text-charcoal cursor-pointer"
+                    aria-label="This data is available for your region — tap to contact us"
                   >
                     <Lock className="w-3 h-3" />
                     <span className="text-[11px] uppercase tracking-[0.06em] font-medium">
                       Subscribers
                     </span>
-                  </span>
+                    <span className="pointer-events-none absolute -top-8 right-0 z-20 hidden whitespace-nowrap rounded bg-charcoal px-2 py-1 text-[10px] font-normal normal-case tracking-normal text-cream shadow group-hover:block">
+                      This data is available for your region
+                    </span>
+                  </button>
                 ) : (
                   <span className="text-charcoal font-semibold">{value}</span>
                 )}
@@ -681,6 +749,11 @@ function Body({
 
       <PracticesSection entity={entity} />
       <DocumentsSection entityUpid={entity.data.upid} />
+
+      <LockedFieldModal
+        open={lockedModalOpen}
+        onClose={() => setLockedModalOpen(false)}
+      />
     </>
   );
 }

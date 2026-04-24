@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { NetworkExplorer } from "@/components/farms/network-explorer";
@@ -25,6 +25,20 @@ function PageBody() {
   const persona: Persona | null = isPersona(raw) ? raw : null;
   const embedMode = params.get("mode") === "embed";
   const fromAfs = params.get("ref") === "afs";
+
+  // In embed mode the demo is loaded inside an iframe on pro-pitch. Silence
+  // console errors/warnings so they don't bubble into the parent page's devtools.
+  useEffect(() => {
+    if (!embedMode) return;
+    const original = { error: console.error, warn: console.warn };
+    const noop = () => {};
+    console.error = noop;
+    console.warn = noop;
+    return () => {
+      console.error = original.error;
+      console.warn = original.warn;
+    };
+  }, [embedMode]);
 
   // Embed mode: skip landing, skip persona switcher, lock to an explorer surface.
   if (embedMode) {
