@@ -25,6 +25,7 @@ import {
   type ChoroplethMetric,
 } from "./policymaker-map";
 import { ImpactCards } from "./impact-cards";
+import { GapAnalysis } from "./gap-analysis";
 
 type Props = {
   farms: Farm[];
@@ -398,6 +399,8 @@ export function AfsDashboard({
         impactDocs={impactDocs}
         scopeLabel={selectedCounty || "selected county"}
       />
+
+      <GapAnalysis farms={farms} regions={regions} />
 
       {recruitmentGaps.length > 0 ? (
         <section className="rounded-[14px] border border-cream-shadow bg-white p-6 sm:p-8 shadow-sm">

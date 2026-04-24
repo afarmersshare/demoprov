@@ -25,6 +25,7 @@ import {
   type ChoroplethMetric,
 } from "./policymaker-map";
 import { ImpactCards } from "./impact-cards";
+import { GapAnalysis } from "./gap-analysis";
 
 type Props = {
   farms: Farm[];
@@ -504,11 +505,12 @@ export function PolicymakerDashboard({
         scopeLabel={selectedCounty || "selected county"}
       />
 
+      <GapAnalysis farms={farms} regions={regions} />
+
       <section className="rounded-[14px] border border-dashed border-cream-shadow bg-bone/40 p-6 text-sm text-charcoal-soft leading-relaxed">
-        <b className="text-charcoal">More cards in progress.</b> This view
-        will grow to include the food-access gap map (food-insecurity
-        choropleth overlaid with supply), infrastructure investment
-        opportunities, and the Community Wealth Score ranking.
+        <b className="text-charcoal">More cards in progress.</b> Planned:
+        infrastructure investment opportunities by county, and the
+        Community Wealth Score ranking.
       </section>
     </div>
   );
