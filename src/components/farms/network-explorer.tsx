@@ -898,7 +898,9 @@ export function NetworkExplorer({
         complianceByFarm={complianceByFarm}
       />
 
-      {embedMode ? <EmbedCta /> : null}
+      {embedMode || persona !== "explore" ? (
+        <EmbedCta variant={embedMode ? "embed" : "persona"} />
+      ) : null}
     </div>
   );
 }
