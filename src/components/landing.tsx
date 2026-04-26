@@ -288,23 +288,23 @@ export function Landing() {
   const role = selected ? ROLES.find((r) => r.id === selected) ?? null : null;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 lg:min-h-[calc(100vh-65px)]">
+    <div className="grid grid-cols-1 lg:grid-cols-2 lg:min-h-[calc(100vh-56px)]">
       {/* LEFT — role tiles */}
-      <div className="bg-white lg:border-r border-cream-shadow px-8 sm:px-12 py-10 sm:py-14 flex flex-col">
-        <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-blue-light mb-10">
+      <div className="bg-white lg:border-r border-cream-shadow px-8 sm:px-10 py-7 sm:py-9 flex flex-col">
+        <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-blue-light mb-6">
           Louisville &amp; Kentuckiana · Demo
         </div>
 
-        <h1 className="font-display text-[28px] sm:text-[32px] leading-[1.25] text-charcoal font-normal mb-2">
+        <h1 className="font-display text-[26px] sm:text-[30px] leading-[1.2] text-charcoal font-normal mb-1.5">
           Where do you sit
           <br />
           in this food system?
         </h1>
-        <div className="text-[10px] font-normal uppercase tracking-[0.15em] text-slate-blue-light mb-9">
+        <div className="text-xs font-normal uppercase tracking-[0.15em] text-slate-blue-light mb-6">
           Your answer shapes what you see here
         </div>
 
-        <div className="flex flex-col gap-2 flex-1">
+        <div className="flex flex-col gap-1.5 flex-1">
           {ROLES.map((r) => {
             const Icon = ICON_BY_ID[r.id];
             const isSelected = selected === r.id;
@@ -315,7 +315,7 @@ export function Landing() {
                 onClick={() => setSelected(r.id)}
                 aria-pressed={isSelected}
                 className={
-                  "group flex items-center gap-3.5 px-4 py-3 rounded-[3px] border text-left transition-all " +
+                  "group flex items-center gap-3.5 px-4 py-2.5 rounded-[3px] border text-left transition-all " +
                   (isSelected
                     ? "border-forest-sage bg-cream/60"
                     : "border-cream-shadow bg-chrome hover:border-slate-blue hover:bg-slate-pale/50")
@@ -323,25 +323,25 @@ export function Landing() {
               >
                 <span
                   className={
-                    "h-[30px] w-[30px] flex-shrink-0 transition-opacity " +
+                    "h-7 w-7 flex-shrink-0 transition-opacity " +
                     (isSelected
                       ? "text-forest-sage opacity-100"
-                      : "text-charcoal-soft opacity-50 group-hover:opacity-100")
+                      : "text-charcoal-soft opacity-60 group-hover:opacity-100")
                   }
                 >
                   <Icon />
                 </span>
                 <span className="flex-1 min-w-0">
-                  <span className="block font-display text-[15px] text-charcoal font-medium leading-tight">
+                  <span className="block font-display text-[16px] text-charcoal font-medium leading-tight">
                     {r.title}
                   </span>
-                  <span className="block text-[11px] text-charcoal-soft leading-[1.55] mt-0.5">
+                  <span className="block text-[13px] text-charcoal-soft leading-[1.45] mt-0.5">
                     {r.need}
                   </span>
                 </span>
                 <span
                   className={
-                    "text-sm transition-all flex-shrink-0 " +
+                    "text-base transition-all flex-shrink-0 " +
                     (isSelected
                       ? "text-forest-sage translate-x-0.5"
                       : "text-cream-shadow group-hover:text-slate-blue group-hover:translate-x-0.5")
@@ -355,83 +355,83 @@ export function Landing() {
           })}
         </div>
 
-        <div className="mt-7 pt-6 border-t border-cream-shadow flex items-center gap-4">
-          {selected ? (
-            <Link
-              href={`/?persona=${selected}`}
-              className="inline-block bg-forest-sage hover:bg-forest-sage/90 text-white text-[10px] font-semibold uppercase tracking-[0.15em] px-5 py-2.5 rounded-[3px] transition-colors"
-            >
-              Enter the system →
-            </Link>
-          ) : null}
+        <div className="mt-5 pt-5 border-t border-cream-shadow flex flex-col gap-3.5">
           <Link
             href="/?persona=explore"
-            className="text-[11px] text-slate-blue-light hover:text-slate-blue underline underline-offset-2 decoration-cream-shadow hover:decoration-slate-blue transition-colors"
+            className="text-[13px] text-slate-blue-light hover:text-slate-blue underline underline-offset-2 decoration-cream-shadow hover:decoration-slate-blue transition-colors w-fit"
           >
             explore without a role
           </Link>
+          <div className="text-[12px] text-charcoal-soft/75 leading-[1.55]">
+            All people, farms, and buyers in this demo are fictional. County
+            boundaries are real (US Census); the data schema underneath is the
+            real Provender system.
+          </div>
         </div>
       </div>
 
-      {/* RIGHT — preview / placeholder */}
-      <div className="bg-chrome px-8 sm:px-12 py-10 sm:py-14 flex flex-col">
+      {/* RIGHT — preview / placeholder + Enter CTA at the bottom */}
+      <div className="bg-chrome px-8 sm:px-10 py-7 sm:py-9 flex flex-col">
         {!role ? (
-          <div className="flex-1 flex flex-col items-center justify-center gap-5 text-slate-blue-light min-h-[280px]">
+          <div className="flex-1 flex flex-col items-center justify-center gap-5 text-slate-blue-light min-h-[260px]">
             <ConstellationGraphic />
-            <div className="font-display italic text-[13px] text-slate-blue-light text-center leading-[1.7]">
+            <div className="font-display italic text-[14px] text-slate-blue-light text-center leading-[1.65]">
               Select a role to see
               <br />
               your place in the system
             </div>
           </div>
         ) : (
-          <div className="flex flex-col gap-7 flex-1">
-            <div>
-              <div className="text-[9px] font-semibold uppercase tracking-[0.2em] text-slate-blue-light mb-2">
-                Your position
+          <div className="flex flex-col flex-1">
+            <div className="flex flex-col gap-6 flex-1">
+              <div>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-blue-light mb-2">
+                  Your position
+                </div>
+                <div className="font-display text-[20px] text-charcoal leading-[1.35] mb-3">
+                  {role.position.head}
+                </div>
+                <div className="text-[15px] text-charcoal-soft leading-[1.6]">
+                  {role.position.body}
+                </div>
               </div>
-              <div className="font-display text-[18px] text-charcoal leading-[1.4] mb-2.5">
-                {role.position.head}
+
+              <div>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-blue-light mb-2.5">
+                  What you&apos;ll find inside
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {role.finds.map((c, i) => (
+                    <div
+                      key={i}
+                      className="bg-white border border-cream-shadow rounded-[3px] px-3.5 pt-3 pb-3"
+                    >
+                      <div className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-blue-light mb-1.5 leading-tight">
+                        {c.label}
+                      </div>
+                      <div className="font-display text-[14px] text-charcoal leading-[1.4]">
+                        {c.detail}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="text-[12px] text-charcoal-soft leading-[1.75]">
-                {role.position.body}
+
+              <div className="font-display italic text-[14px] text-slate-blue-light leading-[1.6] pt-3 border-t border-cream-shadow">
+                {role.note}
               </div>
             </div>
 
-            <div>
-              <div className="text-[9px] font-semibold uppercase tracking-[0.2em] text-slate-blue-light mb-2.5">
-                What you'll find inside
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
-                {role.finds.map((c, i) => (
-                  <div
-                    key={i}
-                    className="bg-white border border-cream-shadow rounded-[3px] px-3 pt-2.5 pb-2.5"
-                  >
-                    <div className="text-[8px] font-bold uppercase tracking-[0.12em] text-slate-blue-light mb-1.5 leading-tight">
-                      {c.label}
-                    </div>
-                    <div className="font-display text-[12px] text-charcoal leading-[1.45]">
-                      {c.detail}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="font-display italic text-[12px] text-slate-blue-light leading-[1.65] pt-3 border-t border-cream-shadow mt-1">
-              {role.note}
+            <div className="mt-6 pt-5 border-t border-cream-shadow">
+              <Link
+                href={`/?persona=${selected}`}
+                className="inline-block bg-forest-sage hover:bg-forest-sage/90 text-white text-[12px] font-semibold uppercase tracking-[0.15em] px-6 py-3 rounded-[3px] transition-colors"
+              >
+                Enter the system →
+              </Link>
             </div>
           </div>
         )}
-
-        {/* Demo disclaimer pinned to bottom of right column */}
-        <div className="text-[10px] text-charcoal-soft/70 leading-relaxed mt-7 pt-5 border-t border-cream-shadow">
-          Every person, farm, and buyer in this demo is fictional, seeded in
-          the Louisville–Kentuckiana region. County shapes are real (US Census);
-          demographics are illustrative-plausible. The data layer underneath is
-          the real Provender schema.
-        </div>
       </div>
     </div>
   );
