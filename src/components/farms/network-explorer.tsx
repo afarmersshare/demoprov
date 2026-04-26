@@ -684,7 +684,16 @@ export function NetworkExplorer({
         <TabsList className="!grid !grid-cols-3 !gap-1 !w-full !h-auto !p-1.5 sm:!inline-flex sm:!gap-0 sm:!w-fit sm:!h-8 sm:!p-[3px]">
           <TabsTrigger value="map">Map</TabsTrigger>
           <TabsTrigger value="network">Network</TabsTrigger>
-          <TabsTrigger value="flows">Flows</TabsTrigger>
+          {/*
+            Flows is a 4-column d3-sankey. Even at phone-landscape widths
+            the long node names ("Restaurant Independent", "Foodservice
+            Management", "Institution Hospital") overlap because d3-sankey
+            doesn't reserve label space. Hidden below md (768px); reappears
+            on tablet-landscape and desktop where the canvas is wide enough.
+          */}
+          <TabsTrigger value="flows" className="hidden md:flex">
+            Flows
+          </TabsTrigger>
           <TabsTrigger value="list">List</TabsTrigger>
           <TabsTrigger value="directory">Directory</TabsTrigger>
           <TabsTrigger value="county">By county</TabsTrigger>
