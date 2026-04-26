@@ -448,8 +448,7 @@ export function NetworkFlows({
         <svg
           viewBox={`0 0 ${layout.width} ${layout.height}`}
           preserveAspectRatio="xMidYMid meet"
-          className="block w-full"
-          style={{ height: layout.height }}
+          className="block w-full h-auto"
         >
           <text
             x={layout.margin.left}
