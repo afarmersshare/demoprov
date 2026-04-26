@@ -3,7 +3,18 @@ import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/auth/login-form";
 import { getAuthedUser } from "@/lib/auth/get-user";
 
-type SearchParams = Promise<{ error?: string }>;
+type SearchParams = Promise<{ error?: string; next?: string }>;
+
+// Only honour `next` if it's a same-origin relative path. Reject protocol-
+// prefixed values ("https://...") and protocol-relative ones ("//host/...")
+// so a crafted /login?next=https://evil.example can't turn the login page
+// into an open redirector.
+function safeNext(raw: string | undefined): string | null {
+  if (!raw) return null;
+  if (!raw.startsWith("/")) return null;
+  if (raw.startsWith("//")) return null;
+  return raw;
+}
 
 export default async function LoginPage({
   searchParams,
@@ -15,7 +26,8 @@ export default async function LoginPage({
   const user = await getAuthedUser();
   if (user) redirect("/");
 
-  const { error } = await searchParams;
+  const { error, next } = await searchParams;
+  const safe = safeNext(next);
 
   return (
     <main className="min-h-screen bg-chrome text-charcoal flex flex-col">
@@ -46,7 +58,7 @@ export default async function LoginPage({
           </div>
 
           <div className="rounded-[14px] border border-cream-shadow bg-white px-6 py-7 shadow-sm">
-            <LoginForm initialError={error ?? null} />
+            <LoginForm initialError={error ?? null} next={safe} />
           </div>
 
           <p className="mt-5 text-center text-[12px] text-charcoal-soft/80 leading-relaxed">

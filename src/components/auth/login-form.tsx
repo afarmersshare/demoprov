@@ -5,7 +5,17 @@ import { createClient } from "@/lib/supabase/client";
 
 type Status = "idle" | "sending" | "sent" | "error";
 
-export function LoginForm({ initialError }: { initialError?: string | null }) {
+export function LoginForm({
+  initialError,
+  next,
+}: {
+  initialError?: string | null;
+  // Pre-validated by the server page (must start with a single "/"). The
+  // form appends it to the auth-callback URL so /auth/callback/route.ts
+  // can redirect there after the session exchange. If null, the callback
+  // falls through to "/".
+  next?: string | null;
+}) {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<Status>(initialError ? "error" : "idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(
@@ -15,10 +25,13 @@ export function LoginForm({ initialError }: { initialError?: string | null }) {
   );
 
   const supabase = createClient();
-  const callbackUrl =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/auth/callback`
-      : "/auth/callback";
+  const callbackUrl = (() => {
+    const base =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/auth/callback`
+        : "/auth/callback";
+    return next ? `${base}?next=${encodeURIComponent(next)}` : base;
+  })();
 
   async function handleGoogle() {
     setStatus("sending");
