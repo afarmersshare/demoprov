@@ -685,13 +685,14 @@ export function NetworkExplorer({
           <TabsTrigger value="map">Map</TabsTrigger>
           <TabsTrigger value="network">Network</TabsTrigger>
           {/*
-            Flows is a 4-column d3-sankey. Even at phone-landscape widths
-            the long node names ("Restaurant Independent", "Foodservice
-            Management", "Institution Hospital") overlap because d3-sankey
-            doesn't reserve label space. Hidden below md (768px); reappears
-            on tablet-landscape and desktop where the canvas is wide enough.
+            Flows is a 4-column d3-sankey. Long node names ("Restaurant
+            Independent", "Foodservice Management", "Institution Hospital")
+            overlap below tablet-landscape width because d3-sankey doesn't
+            reserve label space. Hidden below lg (1024px) — covers phones
+            in any orientation and tablet portrait; reappears on tablet
+            landscape and desktop.
           */}
-          <TabsTrigger value="flows" className="hidden md:flex">
+          <TabsTrigger value="flows" className="hidden lg:flex">
             Flows
           </TabsTrigger>
           <TabsTrigger value="list">List</TabsTrigger>
