@@ -22,7 +22,7 @@
 -- Idempotent: enums are guarded; tables use IF NOT EXISTS; functions use
 -- CREATE OR REPLACE; policies and triggers are dropped before recreation.
 --
--- First applied: TBD
+-- First applied: 2026-04-26 (demo)
 
 
 -- ============================================================================

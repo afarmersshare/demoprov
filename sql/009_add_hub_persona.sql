@@ -9,6 +9,6 @@
 -- (until a hub-specific dashboard exists) see the buyer dashboard layout.
 --
 -- Idempotent — ADD VALUE IF NOT EXISTS is safe to re-run.
--- First applied: TBD
+-- First applied: 2026-04-26 (demo)
 
 ALTER TYPE public.persona_t ADD VALUE IF NOT EXISTS 'hub';
