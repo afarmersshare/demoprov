@@ -406,7 +406,10 @@ export function NetworkFlows({
     if (links.length === 0) return null;
 
     const height = 620;
-    const margin = { top: 42, right: 200, bottom: 16, left: 20 };
+    // margin.top was 42 to reserve room for column headers drawn inside the
+    // SVG. Headers now live in an HTML row above the SVG so the diagram can
+    // breathe right up to the top.
+    const margin = { top: 12, right: 200, bottom: 16, left: 20 };
     const effWidth = Math.max(width, 520);
 
     const layoutFn = sankey<NodeDatum, LinkDatum>()
@@ -445,56 +448,32 @@ export function NetworkFlows({
           No flows match these filters — broaden the member-status filter above.
         </div>
       ) : (
-        <svg
-          viewBox={`0 0 ${layout.width} ${layout.height}`}
-          preserveAspectRatio="xMidYMid meet"
-          className="block w-full h-auto"
-        >
-          <text
-            x={layout.margin.left}
-            y={22}
-            fontSize={11}
-            fontWeight={700}
-            fill={CHARCOAL_SOFT}
-            style={{ letterSpacing: "0.1em", textTransform: "uppercase" }}
+        <>
+          {/*
+            Column headers in HTML so they wrap, respect user font scaling,
+            and stay legible at every viewport width. Four equal columns
+            with text-align matching the sankey nodes' visual position
+            (left, center, center, right). On phones the long subtitles
+            collapse to single words; full labels reappear at sm+.
+          */}
+          <div className="grid grid-cols-4 gap-1 px-3 pt-3 pb-1 text-[9px] sm:text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft">
+            <div className="text-left">
+              Farms<span className="hidden sm:inline"> · by type</span>
+            </div>
+            <div className="text-center">
+              Processors<span className="hidden sm:inline"> · by type</span>
+            </div>
+            <div className="text-center">Aggregators</div>
+            <div className="text-right">
+              Outcomes<span className="hidden sm:inline"> · markets &amp; recovery</span>
+            </div>
+          </div>
+          <svg
+            viewBox={`0 0 ${layout.width} ${layout.height}`}
+            preserveAspectRatio="xMidYMid meet"
+            className="block w-full h-auto"
           >
-            Farms · by type
-          </text>
-          <text
-            x={layout.width * 0.33}
-            y={22}
-            fontSize={11}
-            fontWeight={700}
-            fill={CHARCOAL_SOFT}
-            textAnchor="middle"
-            style={{ letterSpacing: "0.1em", textTransform: "uppercase" }}
-          >
-            Processors · by type
-          </text>
-          <text
-            x={layout.width * 0.58}
-            y={22}
-            fontSize={11}
-            fontWeight={700}
-            fill={CHARCOAL_SOFT}
-            textAnchor="middle"
-            style={{ letterSpacing: "0.1em", textTransform: "uppercase" }}
-          >
-            Aggregators
-          </text>
-          <text
-            x={layout.width - layout.margin.right}
-            y={22}
-            fontSize={11}
-            fontWeight={700}
-            fill={CHARCOAL_SOFT}
-            textAnchor="end"
-            style={{ letterSpacing: "0.1em", textTransform: "uppercase" }}
-          >
-            Outcomes · markets &amp; recovery
-          </text>
-
-          <g fill="none" style={{ mixBlendMode: "multiply" }}>
+            <g fill="none" style={{ mixBlendMode: "multiply" }}>
             {layout.links.map((link, i) => {
               const l = link as LaidLink;
               const sourceNode = l.source as LaidNode;
@@ -597,6 +576,7 @@ export function NetworkFlows({
             })}
           </g>
         </svg>
+        </>
       )}
 
       <div className="border-t border-cream-shadow bg-cream-deep/40 px-4 py-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] text-charcoal-soft leading-snug">
