@@ -10,6 +10,9 @@ const PERSONA_ENTRIES: Array<{ id: Persona; label: string }> = [
   { id: "afs", label: "A Farmer's Share view" },
   { id: "farmer", label: "Farmer view" },
   { id: "buyer", label: "Buyer view" },
+  { id: "hub", label: "Hub / aggregator view" },
+  { id: "nonprofit", label: "Nonprofit view" },
+  { id: "funder", label: "Funder view" },
   { id: "explore", label: "Just exploring" },
 ];
 

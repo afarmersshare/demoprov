@@ -36,6 +36,9 @@ export type Persona =
   | "afs"
   | "farmer"
   | "buyer"
+  | "hub"
+  | "nonprofit"
+  | "funder"
   | "explore";
 
 export type Farm = {
@@ -830,7 +833,7 @@ export function NetworkExplorer({
                 selected={selectedEntity}
                 onSelect={setSelectedEntity}
               />
-            ) : persona === "buyer" ? (
+            ) : persona === "buyer" || persona === "hub" ? (
               <BuyerDashboard
                 farms={farmsForByCounty}
                 markets={filteredMarkets}

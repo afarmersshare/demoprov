@@ -15,6 +15,9 @@ function isPersona(v: string | null): v is Persona {
     v === "afs" ||
     v === "farmer" ||
     v === "buyer" ||
+    v === "hub" ||
+    v === "nonprofit" ||
+    v === "funder" ||
     v === "explore"
   );
 }
@@ -73,19 +76,16 @@ function PageBody() {
           >
             Provender<span className="text-accent-amber">.</span>
           </Link>
-          {persona ? (
-            <PersonaSwitcher persona={persona} />
-          ) : (
-            <div className="inline-flex items-center gap-2 rounded-full bg-slate-pale px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-charcoal-soft">
-              <span className="inline-block h-2 w-2 rounded-full bg-region-badge" />
-              Louisville &amp; Kentuckiana
-            </div>
-          )}
+          {persona ? <PersonaSwitcher persona={persona} /> : null}
         </div>
       </nav>
-      <div className="mx-auto max-w-7xl px-6 sm:px-10 py-8 sm:py-10">
-        {persona === null ? <Landing /> : <NetworkExplorer persona={persona} />}
-      </div>
+      {persona === null ? (
+        <Landing />
+      ) : (
+        <div className="mx-auto max-w-7xl px-6 sm:px-10 py-8 sm:py-10">
+          <NetworkExplorer persona={persona} />
+        </div>
+      )}
     </main>
   );
 }

@@ -48,7 +48,9 @@ export const PERSONA_COLOR = {
   afs: FOREST_SAGE,
   farmer: SLATE_BLUE_LIGHT,
   buyer: ACCENT_AMBER,
-  funder: "#bda2b9",
+  hub: "#b86b4b", // terracotta — sits between supply and demand
+  nonprofit: "#9caf88", // sage — advocacy / mission-driven
+  funder: "#bda2b9", // mauve
   explore: MID_GRAY,
 } as const;
 
