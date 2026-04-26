@@ -435,6 +435,14 @@ export function NetworkFlows({
 
     const pathGen = sankeyLinkHorizontal<NodeDatum, LinkDatum>();
 
+    // Label font sizes shrink on narrow viewports so long node names
+    // ("Restaurant Independent", "Foodservice Management", etc.) don't
+    // overflow into adjacent columns. Threshold matches Tailwind's sm.
+    const isNarrow = effWidth < 640;
+    const nameFont = isNarrow ? 9 : 12;
+    const valueFont = isNarrow ? 7 : 10;
+    const valueOffset = isNarrow ? 11 : 14;
+
     return {
       nodes: graph.nodes,
       links: graph.links,
@@ -442,6 +450,9 @@ export function NetworkFlows({
       width: effWidth,
       height,
       margin,
+      nameFont,
+      valueFont,
+      valueOffset,
     };
   }, [farms, markets, distributors, processors, recoveryNodes, relationships, width]);
 
@@ -562,18 +573,18 @@ export function NetworkFlows({
                     dy="0.35em"
                     textAnchor={labelLeft ? "start" : "end"}
                     fill={CHARCOAL}
-                    fontSize={12}
+                    fontSize={layout.nameFont}
                     fontWeight={active ? 700 : 500}
                   >
                     {nd.name}
                   </text>
                   <text
                     x={labelLeft ? x1 + 6 : x0 - 6}
-                    y={(y0 + y1) / 2 + 14}
+                    y={(y0 + y1) / 2 + layout.valueOffset}
                     dy="0.35em"
                     textAnchor={labelLeft ? "start" : "end"}
                     fill={CHARCOAL_SOFT}
-                    fontSize={10}
+                    fontSize={layout.valueFont}
                   >
                     {formatLbs(nd.value ?? 0)}
                   </text>

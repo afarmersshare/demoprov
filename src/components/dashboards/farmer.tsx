@@ -342,6 +342,7 @@ export function FarmerDashboard({
             onValueChange={(v) => {
               if (v) setMetric(v as ChoroplethMetric);
             }}
+            className="flex-wrap !w-full sm:!w-fit"
           >
             <ToggleGroupItem value="farm_count">Farms</ToggleGroupItem>
             <ToggleGroupItem value="enrolled_pct">Enrolled %</ToggleGroupItem>

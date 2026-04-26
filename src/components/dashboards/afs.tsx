@@ -241,6 +241,7 @@ export function AfsDashboard({
             onValueChange={(v) => {
               if (v) setMetric(v as ChoroplethMetric);
             }}
+            className="flex-wrap !w-full sm:!w-fit"
           >
             <ToggleGroupItem value="enrolled_pct">Enrolled %</ToggleGroupItem>
             <ToggleGroupItem value="farm_count">Total farms</ToggleGroupItem>

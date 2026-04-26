@@ -257,6 +257,7 @@ export function PolicymakerDashboard({
             onValueChange={(v) => {
               if (v) setMetric(v as ChoroplethMetric);
             }}
+            className="flex-wrap !w-full sm:!w-fit"
           >
             <ToggleGroupItem value="food_insecurity">
               Food insecurity
