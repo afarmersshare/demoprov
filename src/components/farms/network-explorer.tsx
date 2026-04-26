@@ -565,8 +565,8 @@ export function NetworkExplorer({
         </>
       )}
 
-      <div className="mb-5 rounded-[14px] border border-cream-shadow bg-white px-5 py-4 flex flex-wrap items-center gap-x-8 gap-y-3">
-        <div className="flex items-center gap-3">
+      <div className="mb-5 rounded-[14px] border border-cream-shadow bg-white px-4 py-4 sm:px-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-8 sm:gap-y-3">
+        <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
           <label className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft">
             Member status
           </label>
@@ -578,20 +578,21 @@ export function NetworkExplorer({
             onValueChange={(v) => {
               if (v) setStatusFilter(v as StatusFilter);
             }}
+            className="w-full sm:w-auto"
           >
-            <ToggleGroupItem value="all">All</ToggleGroupItem>
-            <ToggleGroupItem value="enrolled">Enrolled</ToggleGroupItem>
-            <ToggleGroupItem value="engaged">Engaged</ToggleGroupItem>
-            <ToggleGroupItem value="prospect">Prospect</ToggleGroupItem>
+            <ToggleGroupItem value="all" className="flex-1 sm:flex-none">All</ToggleGroupItem>
+            <ToggleGroupItem value="enrolled" className="flex-1 sm:flex-none">Enrolled</ToggleGroupItem>
+            <ToggleGroupItem value="engaged" className="flex-1 sm:flex-none">Engaged</ToggleGroupItem>
+            <ToggleGroupItem value="prospect" className="flex-1 sm:flex-none">Prospect</ToggleGroupItem>
           </ToggleGroup>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
           <label className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft">
             Farm type
           </label>
           <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="min-w-[180px]">
+            <SelectTrigger className="w-full sm:min-w-[180px] sm:w-auto">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -606,12 +607,12 @@ export function NetworkExplorer({
         </div>
 
         {activeTab !== "county" ? (
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
             <label className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft">
               County
             </label>
             <Select value={countyFilter} onValueChange={setCountyFilter}>
-              <SelectTrigger className="min-w-[180px]">
+              <SelectTrigger className="w-full sm:min-w-[180px] sm:w-auto">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -626,7 +627,7 @@ export function NetworkExplorer({
           </div>
         ) : null}
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
           <label className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft">
             Compliance
           </label>
@@ -634,7 +635,7 @@ export function NetworkExplorer({
             value={complianceFilter}
             onValueChange={(v) => setComplianceFilter(v as ComplianceFilter)}
           >
-            <SelectTrigger className="min-w-[180px]">
+            <SelectTrigger className="w-full sm:min-w-[180px] sm:w-auto">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -655,7 +656,7 @@ export function NetworkExplorer({
               setCountyFilter(ALL_COUNTIES);
               setComplianceFilter(ALL_COMPLIANCE);
             }}
-            className="ml-auto text-xs text-charcoal-soft underline underline-offset-2 hover:text-slate-blue"
+            className="self-start text-xs text-charcoal-soft underline underline-offset-2 hover:text-slate-blue sm:ml-auto sm:self-auto"
           >
             Clear filters
           </button>
@@ -682,17 +683,25 @@ export function NetworkExplorer({
         onValueChange={setActiveTab}
         className="w-full"
       >
-        <TabsList>
-          <TabsTrigger value="map">Map</TabsTrigger>
-          <TabsTrigger value="network">Network</TabsTrigger>
-          <TabsTrigger value="flows">Flows</TabsTrigger>
-          <TabsTrigger value="list">List</TabsTrigger>
-          <TabsTrigger value="directory">Directory</TabsTrigger>
-          <TabsTrigger value="county">By county</TabsTrigger>
-          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-          <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
-          <TabsTrigger value="reports">Reports</TabsTrigger>
-        </TabsList>
+        {/*
+          Wrapper -mx-4 px-4 lets the tab strip bleed to the screen edges on
+          mobile (so the rounded TabsList background reaches the gutter) while
+          overflow-x-auto keeps the swipe scroll local — the page itself stays
+          locked to the viewport.
+        */}
+        <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0">
+          <TabsList className="max-w-none">
+            <TabsTrigger value="map">Map</TabsTrigger>
+            <TabsTrigger value="network">Network</TabsTrigger>
+            <TabsTrigger value="flows">Flows</TabsTrigger>
+            <TabsTrigger value="list">List</TabsTrigger>
+            <TabsTrigger value="directory">Directory</TabsTrigger>
+            <TabsTrigger value="county">By county</TabsTrigger>
+            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+            <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
+            <TabsTrigger value="reports">Reports</TabsTrigger>
+          </TabsList>
+        </div>
         <TabsContent value="map" className="mt-4">
           <div className="md:grid md:grid-cols-[1fr_340px] md:gap-5">
             <FarmsMap
