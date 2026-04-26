@@ -1,15 +1,16 @@
 "use client";
 
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { NetworkExplorer } from "@/components/farms/network-explorer";
 import { Landing } from "@/components/landing";
 import { PersonaSwitcher } from "@/components/persona-switcher";
 import { EntryBanner } from "@/components/entry-banner";
+import { createClient } from "@/lib/supabase/client";
 import type { Persona } from "@/components/farms/network-explorer";
 
-function isPersona(v: string | null): v is Persona {
+function isPersona(v: string | null | undefined): v is Persona {
   return (
     v === "policymaker" ||
     v === "afs" ||
@@ -25,9 +26,42 @@ function isPersona(v: string | null): v is Persona {
 function PageBody() {
   const params = useSearchParams();
   const raw = params.get("persona");
-  const persona: Persona | null = isPersona(raw) ? raw : null;
+  const urlPersona: Persona | null = isPersona(raw) ? raw : null;
   const embedMode = params.get("mode") === "embed";
   const fromAfs = params.get("ref") === "afs";
+
+  // Authed-user resolution: if there's no ?persona= override and the visitor
+  // is signed in, use their profile.persona. Middleware also redirects on /
+  // for SSR'd loads; this client-side fallback handles same-page navigations
+  // (e.g. clicking the wordmark home link from inside the app) where the
+  // server middleware doesn't re-run.
+  const [profilePersona, setProfilePersona] = useState<Persona | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (embedMode) return;
+    let cancelled = false;
+    const supabase = createClient();
+    (async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (cancelled || !user) return;
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("persona, tier")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (cancelled || !profile) return;
+      if (isPersona(profile.persona)) setProfilePersona(profile.persona);
+      if (profile.tier === "afs_internal") setIsAdmin(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [embedMode]);
+
+  const persona: Persona | null = urlPersona ?? profilePersona;
 
   // In embed mode the demo is loaded inside an iframe on pro-pitch. Silence
   // console errors/warnings so they don't bubble into the parent page's devtools.
@@ -76,7 +110,7 @@ function PageBody() {
           >
             Provender<span className="text-accent-amber">.</span>
           </Link>
-          {persona ? <PersonaSwitcher persona={persona} /> : null}
+          {persona ? <PersonaSwitcher persona={persona} isAdmin={isAdmin} /> : null}
         </div>
       </nav>
       {persona === null ? (

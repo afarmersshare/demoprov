@@ -21,9 +21,9 @@ const LABEL_BY_ID: Record<Persona, string> = PERSONA_ENTRIES.reduce(
   {} as Record<Persona, string>,
 );
 
-type Props = { persona: Persona };
+type Props = { persona: Persona; isAdmin?: boolean };
 
-export function PersonaSwitcher({ persona }: Props) {
+export function PersonaSwitcher({ persona, isAdmin = false }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
 
@@ -88,7 +88,9 @@ export function PersonaSwitcher({ persona }: Props) {
           <div className="px-3.5 pt-2.5 pb-1 text-[9px] font-bold uppercase tracking-[0.1em] text-charcoal-soft/70">
             Switch lens
           </div>
-          {PERSONA_ENTRIES.filter((p) => p.id !== persona).map((p) => (
+          {PERSONA_ENTRIES.filter(
+            (p) => p.id !== persona && (isAdmin || p.id !== "afs"),
+          ).map((p) => (
             <Link
               key={p.id}
               href={`/?persona=${p.id}`}
