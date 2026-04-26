@@ -554,14 +554,6 @@ export function NetworkExplorer({
             totalFarms={farms}
             filterActive={filterActive}
           />
-          <div className="mb-4 -mt-2 text-[11px] text-charcoal-soft/80 tabular-nums font-mono">
-            Network loaded — {farms.length} farms · {markets.length} markets ·{" "}
-            {distributors.length} distributors · {processors.length}{" "}
-            processors · {recoveryNodes.length} recovery · {enablers.length}{" "}
-            enablers · {persons.length} people · {regions.length} regions ·{" "}
-            {relationships.length} connections · {farmCrops.length} crop links ·{" "}
-            {impactDocs.length} impact docs
-          </div>
         </>
       )}
 
@@ -684,24 +676,22 @@ export function NetworkExplorer({
         className="w-full"
       >
         {/*
-          Wrapper -mx-4 px-4 lets the tab strip bleed to the screen edges on
-          mobile (so the rounded TabsList background reaches the gutter) while
-          overflow-x-auto keeps the swipe scroll local — the page itself stays
-          locked to the viewport.
+          Mobile: 3-column grid so all 9 tabs are visible at once with no
+          horizontal scroll (see commit "Mobile: stack tabs..."). Desktop
+          (sm+): revert to the original inline-flex strip via tailwind-merge
+          override of the cva defaults in TabsList.
         */}
-        <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0">
-          <TabsList className="max-w-none">
-            <TabsTrigger value="map">Map</TabsTrigger>
-            <TabsTrigger value="network">Network</TabsTrigger>
-            <TabsTrigger value="flows">Flows</TabsTrigger>
-            <TabsTrigger value="list">List</TabsTrigger>
-            <TabsTrigger value="directory">Directory</TabsTrigger>
-            <TabsTrigger value="county">By county</TabsTrigger>
-            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-            <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
-            <TabsTrigger value="reports">Reports</TabsTrigger>
-          </TabsList>
-        </div>
+        <TabsList className="!grid !grid-cols-3 !gap-1 !w-full !h-auto !p-1.5 sm:!inline-flex sm:!gap-0 sm:!w-fit sm:!h-8 sm:!p-[3px]">
+          <TabsTrigger value="map">Map</TabsTrigger>
+          <TabsTrigger value="network">Network</TabsTrigger>
+          <TabsTrigger value="flows">Flows</TabsTrigger>
+          <TabsTrigger value="list">List</TabsTrigger>
+          <TabsTrigger value="directory">Directory</TabsTrigger>
+          <TabsTrigger value="county">By county</TabsTrigger>
+          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+          <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
+          <TabsTrigger value="reports">Reports</TabsTrigger>
+        </TabsList>
         <TabsContent value="map" className="mt-4">
           <div className="md:grid md:grid-cols-[1fr_340px] md:gap-5">
             <FarmsMap

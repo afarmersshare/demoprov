@@ -183,6 +183,13 @@ export function FarmsMap({
         mapStyle="https://tiles.openfreemap.org/styles/positron"
         style={{ width: "100%", height: "100%" }}
         onClick={() => onSelect(null)}
+        // Cooperative gestures: a one-finger touch (or unmodified scroll
+        // wheel) scrolls the page; only two-finger pan / pinch move and
+        // zoom the map. Critical on mobile where the map fills the
+        // viewport — without this, tapping anywhere near the map traps
+        // the user and they cannot scroll past it. MapLibre shows a
+        // brief "Use two fingers to move the map" hint on first try.
+        cooperativeGestures
       >
         <NavigationControl position="top-right" />
 
