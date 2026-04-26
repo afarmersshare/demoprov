@@ -4,23 +4,48 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
-// Top-nav chip that shows "Sign in" when anonymous and "Sign out" when
-// authed. Self-contained: doesn't rely on any state plumbed from the
-// page. Survives the demo→real-build cut where the persona switcher
-// goes away.
+// Top-nav chip:
+//   anonymous → "Sign in"  (links to /login)
+//   authed    → "Hi, [name]" (links to /profile, which hosts sign-out)
+//
+// Self-contained: subscribes to auth state changes and refreshes the label
+// without needing props from the page. Display name comes from
+// user_profiles.display_name with email-prefix fallback so we never render
+// an empty chip.
 export function AuthChip() {
   const [authed, setAuthed] = useState<boolean | null>(null);
+  const [label, setLabel] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
     let cancelled = false;
 
-    supabase.auth.getUser().then(({ data }) => {
-      if (!cancelled) setAuthed(Boolean(data.user));
-    });
+    async function refresh() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (cancelled) return;
+      if (!user) {
+        setAuthed(false);
+        setLabel(null);
+        return;
+      }
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("display_name")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      const fallback = user.email ? user.email.split("@")[0] : "you";
+      const name = profile?.display_name?.trim() || fallback;
+      setAuthed(true);
+      setLabel(name);
+    }
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!cancelled) setAuthed(Boolean(session?.user));
+    refresh();
+
+    const { data: sub } = supabase.auth.onAuthStateChange(() => {
+      refresh();
     });
 
     return () => {
@@ -33,7 +58,7 @@ export function AuthChip() {
   if (authed === null) return null;
 
   const chipClass =
-    "inline-flex items-center gap-2 rounded-full border border-cream-shadow bg-white px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-charcoal-soft hover:text-slate-blue hover:border-slate-blue transition-colors";
+    "inline-flex items-center gap-2 rounded-full border border-cream-shadow bg-white px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-charcoal-soft hover:text-slate-blue hover:border-slate-blue transition-colors max-w-[200px]";
 
   if (!authed) {
     return (
@@ -44,10 +69,10 @@ export function AuthChip() {
   }
 
   return (
-    <form action="/auth/signout" method="post">
-      <button type="submit" className={chipClass}>
-        Sign out
-      </button>
-    </form>
+    <Link href="/profile" className={chipClass}>
+      <span className="truncate normal-case tracking-normal text-[12px] font-semibold">
+        Hi, {label}
+      </span>
+    </Link>
   );
 }
