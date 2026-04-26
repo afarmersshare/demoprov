@@ -7,6 +7,7 @@ import { NetworkExplorer } from "@/components/farms/network-explorer";
 import { Landing } from "@/components/landing";
 import { PersonaSwitcher } from "@/components/persona-switcher";
 import { EntryBanner } from "@/components/entry-banner";
+import { AuthChip } from "@/components/auth/auth-chip";
 import { createClient } from "@/lib/supabase/client";
 import type { Persona } from "@/components/farms/network-explorer";
 
@@ -110,7 +111,10 @@ function PageBody() {
           >
             Provender<span className="text-accent-amber">.</span>
           </Link>
-          {persona ? <PersonaSwitcher persona={persona} isAdmin={isAdmin} /> : null}
+          <div className="flex items-center gap-2.5">
+            {persona ? <PersonaSwitcher persona={persona} isAdmin={isAdmin} /> : null}
+            <AuthChip />
+          </div>
         </div>
       </nav>
       {persona === null ? (
