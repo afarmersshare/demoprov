@@ -10,6 +10,7 @@ import { EntryBanner } from "@/components/entry-banner";
 import { AuthChip } from "@/components/auth/auth-chip";
 import { createClient } from "@/lib/supabase/client";
 import type { Persona } from "@/components/farms/network-explorer";
+import type { ModuleSlug } from "@/lib/auth/get-user";
 
 function isPersona(v: string | null | undefined): v is Persona {
   return (
@@ -38,6 +39,12 @@ function PageBody() {
   // server middleware doesn't re-run.
   const [profilePersona, setProfilePersona] = useState<Persona | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  // undefined = not yet resolved or anonymous (treat as demo, all unlocked).
+  // [] = signed in with zero entitlements. Distinct so NetworkExplorer can
+  // tell "no row in DB" apart from "still loading".
+  const [entitledModules, setEntitledModules] = useState<
+    ModuleSlug[] | undefined
+  >(undefined);
 
   useEffect(() => {
     if (embedMode) return;
@@ -48,14 +55,25 @@ function PageBody() {
         data: { user },
       } = await supabase.auth.getUser();
       if (cancelled || !user) return;
-      const { data: profile } = await supabase
-        .from("user_profiles")
-        .select("persona, tier")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      const [{ data: profile }, { data: entitlements }] = await Promise.all([
+        supabase
+          .from("user_profiles")
+          .select("persona, tier")
+          .eq("user_id", user.id)
+          .maybeSingle(),
+        supabase
+          .from("user_module_entitlements")
+          .select("module_slug")
+          .eq("user_id", user.id),
+      ]);
       if (cancelled || !profile) return;
       if (isPersona(profile.persona)) setProfilePersona(profile.persona);
       if (profile.tier === "afs_internal") setIsAdmin(true);
+      setEntitledModules(
+        (entitlements ?? []).map(
+          (row: { module_slug: string }) => row.module_slug as ModuleSlug,
+        ),
+      );
     })();
     return () => {
       cancelled = true;
@@ -121,7 +139,10 @@ function PageBody() {
         <Landing />
       ) : (
         <div className="mx-auto max-w-7xl px-6 sm:px-10 py-8 sm:py-10">
-          <NetworkExplorer persona={persona} />
+          <NetworkExplorer
+            persona={persona}
+            entitledModules={entitledModules}
+          />
         </div>
       )}
     </main>
