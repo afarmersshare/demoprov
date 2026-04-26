@@ -406,11 +406,18 @@ export function NetworkFlows({
     if (links.length === 0) return null;
 
     const height = 620;
-    // margin.top was 42 to reserve room for column headers drawn inside the
-    // SVG. Headers now live in an HTML row above the SVG so the diagram can
-    // breathe right up to the top.
-    const margin = { top: 12, right: 200, bottom: 16, left: 20 };
-    const effWidth = Math.max(width, 520);
+    // margin.right used to be 200 from when outcome labels were positioned
+    // to the right of the rightmost nodes. Labels now render to the left
+    // of right-half nodes (see labelLeft branch below), so the right margin
+    // was just dead space pushing the diagram off-center on every viewport.
+    // Tight 16px gutters all around let the sankey fill its container at
+    // any width.
+    const margin = { top: 12, right: 16, bottom: 16, left: 16 };
+    // effWidth used to clamp at 520, which forced narrow phones to render a
+    // 520-wide layout scaled down — squashing labels and ribbons. Now we
+    // honor the actual container width with a 320 safety floor only for
+    // the very narrowest viewports.
+    const effWidth = Math.max(width, 320);
 
     const layoutFn = sankey<NodeDatum, LinkDatum>()
       .nodeWidth(18)

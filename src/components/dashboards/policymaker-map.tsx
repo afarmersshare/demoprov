@@ -275,6 +275,9 @@ export function PolicymakerMap({
         style={{ width: "100%", height: "100%" }}
         interactiveLayerIds={["regions-fill"]}
         onClick={handleMapClick}
+        // Cooperative gestures: single-finger scrolls the page, two
+        // fingers pan/zoom the map. Same pattern as the main farms map.
+        cooperativeGestures
       >
         <NavigationControl position="top-right" />
 

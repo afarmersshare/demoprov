@@ -445,6 +445,12 @@ export function NetworkGraph({
     <div
       ref={containerRef}
       className="relative w-full h-[600px] rounded-[14px] overflow-hidden border border-cream-shadow bg-cream"
+      // touch-action: pan-y lets the browser claim single-finger vertical
+      // touches for page scroll, so users can swipe past the graph without
+      // getting trapped. Multi-touch (pinch / two-finger drag) still
+      // reaches react-force-graph for in-graph zoom and pan. Tap-to-click
+      // on nodes continues to work because taps are distinct from pans.
+      style={{ touchAction: "pan-y" }}
     >
       {!nothingToPlot ? (
         <ForceGraph2D
