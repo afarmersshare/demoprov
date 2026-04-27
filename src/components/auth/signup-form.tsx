@@ -398,11 +398,18 @@ export function SignupForm({
         </fieldset>
 
         {/* Preferences — both default to OFF (= consent given). Checking
-            the box revokes the corresponding consent. */}
+            the box revokes the corresponding consent. The intro sentence
+            makes the opt-in explicit at signup time so the granular opt-out
+            controls below sit on top of informed consent. */}
         <fieldset className="space-y-3 pt-2 border-t border-cream-shadow">
           <legend className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft pt-4">
             Preferences
           </legend>
+          <p className="text-[13px] leading-relaxed text-charcoal-soft -mt-1">
+            By creating your account, you&apos;re agreeing to occasional
+            Provender updates and a directory listing visible to other paying
+            users in your tier. Use the boxes below to opt out of either.
+          </p>
 
           <label className="flex items-start gap-3 cursor-pointer text-[13px] leading-relaxed text-charcoal">
             <input
