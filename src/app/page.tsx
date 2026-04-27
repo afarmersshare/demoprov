@@ -40,6 +40,7 @@ function PageBody() {
   // server middleware doesn't re-run.
   const [profilePersona, setProfilePersona] = useState<Persona | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   // undefined = not yet resolved or anonymous (treat as demo, all unlocked).
   // [] = signed in with zero entitlements. Distinct so NetworkExplorer can
   // tell "no row in DB" apart from "still loading".
@@ -61,6 +62,7 @@ function PageBody() {
         data: { user },
       } = await supabase.auth.getUser();
       if (cancelled || !user) return;
+      setIsLoggedIn(true);
       const [{ data: profile }, { data: entitlements }] = await Promise.all([
         supabase
           .from("user_profiles")
@@ -139,7 +141,9 @@ function PageBody() {
             Provender<span className="text-accent-amber">.</span>
           </Link>
           <div className="flex items-center gap-2.5">
-            {persona ? <PersonaSwitcher persona={persona} isAdmin={isAdmin} /> : null}
+            {persona && (!isLoggedIn || isAdmin) ? (
+              <PersonaSwitcher persona={persona} isAdmin={isAdmin} />
+            ) : null}
             <AuthChip />
           </div>
         </div>
