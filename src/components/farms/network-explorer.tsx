@@ -30,6 +30,9 @@ import { BuyerDashboard } from "../dashboards/buyer";
 import { EmbedCta } from "../embed-cta";
 import { ReportsTab } from "./reports-tab";
 import { PipelineDashboard } from "../dashboards/pipeline-dashboard";
+import { LockedModule } from "../locked-module";
+import type { ModuleSlug } from "@/lib/auth/get-user";
+import { Lock } from "lucide-react";
 
 export type Persona =
   | "policymaker"
@@ -244,13 +247,40 @@ function prettify(raw: string): string {
   return raw.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+// Default tab order for "drop the user on their first entitled module" —
+// matches the visual TabsList order so the auto-pick lines up with what the
+// eye sees first.
+const TAB_ORDER: ModuleSlug[] = [
+  "dashboard",
+  "map",
+  "network",
+  "flows",
+  "list",
+  "directory",
+  "county",
+  "pipeline",
+  "reports",
+];
+
 export function NetworkExplorer({
   persona = "explore",
   embedMode = false,
+  entitledModules,
 }: {
   persona?: Persona;
   embedMode?: boolean;
+  // undefined = anonymous demo or pre-resolution → all tabs unlocked.
+  // [] = signed in with zero entitlements (treat all tabs as locked).
+  // Defined and non-empty = enforce: only listed slugs render the live tool.
+  entitledModules?: ModuleSlug[];
 }) {
+  // Treating "no plumbed entitlements" as "demo" preserves the existing
+  // anonymous experience — the public landing/embed surfaces continue to
+  // show every tool. Authed users always get a defined array (possibly
+  // empty), so they always go through the gate.
+  const enforcing = entitledModules !== undefined;
+  const isUnlocked = (slug: ModuleSlug): boolean =>
+    !enforcing || entitledModules.includes(slug);
   const [farms, setFarms] = useState<Farm[]>([]);
   const [markets, setMarkets] = useState<Market[]>([]);
   const [distributors, setDistributors] = useState<Distributor[]>([]);
@@ -275,6 +305,20 @@ export function NetworkExplorer({
   const [selectedEntity, setSelectedEntity] = useState<NetworkEntity | null>(
     null,
   );
+
+  // If a signed-in user lands on a tab their tier doesn't include, jump
+  // them to the first entitled tab in canonical order. Demo / anonymous
+  // users (entitledModules undefined) skip this entirely. Runs once
+  // entitlements resolve; later user-initiated tab changes aren't
+  // overridden because the effect only fires on entitledModules changes
+  // and the new activeTab is, by definition, entitled.
+  useEffect(() => {
+    if (!enforcing) return;
+    if (isUnlocked(activeTab as ModuleSlug)) return;
+    const fallback = TAB_ORDER.find((slug) => isUnlocked(slug));
+    if (fallback) setActiveTab(fallback);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entitledModules]);
 
   useEffect(() => {
     const supabase = createClient();
@@ -682,8 +726,12 @@ export function NetworkExplorer({
           override of the cva defaults in TabsList.
         */}
         <TabsList className="!grid !grid-cols-3 !gap-1 !w-full !h-auto !p-1.5 sm:!inline-flex sm:!gap-0 sm:!w-fit sm:!h-8 sm:!p-[3px]">
-          <TabsTrigger value="map">Map</TabsTrigger>
-          <TabsTrigger value="network">Network</TabsTrigger>
+          <TabTriggerWithLock slug="map" locked={!isUnlocked("map")}>
+            Map
+          </TabTriggerWithLock>
+          <TabTriggerWithLock slug="network" locked={!isUnlocked("network")}>
+            Network
+          </TabTriggerWithLock>
           {/*
             Flows is a 4-column d3-sankey. Long node names ("Restaurant
             Independent", "Foodservice Management", "Institution Hospital")
@@ -692,129 +740,176 @@ export function NetworkExplorer({
             in any orientation and tablet portrait; reappears on tablet
             landscape and desktop.
           */}
-          <TabsTrigger value="flows" className="hidden lg:flex">
+          <TabTriggerWithLock
+            slug="flows"
+            locked={!isUnlocked("flows")}
+            className="hidden lg:flex"
+          >
             Flows
-          </TabsTrigger>
-          <TabsTrigger value="list">List</TabsTrigger>
-          <TabsTrigger value="directory">Directory</TabsTrigger>
-          <TabsTrigger value="county">By county</TabsTrigger>
-          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-          <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
-          <TabsTrigger value="reports">Reports</TabsTrigger>
+          </TabTriggerWithLock>
+          <TabTriggerWithLock slug="list" locked={!isUnlocked("list")}>
+            List
+          </TabTriggerWithLock>
+          <TabTriggerWithLock
+            slug="directory"
+            locked={!isUnlocked("directory")}
+          >
+            Directory
+          </TabTriggerWithLock>
+          <TabTriggerWithLock slug="county" locked={!isUnlocked("county")}>
+            By county
+          </TabTriggerWithLock>
+          <TabTriggerWithLock
+            slug="dashboard"
+            locked={!isUnlocked("dashboard")}
+          >
+            Dashboard
+          </TabTriggerWithLock>
+          <TabTriggerWithLock slug="pipeline" locked={!isUnlocked("pipeline")}>
+            Pipeline
+          </TabTriggerWithLock>
+          <TabTriggerWithLock slug="reports" locked={!isUnlocked("reports")}>
+            Reports
+          </TabTriggerWithLock>
         </TabsList>
         <TabsContent value="map" className="mt-4">
-          <div className="md:grid md:grid-cols-[1fr_340px] md:gap-5">
-            <FarmsMap
-              farms={filteredFarms}
-              markets={filteredMarkets}
-              distributors={filteredDistributors}
-              processors={filteredProcessors}
-              recoveryNodes={filteredRecoveryNodes}
-              enablers={filteredEnablers}
-              regions={regions}
-              selected={selectedEntity}
-              onSelect={setSelectedEntity}
-            />
-            <div className="hidden md:block">
-              <EntityDetailPanel
-                entity={selectedEntity}
-                entityCount={mapPinCount}
-                hintToClick="Click any marker on the map to see details."
-                embedMode={embedMode}
-                complianceByFarm={complianceByFarm}
+          {isUnlocked("map") ? (
+            <div className="md:grid md:grid-cols-[1fr_340px] md:gap-5">
+              <FarmsMap
+                farms={filteredFarms}
+                markets={filteredMarkets}
+                distributors={filteredDistributors}
+                processors={filteredProcessors}
+                recoveryNodes={filteredRecoveryNodes}
+                enablers={filteredEnablers}
+                regions={regions}
+                selected={selectedEntity}
+                onSelect={setSelectedEntity}
               />
+              <div className="hidden md:block">
+                <EntityDetailPanel
+                  entity={selectedEntity}
+                  entityCount={mapPinCount}
+                  hintToClick="Click any marker on the map to see details."
+                  embedMode={embedMode}
+                  complianceByFarm={complianceByFarm}
+                />
+              </div>
             </div>
-          </div>
+          ) : (
+            <LockedModule slug="map" />
+          )}
         </TabsContent>
         <TabsContent value="network" className="mt-4">
-          <div className="md:grid md:grid-cols-[1fr_340px] md:gap-5">
-            <NetworkGraph
-              farms={filteredFarms}
-              markets={filteredMarkets}
-              distributors={filteredDistributors}
-              processors={filteredProcessors}
-              recoveryNodes={filteredRecoveryNodes}
-              enablers={filteredEnablers}
-              relationships={relationships}
-              persons={persons}
-              selected={selectedEntity}
-              onSelect={setSelectedEntity}
-            />
-            <div className="hidden md:block">
-              <EntityDetailPanel
-                entity={selectedEntity}
-                entityCount={mapPinCount}
-                hintToClick="Click any node in the graph to see details."
-                embedMode={embedMode}
-                complianceByFarm={complianceByFarm}
+          {isUnlocked("network") ? (
+            <div className="md:grid md:grid-cols-[1fr_340px] md:gap-5">
+              <NetworkGraph
+                farms={filteredFarms}
+                markets={filteredMarkets}
+                distributors={filteredDistributors}
+                processors={filteredProcessors}
+                recoveryNodes={filteredRecoveryNodes}
+                enablers={filteredEnablers}
+                relationships={relationships}
+                persons={persons}
+                selected={selectedEntity}
+                onSelect={setSelectedEntity}
               />
+              <div className="hidden md:block">
+                <EntityDetailPanel
+                  entity={selectedEntity}
+                  entityCount={mapPinCount}
+                  hintToClick="Click any node in the graph to see details."
+                  embedMode={embedMode}
+                  complianceByFarm={complianceByFarm}
+                />
+              </div>
             </div>
-          </div>
+          ) : (
+            <LockedModule slug="network" />
+          )}
         </TabsContent>
         <TabsContent value="flows" className="mt-4">
-          <NetworkFlows
-            farms={filteredFarms}
-            markets={filteredMarkets}
-            distributors={filteredDistributors}
-            processors={filteredProcessors}
-            recoveryNodes={filteredRecoveryNodes}
-            relationships={relationships}
-          />
-        </TabsContent>
-        <TabsContent value="list" className="mt-4">
-          <div className="md:grid md:grid-cols-[1fr_340px] md:gap-5">
-            <FarmsList
+          {isUnlocked("flows") ? (
+            <NetworkFlows
               farms={filteredFarms}
-              selected={selectedFarm}
-              onSelect={(f) =>
-                setSelectedEntity(f ? { kind: "farm", data: f } : null)
-              }
-            />
-            <div className="hidden md:block">
-              <FarmDetailPanel
-                farm={selectedFarm}
-                farmCount={filteredFarms.length}
-                hintToClick="Click any row to see details for that farm."
-              />
-            </div>
-          </div>
-        </TabsContent>
-        <TabsContent value="directory" className="mt-4">
-          <NetworkDirectory
-            farms={farms}
-            markets={markets}
-            distributors={distributors}
-            processors={processors}
-            recoveryNodes={recoveryNodes}
-            enablers={enablers}
-            statusFilter={statusFilter}
-          />
-        </TabsContent>
-        <TabsContent value="county" className="mt-4">
-          <div className="md:grid md:grid-cols-[1fr_340px] md:gap-5">
-            <NetworkByCounty
-              farms={farmsForByCounty}
               markets={filteredMarkets}
               distributors={filteredDistributors}
               processors={filteredProcessors}
               recoveryNodes={filteredRecoveryNodes}
-              enablers={filteredEnablers}
-              regions={regions}
-              statusFilter={statusFilter}
-              onSelect={setSelectedEntity}
+              relationships={relationships}
             />
-            <div className="hidden md:block">
-              <EntityDetailPanel
-                entity={selectedEntity}
-                entityCount={mapPinCount}
-                hintToClick="Expand a county and click any entity name to see details."
-                embedMode={embedMode}
-                complianceByFarm={complianceByFarm}
+          ) : (
+            <LockedModule slug="flows" />
+          )}
+        </TabsContent>
+        <TabsContent value="list" className="mt-4">
+          {isUnlocked("list") ? (
+            <div className="md:grid md:grid-cols-[1fr_340px] md:gap-5">
+              <FarmsList
+                farms={filteredFarms}
+                selected={selectedFarm}
+                onSelect={(f) =>
+                  setSelectedEntity(f ? { kind: "farm", data: f } : null)
+                }
               />
+              <div className="hidden md:block">
+                <FarmDetailPanel
+                  farm={selectedFarm}
+                  farmCount={filteredFarms.length}
+                  hintToClick="Click any row to see details for that farm."
+                />
+              </div>
             </div>
-          </div>
+          ) : (
+            <LockedModule slug="list" />
+          )}
+        </TabsContent>
+        <TabsContent value="directory" className="mt-4">
+          {isUnlocked("directory") ? (
+            <NetworkDirectory
+              farms={farms}
+              markets={markets}
+              distributors={distributors}
+              processors={processors}
+              recoveryNodes={recoveryNodes}
+              enablers={enablers}
+              statusFilter={statusFilter}
+            />
+          ) : (
+            <LockedModule slug="directory" />
+          )}
+        </TabsContent>
+        <TabsContent value="county" className="mt-4">
+          {isUnlocked("county") ? (
+            <div className="md:grid md:grid-cols-[1fr_340px] md:gap-5">
+              <NetworkByCounty
+                farms={farmsForByCounty}
+                markets={filteredMarkets}
+                distributors={filteredDistributors}
+                processors={filteredProcessors}
+                recoveryNodes={filteredRecoveryNodes}
+                enablers={filteredEnablers}
+                regions={regions}
+                statusFilter={statusFilter}
+                onSelect={setSelectedEntity}
+              />
+              <div className="hidden md:block">
+                <EntityDetailPanel
+                  entity={selectedEntity}
+                  entityCount={mapPinCount}
+                  hintToClick="Expand a county and click any entity name to see details."
+                  embedMode={embedMode}
+                  complianceByFarm={complianceByFarm}
+                />
+              </div>
+            </div>
+          ) : (
+            <LockedModule slug="county" />
+          )}
         </TabsContent>
         <TabsContent value="dashboard" className="mt-4">
+          {isUnlocked("dashboard") ? (
           <div className="md:grid md:grid-cols-[1fr_340px] md:gap-5 md:items-start">
             {persona === "afs" ? (
               <AfsDashboard
@@ -879,26 +974,37 @@ export function NetworkExplorer({
               />
             </div>
           </div>
+          ) : (
+            <LockedModule slug="dashboard" />
+          )}
         </TabsContent>
         <TabsContent value="pipeline" className="mt-4">
-          <PipelineDashboard
-            farms={filteredFarms}
-            complianceByFarm={complianceByFarm}
-          />
+          {isUnlocked("pipeline") ? (
+            <PipelineDashboard
+              farms={filteredFarms}
+              complianceByFarm={complianceByFarm}
+            />
+          ) : (
+            <LockedModule slug="pipeline" />
+          )}
         </TabsContent>
         <TabsContent value="reports" className="mt-4">
-          <ReportsTab
-            farms={filteredFarms}
-            markets={filteredMarkets}
-            distributors={filteredDistributors}
-            processors={filteredProcessors}
-            recoveryNodes={filteredRecoveryNodes}
-            enablers={filteredEnablers}
-            farmCrops={farmCrops}
-            impactDocs={impactDocs}
-            regions={regions}
-            complianceByFarm={complianceByFarm}
-          />
+          {isUnlocked("reports") ? (
+            <ReportsTab
+              farms={filteredFarms}
+              markets={filteredMarkets}
+              distributors={filteredDistributors}
+              processors={filteredProcessors}
+              recoveryNodes={filteredRecoveryNodes}
+              enablers={filteredEnablers}
+              farmCrops={farmCrops}
+              impactDocs={impactDocs}
+              regions={regions}
+              complianceByFarm={complianceByFarm}
+            />
+          ) : (
+            <LockedModule slug="reports" />
+          )}
         </TabsContent>
       </Tabs>
 
@@ -916,3 +1022,35 @@ export function NetworkExplorer({
     </div>
   );
 }
+
+// TabsTrigger plus an inline lock glyph for modules the user's tier doesn't
+// include. Locked tabs stay clickable — the TabsContent renders a
+// LockedModule upsell rather than the live tool. Treat the glyph as a hint,
+// not a blocker.
+function TabTriggerWithLock({
+  slug,
+  locked,
+  className,
+  children,
+}: {
+  slug: ModuleSlug;
+  locked: boolean;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <TabsTrigger
+      value={slug}
+      className={className}
+      aria-label={locked ? `${slug} (locked)` : undefined}
+    >
+      <span className="inline-flex items-center gap-1">
+        {children}
+        {locked ? (
+          <Lock className="h-2.5 w-2.5 opacity-60" aria-hidden />
+        ) : null}
+      </span>
+    </TabsTrigger>
+  );
+}
+
