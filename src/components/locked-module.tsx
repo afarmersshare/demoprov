@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Lock, ArrowRight } from "lucide-react";
 import type { ModuleSlug } from "@/lib/auth/get-user";
 
@@ -92,9 +93,9 @@ const MODULE_PITCH: Record<
 
 // Renders inside a TabsContent slot when the user's tier doesn't entitle
 // them to that module. Same shape as the live tools (rounded card, regional
-// chrome) so the page doesn't feel broken — it feels gated. CTA points at
-// hello@afarmersshare.com; admin tooling that flips entitlements lives
-// behind the service-role key (see sql/008_auth_users.sql).
+// chrome) so the page doesn't feel broken — it feels gated. Primary CTA
+// routes to /pricing with the locked module slug highlighted; the email
+// address stays visible underneath as a direct fallback.
 export function LockedModule({ slug }: { slug: ModuleSlug }) {
   const pitch = MODULE_PITCH[slug];
   return (
@@ -124,18 +125,24 @@ export function LockedModule({ slug }: { slug: ModuleSlug }) {
           ))}
         </ul>
 
-        <a
-          href={`mailto:hello@afarmersshare.com?subject=Unlock%20${encodeURIComponent(
-            pitch.title,
-          )}%20on%20Provender`}
+        <Link
+          href={`/pricing?highlight=${slug}`}
           className="mt-7 inline-flex items-center gap-2 rounded-full bg-slate-blue px-5 py-2 text-[12px] font-semibold uppercase tracking-[0.08em] text-warm-cream hover:bg-slate-blue-light transition-colors"
         >
-          Talk to us about access
+          See plans that include this
           <ArrowRight className="w-3.5 h-3.5" />
-        </a>
+        </Link>
 
         <p className="mt-4 text-[11px] text-charcoal-soft/80">
-          hello@afarmersshare.com
+          Or email{" "}
+          <a
+            href={`mailto:hello@afarmersshare.com?subject=Unlock%20${encodeURIComponent(
+              pitch.title,
+            )}%20on%20Provender`}
+            className="font-semibold text-slate-blue hover:text-slate-blue-light"
+          >
+            hello@afarmersshare.com
+          </a>
         </p>
       </div>
     </div>

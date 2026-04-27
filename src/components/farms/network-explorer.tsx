@@ -1016,9 +1016,21 @@ export function NetworkExplorer({
         complianceByFarm={complianceByFarm}
       />
 
-      {embedMode || persona !== "explore" ? (
-        <EmbedCta variant={embedMode ? "embed" : "persona"} />
-      ) : null}
+      {(() => {
+        // Embed iframes always get the escape-hatch CTA. Persona views get the
+        // "explore the full demo" CTA only when there's actually more to see —
+        // i.e. the user is anonymous (no entitlements enforced) or has at
+        // least one locked tab. Tiers with everything unlocked
+        // (afs_internal, aggregator_licensed, demo) hide the persona CTA.
+        if (embedMode) {
+          return <EmbedCta variant="embed" />;
+        }
+        if (persona === "explore") return null;
+        const hasLockedTab =
+          enforcing && TAB_ORDER.some((s) => !entitledModules.includes(s));
+        if (enforcing && !hasLockedTab) return null;
+        return <EmbedCta variant="persona" />;
+      })()}
     </div>
   );
 }
