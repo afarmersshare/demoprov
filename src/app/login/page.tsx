@@ -29,6 +29,8 @@ export default async function LoginPage({
   const { error, next } = await searchParams;
   const safe = safeNext(next);
 
+  const signupHref = safe ? `/signup?next=${encodeURIComponent(safe)}` : "/signup";
+
   return (
     <main className="min-h-screen bg-chrome text-charcoal flex flex-col">
       <nav className="border-b border-cream-shadow bg-chrome/85 backdrop-blur-md">
@@ -47,41 +49,106 @@ export default async function LoginPage({
       </nav>
 
       <div className="flex-1 flex items-center justify-center px-6 py-12">
-        <div className="w-full max-w-[420px]">
-          <div className="text-center mb-7">
+        <div className="w-full max-w-[960px]">
+          <div className="text-center mb-8">
             <h1 className="font-display text-[28px] sm:text-[32px] font-semibold text-charcoal leading-tight tracking-[-0.01em]">
-              Sign in to Provender
+              Welcome to Provender
             </h1>
             <p className="mt-2 text-[14px] text-charcoal-soft leading-relaxed">
-              Use your Google account, or we&apos;ll email you a one-time link.
+              New here? Create an account on the left. Already signed up?
+              Sign in on the right.
             </p>
           </div>
 
-          <div className="rounded-[14px] border border-cream-shadow bg-white px-6 py-7 shadow-sm">
-            <LoginForm initialError={error ?? null} next={safe} />
-          </div>
+          {/* Two-column on md+, stacked on mobile. Both cards keep equal
+              visual weight so neither path looks secondary. */}
+          <div className="grid md:grid-cols-2 gap-5 md:gap-6">
+            {/* Create an account — left column */}
+            <section className="rounded-[14px] border border-cream-shadow bg-white px-6 sm:px-7 py-7 shadow-sm flex flex-col">
+              <div className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft">
+                New to Provender
+              </div>
+              <h2 className="mt-2 font-display text-[22px] font-semibold text-slate-blue leading-tight">
+                Create an account
+              </h2>
+              <p className="mt-3 text-[14px] text-charcoal-soft leading-relaxed">
+                Map your role in the regional food system. Free while we&apos;re
+                in beta.
+              </p>
 
-          <p className="mt-5 text-center text-[13px] text-charcoal-soft leading-relaxed">
-            Don&apos;t have an account?{" "}
-            <Link
-              href={safe ? `/signup?next=${encodeURIComponent(safe)}` : "/signup"}
-              className="font-semibold text-slate-blue hover:text-slate-blue-light transition-colors"
-            >
-              Sign up
-            </Link>
-          </p>
-          <p className="mt-2 text-center text-[12px] text-charcoal-soft/80 leading-relaxed">
-            Or{" "}
-            <Link
-              href="/"
-              className="font-semibold text-slate-blue hover:text-slate-blue-light transition-colors"
-            >
-              explore the demo
-            </Link>{" "}
-            without signing in.
-          </p>
+              <ul className="mt-5 space-y-2.5 text-[13px] text-charcoal leading-relaxed">
+                <li className="flex gap-2.5">
+                  <Bullet />
+                  <span>
+                    Pick your role — farmer, buyer, food council, funder, or
+                    just exploring.
+                  </span>
+                </li>
+                <li className="flex gap-2.5">
+                  <Bullet />
+                  <span>
+                    Land on a dashboard built for how you actually think about
+                    food.
+                  </span>
+                </li>
+                <li className="flex gap-2.5">
+                  <Bullet />
+                  <span>
+                    Set your visibility on your terms — directory listing is
+                    opt-out.
+                  </span>
+                </li>
+              </ul>
+
+              <div className="mt-auto pt-7">
+                <Link
+                  href={signupHref}
+                  className="block w-full text-center rounded-[10px] bg-slate-blue px-4 py-3 text-[14px] font-semibold text-white hover:bg-slate-blue-light transition-colors"
+                >
+                  Create your account
+                </Link>
+                <p className="mt-3 text-center text-[12px] text-charcoal-soft/80">
+                  Or{" "}
+                  <Link
+                    href="/"
+                    className="font-semibold text-slate-blue hover:text-slate-blue-light transition-colors"
+                  >
+                    explore the demo
+                  </Link>{" "}
+                  without signing in.
+                </p>
+              </div>
+            </section>
+
+            {/* Sign in — right column */}
+            <section className="rounded-[14px] border border-cream-shadow bg-white px-6 sm:px-7 py-7 shadow-sm">
+              <div className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft">
+                Already have an account
+              </div>
+              <h2 className="mt-2 font-display text-[22px] font-semibold text-slate-blue leading-tight">
+                Sign in
+              </h2>
+              <p className="mt-3 text-[14px] text-charcoal-soft leading-relaxed">
+                Use your Google account, send yourself a sign-in link, or use a
+                password.
+              </p>
+
+              <div className="mt-5">
+                <LoginForm initialError={error ?? null} next={safe} />
+              </div>
+            </section>
+          </div>
         </div>
       </div>
     </main>
+  );
+}
+
+function Bullet() {
+  return (
+    <span
+      aria-hidden="true"
+      className="mt-[7px] inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-slate-blue"
+    />
   );
 }
