@@ -5,10 +5,14 @@ import { createClient } from "@/lib/supabase/server";
 import { updateDisplayName, toggleConsent } from "./actions";
 import { AuthChip } from "@/components/auth/auth-chip";
 import { YourDetailsForm } from "@/components/profile/your-details-form";
+import { AvatarUpload } from "@/components/profile/avatar-upload";
 import {
   EMPTY_PROFILE_VALUES,
   type ProfileFieldsValues,
 } from "@/components/auth/profile-fields";
+
+const AVATAR_BUCKET = "provender-public-images";
+const AVATAR_SIGNED_URL_TTL = 3600;
 
 type ConsentRow = {
   consent_type: string;
@@ -26,6 +30,7 @@ type ProfileDataRow = {
   website: string | null;
   primary_interest: string | null;
   referral_source: string | null;
+  avatar_path: string | null;
 };
 
 // Tiers that can meaningfully upgrade. Demo and farmer_free see the upsell
@@ -158,6 +163,19 @@ export default async function ProfilePage() {
     referralSource: profileDataRow?.referral_source ?? "",
   };
 
+  // Avatar: bucket is private (sql/12), so we mint a signed URL on the
+  // server and pass it to the client component. The client refreshes its
+  // own signed URL after a successful upload, then router.refresh() re-runs
+  // this code path to keep the rest of the page in sync.
+  const avatarPath = profileDataRow?.avatar_path ?? null;
+  let avatarSignedUrl: string | null = null;
+  if (avatarPath) {
+    const { data } = await supabase.storage
+      .from(AVATAR_BUCKET)
+      .createSignedUrl(avatarPath, AVATAR_SIGNED_URL_TTL);
+    avatarSignedUrl = data?.signedUrl ?? null;
+  }
+
   const canUpgrade = UPGRADEABLE_TIERS.has(user.tier);
 
   return (
@@ -186,6 +204,24 @@ export default async function ProfilePage() {
             {user.email ?? "—"}
           </p>
         </div>
+
+        <section className="rounded-[14px] border border-cream-shadow bg-white p-6 sm:p-7">
+          <h2 className="font-display text-[18px] font-semibold text-charcoal">
+            Profile photo
+          </h2>
+          <p className="mt-1 text-[13px] text-charcoal-soft">
+            A face goes a long way in a network. Your photo is visible to
+            other signed-in Provender users and never to anonymous visitors.
+          </p>
+          <div className="mt-5">
+            <AvatarUpload
+              userId={user.userId}
+              initialPath={avatarPath}
+              initialSignedUrl={avatarSignedUrl}
+              displayName={user.displayName}
+            />
+          </div>
+        </section>
 
         <section className="rounded-[14px] border border-cream-shadow bg-white p-6 sm:p-7">
           <h2 className="font-display text-[18px] font-semibold text-charcoal">
