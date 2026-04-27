@@ -91,7 +91,16 @@ function PageBody() {
     };
   }, [embedMode]);
 
-  const persona: Persona | null = urlPersona ?? profilePersona;
+  // Signed-in non-admin users always see their profile persona — the URL
+  // ?persona= param is reserved for admins and anon visitors (matches the
+  // persona-switcher visibility rule). This guards against a stale URL
+  // persona from before a profile edit (browser back-forward cache, shared
+  // links, etc.) overriding the freshly-fetched profile value. Middleware
+  // normalizes the URL on full navigations; this is the in-page fallback.
+  const persona: Persona | null =
+    isLoggedIn && !isAdmin
+      ? (profilePersona ?? urlPersona)
+      : (urlPersona ?? profilePersona);
 
   // In embed mode the demo is loaded inside an iframe on pro-pitch. Silence
   // console errors/warnings so they don't bubble into the parent page's devtools.

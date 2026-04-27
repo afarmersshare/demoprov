@@ -44,7 +44,7 @@ export async function middleware(request: NextRequest) {
 
   const { data: profile } = await supabase
     .from("user_profiles")
-    .select("persona, profile_completed_at")
+    .select("persona, tier, profile_completed_at")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -54,10 +54,21 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(dest);
   }
 
-  // Persona redirect: existing behavior, only for completed users at root.
-  if (profile?.persona && isRoot && !hasPersonaParam && !isEmbed) {
-    url.searchParams.set("persona", profile.persona);
-    return NextResponse.redirect(url);
+  // Persona normalization at root. Signed-in non-admin users always see their
+  // profile persona — URL overrides are reserved for admin (afs_internal) and
+  // anonymous visitors, matching the persona-switcher visibility rule. If their
+  // URL persona is missing OR drifted from their profile (e.g. after a profile
+  // edit), redirect to fix it.
+  if (profile?.persona && isRoot && !isEmbed) {
+    const isAdmin = profile.tier === "afs_internal";
+    const urlPersona = url.searchParams.get("persona");
+    const needsFix = !isAdmin
+      ? urlPersona !== profile.persona
+      : !hasPersonaParam;
+    if (needsFix) {
+      url.searchParams.set("persona", profile.persona);
+      return NextResponse.redirect(url);
+    }
   }
 
   return response;
