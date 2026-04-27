@@ -4,6 +4,7 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 type Status = "idle" | "sending" | "sent" | "error";
+type Mode = "magic" | "password";
 
 export function LoginForm({
   initialError,
@@ -17,6 +18,8 @@ export function LoginForm({
   next?: string | null;
 }) {
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [mode, setMode] = useState<Mode>("magic");
   const [status, setStatus] = useState<Status>(initialError ? "error" : "idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(
     initialError === "callback"
@@ -63,6 +66,26 @@ export function LoginForm({
     setStatus("sent");
   }
 
+  async function handlePassword(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!email.trim() || !password) return;
+    setStatus("sending");
+    setErrorMsg(null);
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+    if (error) {
+      setStatus("error");
+      setErrorMsg(error.message);
+      return;
+    }
+    // Password auth returns a session immediately and the SSR client writes
+    // the cookies. A full navigation lets server middleware re-read the
+    // session and route to the persona dashboard.
+    window.location.href = next ?? "/";
+  }
+
   if (status === "sent") {
     return (
       <div className="rounded-[12px] border border-cream-shadow bg-warm-cream/60 px-5 py-6 text-center">
@@ -105,30 +128,94 @@ export function LoginForm({
         <div className="flex-1 border-t border-cream-shadow" />
       </div>
 
-      <form onSubmit={handleMagicLink} className="space-y-3">
-        <label className="block">
-          <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-charcoal-soft mb-1.5">
-            Email address
-          </span>
-          <input
-            type="email"
-            required
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@organization.org"
-            disabled={status === "sending"}
-            className="w-full rounded-[10px] border border-cream-shadow bg-white px-3.5 py-2.5 text-[14px] text-charcoal placeholder:text-charcoal-soft/50 focus:outline-none focus:border-slate-blue transition-colors disabled:opacity-60"
-          />
-        </label>
-        <button
-          type="submit"
-          disabled={status === "sending" || !email.trim()}
-          className="w-full rounded-[10px] bg-slate-blue px-4 py-3 text-[14px] font-semibold text-white hover:bg-slate-blue-light transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-        >
-          {status === "sending" ? "Sending…" : "Send sign-in link"}
-        </button>
-      </form>
+      {mode === "magic" ? (
+        <form onSubmit={handleMagicLink} className="space-y-3">
+          <label className="block">
+            <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-charcoal-soft mb-1.5">
+              Email address
+            </span>
+            <input
+              type="email"
+              required
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@organization.org"
+              disabled={status === "sending"}
+              className="w-full rounded-[10px] border border-cream-shadow bg-white px-3.5 py-2.5 text-[14px] text-charcoal placeholder:text-charcoal-soft/50 focus:outline-none focus:border-slate-blue transition-colors disabled:opacity-60"
+            />
+          </label>
+          <button
+            type="submit"
+            disabled={status === "sending" || !email.trim()}
+            className="w-full rounded-[10px] bg-slate-blue px-4 py-3 text-[14px] font-semibold text-white hover:bg-slate-blue-light transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {status === "sending" ? "Sending…" : "Send sign-in link"}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMode("password");
+              setErrorMsg(null);
+              setStatus("idle");
+            }}
+            className="w-full text-center text-[12px] font-semibold uppercase tracking-[0.08em] text-charcoal-soft hover:text-slate-blue transition-colors"
+          >
+            Have a password? Sign in with it instead
+          </button>
+        </form>
+      ) : (
+        <form onSubmit={handlePassword} className="space-y-3">
+          <label className="block">
+            <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-charcoal-soft mb-1.5">
+              Email address
+            </span>
+            <input
+              type="email"
+              required
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@organization.org"
+              disabled={status === "sending"}
+              className="w-full rounded-[10px] border border-cream-shadow bg-white px-3.5 py-2.5 text-[14px] text-charcoal placeholder:text-charcoal-soft/50 focus:outline-none focus:border-slate-blue transition-colors disabled:opacity-60"
+            />
+          </label>
+          <label className="block">
+            <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-charcoal-soft mb-1.5">
+              Password
+            </span>
+            <input
+              type="password"
+              required
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={status === "sending"}
+              className="w-full rounded-[10px] border border-cream-shadow bg-white px-3.5 py-2.5 text-[14px] text-charcoal placeholder:text-charcoal-soft/50 focus:outline-none focus:border-slate-blue transition-colors disabled:opacity-60"
+            />
+          </label>
+          <button
+            type="submit"
+            disabled={status === "sending" || !email.trim() || !password}
+            className="w-full rounded-[10px] bg-slate-blue px-4 py-3 text-[14px] font-semibold text-white hover:bg-slate-blue-light transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {status === "sending" ? "Signing in…" : "Sign in"}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMode("magic");
+              setPassword("");
+              setErrorMsg(null);
+              setStatus("idle");
+            }}
+            className="w-full text-center text-[12px] font-semibold uppercase tracking-[0.08em] text-charcoal-soft hover:text-slate-blue transition-colors"
+          >
+            Use a sign-in link instead
+          </button>
+        </form>
+      )}
 
       {errorMsg ? (
         <p className="text-[12px] text-red-700 bg-red-50 border border-red-200 rounded-[8px] px-3 py-2">
