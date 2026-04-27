@@ -81,8 +81,11 @@ export function SignupForm({
   const [website, setWebsite] = useState("");
   const [primaryInterest, setPrimaryInterest] = useState("");
   const [referralSource, setReferralSource] = useState("");
-  const [marketingConsent, setMarketingConsent] = useState(false);
-  const [directoryConsent, setDirectoryConsent] = useState(false);
+  // Opt-out semantics: default unchecked = consent given. Checking the box
+  // revokes the consent. Trigger receives the inverted boolean (CNS rows are
+  // written when consent = true, so an unchecked opt-out box → CNS row).
+  const [marketingOptOut, setMarketingOptOut] = useState(false);
+  const [directoryOptOut, setDirectoryOptOut] = useState(false);
 
   const [status, setStatus] = useState<Status>(initialError ? "error" : "idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(
@@ -138,11 +141,13 @@ export function SignupForm({
           referral_source: referralSource || null,
           organization_name: orgName.trim() || null,
           organization_type: orgType || null,
-          website: website.trim() || null,
+          website: normalizeWebsite(website),
           title: title.trim() || null,
           region_county: regionCounty.trim() || null,
-          marketing_consent: marketingConsent,
-          directory_consent: directoryConsent,
+          // Opt-out boxes: a CHECKED box means the user is revoking consent,
+          // so the consent boolean sent to the trigger is the inverted value.
+          marketing_consent: !marketingOptOut,
+          directory_consent: !directoryOptOut,
         },
       },
     });
@@ -334,14 +339,18 @@ export function SignupForm({
             />
           </Field>
 
-          <Field label="Organization website" htmlFor="signup-website">
+          <Field
+            label="Organization website"
+            htmlFor="signup-website"
+            hint="No need to type http:// — we'll add it for you."
+          >
             <input
               id="signup-website"
-              type="url"
+              type="text"
               autoComplete="url"
               value={website}
               onChange={(e) => setWebsite(e.target.value)}
-              placeholder="https://"
+              placeholder="example.com"
               maxLength={200}
               disabled={isSubmitting}
               className={inputClass}
@@ -388,27 +397,29 @@ export function SignupForm({
           </Field>
         </fieldset>
 
-        {/* Stay in touch — both default to OFF (consent is opt-in only) */}
+        {/* Preferences — both default to OFF (= consent given). Checking
+            the box revokes the corresponding consent. */}
         <fieldset className="space-y-3 pt-2 border-t border-cream-shadow">
           <legend className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft pt-4">
-            Stay in touch
+            Preferences
           </legend>
 
           <label className="flex items-start gap-3 cursor-pointer text-[13px] leading-relaxed text-charcoal">
             <input
               type="checkbox"
-              checked={marketingConsent}
-              onChange={(e) => setMarketingConsent(e.target.checked)}
+              checked={marketingOptOut}
+              onChange={(e) => setMarketingOptOut(e.target.checked)}
               disabled={isSubmitting}
               className="mt-1 h-4 w-4 shrink-0 rounded border-cream-shadow text-slate-blue focus:ring-slate-blue"
             />
             <span>
               <span className="font-semibold text-charcoal">
-                Email me about Provender updates.
+                Opt out of Provender updates.
               </span>{" "}
               <span className="text-charcoal-soft">
-                Occasional emails — product changes, regional notes, and
-                opportunities. You can opt out any time.
+                We send occasional emails about product changes, regional
+                notes, and opportunities. Check this box if you&apos;d rather
+                not receive them. You can change your mind any time.
               </span>
             </span>
           </label>
@@ -416,18 +427,19 @@ export function SignupForm({
           <label className="flex items-start gap-3 cursor-pointer text-[13px] leading-relaxed text-charcoal">
             <input
               type="checkbox"
-              checked={directoryConsent}
-              onChange={(e) => setDirectoryConsent(e.target.checked)}
+              checked={directoryOptOut}
+              onChange={(e) => setDirectoryOptOut(e.target.checked)}
               disabled={isSubmitting}
               className="mt-1 h-4 w-4 shrink-0 rounded border-cream-shadow text-slate-blue focus:ring-slate-blue"
             />
             <span>
               <span className="font-semibold text-charcoal">
-                Show me in the Provender directory.
+                Do not show me in the Provender directory.
               </span>{" "}
               <span className="text-charcoal-soft">
-                Other paying users in your tier or above can see your name and
-                organization. Off by default — you can change this later.
+                By default, other paying users in your tier or above can see
+                your name and organization. Check this box to keep your
+                account hidden. You can change this later.
               </span>
             </span>
           </label>
@@ -455,6 +467,22 @@ export function SignupForm({
       ) : null}
     </div>
   );
+}
+
+// Take whatever the user typed in the website field and turn it into a
+// well-formed URL. Rules:
+//   * empty / whitespace-only → null (the trigger drops null fields)
+//   * already starts with http:// or https:// → leave alone
+//   * starts with www. → prepend http://
+//   * otherwise (bare domain or anything else) → prepend http://www.
+// We never reject; the field accepts arbitrary text and AFS classifies on
+// the backend if the string is unusable.
+function normalizeWebsite(raw: string): string | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  if (/^www\./i.test(trimmed)) return `http://${trimmed}`;
+  return `http://www.${trimmed}`;
 }
 
 const inputClass =
