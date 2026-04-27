@@ -28,3 +28,32 @@ export async function updateDisplayName(formData: FormData): Promise<void> {
   revalidatePath("/profile");
   revalidatePath("/");
 }
+
+// Server action for the two consent toggles on /profile. Calls
+// fn_set_consent (sql/10) which validates the consent_type, scopes the
+// write to the caller's persons row via auth.uid(), and handles both
+// grant and revoke idempotently.
+export async function toggleConsent(formData: FormData): Promise<void> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
+  const consent_type = String(formData.get("consent_type") ?? "");
+  const grant = String(formData.get("grant") ?? "") === "true";
+
+  if (
+    consent_type !== "marketing_use" &&
+    consent_type !== "provender_directory_listing"
+  ) {
+    return;
+  }
+
+  await supabase.rpc("fn_set_consent", {
+    p_consent_type: consent_type,
+    p_grant: grant,
+  });
+
+  revalidatePath("/profile");
+}

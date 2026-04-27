@@ -1,8 +1,50 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getAuthedUser, type ModuleSlug } from "@/lib/auth/get-user";
-import { updateDisplayName } from "./actions";
+import { createClient } from "@/lib/supabase/server";
+import { updateDisplayName, toggleConsent } from "./actions";
 import { AuthChip } from "@/components/auth/auth-chip";
+
+type ConsentRow = {
+  consent_type: string;
+  granted_at: string;
+  cns_upid: string;
+};
+
+type ManagedConsent = {
+  type: "marketing_use" | "provender_directory_listing";
+  title: string;
+  description: string;
+  whenOnLabel: (grantedAt: string) => string;
+  whenOffLabel: string;
+  grantButtonLabel: string;
+  revokeButtonLabel: string;
+};
+
+const MANAGED_CONSENTS: ManagedConsent[] = [
+  {
+    type: "marketing_use",
+    title: "Provender updates",
+    description:
+      "Occasional emails about product changes, regional notes, and new opportunities.",
+    whenOnLabel: (date) =>
+      `Subscribed since ${new Date(date).toLocaleDateString()}.`,
+    whenOffLabel: "You're not subscribed.",
+    grantButtonLabel: "Subscribe to updates",
+    revokeButtonLabel: "Unsubscribe",
+  },
+  {
+    type: "provender_directory_listing",
+    title: "Directory listing",
+    description:
+      "Other paying users in your tier or above can see your name and organization.",
+    whenOnLabel: (date) =>
+      `Visible since ${new Date(date).toLocaleDateString()}.`,
+    whenOffLabel: "You're hidden from the directory.",
+    grantButtonLabel: "Show me in the directory",
+    revokeButtonLabel: "Hide my profile",
+  },
+];
 
 const ALL_MODULE_SLUGS: ModuleSlug[] = [
   "map",
@@ -61,6 +103,15 @@ export default async function ProfilePage() {
   if (!user) redirect("/login?next=/profile");
 
   const entitled = new Set<ModuleSlug>(user.entitledModules);
+
+  // Fetch active consent records via the SECURITY DEFINER RPC. Returns an
+  // empty array if the user has no persons row or no active consents.
+  const supabase = await createClient();
+  const { data: rawConsents } = await supabase.rpc("fn_get_my_consents");
+  const consents = (rawConsents ?? []) as ConsentRow[];
+  const activeByType = new Map<string, ConsentRow>(
+    consents.map((c) => [c.consent_type, c]),
+  );
 
   return (
     <main className="min-h-screen bg-chrome text-charcoal">
@@ -145,6 +196,77 @@ export default async function ProfilePage() {
               </dd>
             </div>
           </dl>
+        </section>
+
+        <section className="rounded-[14px] border border-cream-shadow bg-white p-6 sm:p-7">
+          <h2 className="font-display text-[18px] font-semibold text-charcoal">
+            Communication preferences
+          </h2>
+          <p className="mt-1 text-[13px] text-charcoal-soft">
+            Toggle either consent off any time. Revocations are recorded and
+            keep a full audit trail.
+          </p>
+
+          <div className="mt-5 space-y-4">
+            {MANAGED_CONSENTS.map((c) => {
+              const active = activeByType.get(c.type);
+              const isOn = Boolean(active);
+              return (
+                <div
+                  key={c.type}
+                  className="rounded-[10px] border border-cream-shadow bg-cream-deep/30 p-4 sm:p-5"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-display text-[15px] font-semibold text-charcoal">
+                          {c.title}
+                        </h3>
+                        <span
+                          className={
+                            "inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] " +
+                            (isOn
+                              ? "bg-slate-blue/10 text-slate-blue"
+                              : "bg-cream-shadow text-charcoal-soft")
+                          }
+                        >
+                          {isOn ? "On" : "Off"}
+                        </span>
+                      </div>
+                      <p className="mt-1.5 text-[13px] text-charcoal-soft leading-relaxed">
+                        {c.description}
+                      </p>
+                      <p className="mt-1.5 text-[12px] text-charcoal-soft/80">
+                        {isOn && active
+                          ? c.whenOnLabel(active.granted_at)
+                          : c.whenOffLabel}
+                      </p>
+                    </div>
+
+                    <form action={toggleConsent} className="shrink-0">
+                      <input type="hidden" name="consent_type" value={c.type} />
+                      <input
+                        type="hidden"
+                        name="grant"
+                        value={isOn ? "false" : "true"}
+                      />
+                      <button
+                        type="submit"
+                        className={
+                          "rounded-[10px] px-4 py-2.5 text-[13px] font-semibold uppercase tracking-[0.06em] transition-colors " +
+                          (isOn
+                            ? "border border-cream-shadow bg-white text-charcoal hover:border-slate-blue hover:text-slate-blue"
+                            : "bg-slate-blue text-warm-cream hover:bg-slate-blue-light")
+                        }
+                      >
+                        {isOn ? c.revokeButtonLabel : c.grantButtonLabel}
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </section>
 
         <section className="rounded-[14px] border border-cream-shadow bg-white p-6 sm:p-7">
