@@ -62,12 +62,16 @@ BEGIN
   -- Ensure the profile row exists. The on_auth_user_created trigger from
   -- 008 should have done this already, but be defensive — if for some
   -- reason it didn't fire, this keeps promotion idempotent.
-  INSERT INTO public.user_profiles (user_id, tier, persona)
-  VALUES (v_user_id, p_tier, p_persona)
+  --
+  -- Stamps profile_completed_at unconditionally so test fixtures land
+  -- gate-cleared. Real users go through fn_complete_profile, not this.
+  INSERT INTO public.user_profiles (user_id, tier, persona, profile_completed_at)
+  VALUES (v_user_id, p_tier, p_persona, NOW())
   ON CONFLICT (user_id)
   DO UPDATE SET
-    tier    = EXCLUDED.tier,
-    persona = EXCLUDED.persona;
+    tier                 = EXCLUDED.tier,
+    persona              = EXCLUDED.persona,
+    profile_completed_at = COALESCE(public.user_profiles.profile_completed_at, EXCLUDED.profile_completed_at);
 
   -- Reset entitlements to the canonical defaults for the new tier.
   DELETE FROM public.user_module_entitlements WHERE user_id = v_user_id;
