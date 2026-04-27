@@ -75,7 +75,7 @@ export default async function CompleteProfilePage() {
 
           <div className="rounded-[14px] border border-cream-shadow bg-white px-6 sm:px-8 py-7 shadow-sm">
             <CompleteProfileForm
-              defaultFullName={profile?.display_name ?? ""}
+              defaultFullName={profile?.display_name ?? user.user_metadata?.full_name ?? user.user_metadata?.name ?? ""}
             />
           </div>
         </div>

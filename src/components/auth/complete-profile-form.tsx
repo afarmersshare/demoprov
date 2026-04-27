@@ -28,9 +28,10 @@ export function CompleteProfileForm({
   const supabase = createClient();
   const isSubmitting = status === "submitting";
 
-  // Persona is the one required field — it drives which dashboard the user
-  // lands on. Everything else stays optional, mirroring /signup.
-  const canSubmit = !isSubmitting && profile.persona !== "" && fullName.trim().length > 0;
+  // Only full name is required to clear the gate — same minimum-friction
+  // bar as /signup. Persona defaults to 'explore' when blank (the trigger
+  // does the same, AFS reclassifies later).
+  const canSubmit = !isSubmitting && fullName.trim().length > 0;
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -39,7 +40,7 @@ export function CompleteProfileForm({
     setErrorMsg(null);
 
     const { error } = await supabase.rpc("fn_complete_profile", {
-      p_persona: profile.persona,
+      p_persona: profile.persona || "explore",
       p_full_name: fullName.trim(),
       p_organization_name: profile.orgName.trim() || null,
       p_organization_type: profile.orgType || null,
