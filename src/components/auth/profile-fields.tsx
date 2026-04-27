@@ -149,12 +149,16 @@ export function ProfileFields({
   // colliding HTML id attributes. Default matches the original signup form.
   idPrefix = "signup",
   optionalHint = "Optional. The more you tell us, the faster we can route you to the right tools.",
+  // /profile self-edit reuses this component but the opt-out checkboxes are
+  // redundant there — the standalone toggle UI on /profile owns consent.
+  showPreferences = true,
 }: {
   values: ProfileFieldsValues;
   onChange: (patch: Partial<ProfileFieldsValues>) => void;
   disabled?: boolean;
   idPrefix?: string;
   optionalHint?: string;
+  showPreferences?: boolean;
 }) {
   const text =
     (key: keyof ProfileFieldsValues) =>
@@ -308,7 +312,9 @@ export function ProfileFields({
       {/* Preferences — both default to OFF (= consent given). Checking
           the box revokes the corresponding consent. The intro sentence
           makes the opt-in explicit at signup time so the granular opt-out
-          controls below sit on top of informed consent. */}
+          controls below sit on top of informed consent.
+          Hidden on /profile self-edit — the standalone toggle UI owns it. */}
+      {showPreferences ? (
       <fieldset className="space-y-3 pt-2 border-t border-cream-shadow">
         <legend className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft pt-4">
           Preferences
@@ -359,6 +365,7 @@ export function ProfileFields({
           </span>
         </label>
       </fieldset>
+      ) : null}
     </>
   );
 }

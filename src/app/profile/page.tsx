@@ -4,12 +4,34 @@ import { getAuthedUser, type ModuleSlug } from "@/lib/auth/get-user";
 import { createClient } from "@/lib/supabase/server";
 import { updateDisplayName, toggleConsent } from "./actions";
 import { AuthChip } from "@/components/auth/auth-chip";
+import { YourDetailsForm } from "@/components/profile/your-details-form";
+import {
+  EMPTY_PROFILE_VALUES,
+  type ProfileFieldsValues,
+} from "@/components/auth/profile-fields";
 
 type ConsentRow = {
   consent_type: string;
   granted_at: string;
   cns_upid: string;
 };
+
+type ProfileDataRow = {
+  persona: string | null;
+  display_name: string | null;
+  region_county: string | null;
+  organization_name: string | null;
+  organization_type: string | null;
+  title: string | null;
+  website: string | null;
+  primary_interest: string | null;
+  referral_source: string | null;
+};
+
+// Tiers that can meaningfully upgrade. Demo and farmer_free see the upsell
+// nudge; institutional/government/etc. see the neutral "See all plans" link
+// without the nudge sentence.
+const UPGRADEABLE_TIERS = new Set(["demo", "farmer_free"]);
 
 type ManagedConsent = {
   type: "marketing_use" | "provender_directory_listing";
@@ -106,12 +128,37 @@ export default async function ProfilePage() {
 
   // Fetch active consent records via the SECURITY DEFINER RPC. Returns an
   // empty array if the user has no persons row or no active consents.
+  // Fetch Your-details pre-fill in parallel via fn_get_my_profile_data (sql/11).
   const supabase = await createClient();
-  const { data: rawConsents } = await supabase.rpc("fn_get_my_consents");
+  const [{ data: rawConsents }, { data: rawProfileData }] = await Promise.all([
+    supabase.rpc("fn_get_my_consents"),
+    supabase.rpc("fn_get_my_profile_data"),
+  ]);
   const consents = (rawConsents ?? []) as ConsentRow[];
   const activeByType = new Map<string, ConsentRow>(
     consents.map((c) => [c.consent_type, c]),
   );
+
+  // The RPC returns a setof row; Supabase wraps it as an array. Use the
+  // first row if present, otherwise fall back to empty values so the form
+  // still renders without crashing.
+  const profileDataRow = (Array.isArray(rawProfileData)
+    ? rawProfileData[0]
+    : null) as ProfileDataRow | null;
+
+  const initialDetails: ProfileFieldsValues = {
+    ...EMPTY_PROFILE_VALUES,
+    persona: profileDataRow?.persona ?? user.persona ?? "",
+    orgName: profileDataRow?.organization_name ?? "",
+    orgType: profileDataRow?.organization_type ?? "",
+    title: profileDataRow?.title ?? "",
+    regionCounty: profileDataRow?.region_county ?? "",
+    website: profileDataRow?.website ?? "",
+    primaryInterest: profileDataRow?.primary_interest ?? "",
+    referralSource: profileDataRow?.referral_source ?? "",
+  };
+
+  const canUpgrade = UPGRADEABLE_TIERS.has(user.tier);
 
   return (
     <main className="min-h-screen bg-chrome text-charcoal">
@@ -167,35 +214,69 @@ export default async function ProfilePage() {
         </section>
 
         <section className="rounded-[14px] border border-cream-shadow bg-white p-6 sm:p-7">
-          <h2 className="font-display text-[18px] font-semibold text-charcoal">
-            Plan &amp; role
-          </h2>
-          <p className="mt-1 text-[13px] text-charcoal-soft">
-            Tier governs which modules you can access. Persona governs which
-            dashboard you land on. Both are set by AFS — email{" "}
-            <a
-              href="mailto:hello@afarmersshare.com"
-              className="font-semibold text-slate-blue hover:text-slate-blue-light"
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+            <div>
+              <h2 className="font-display text-[18px] font-semibold text-charcoal">
+                Plan
+              </h2>
+              <p className="mt-1 text-[13px] text-charcoal-soft">
+                Your tier governs which modules unlock. Tier changes flow
+                through AFS — email{" "}
+                <a
+                  href="mailto:hello@afarmersshare.com"
+                  className="font-semibold text-slate-blue hover:text-slate-blue-light"
+                >
+                  hello@afarmersshare.com
+                </a>{" "}
+                or browse the full lineup.
+              </p>
+            </div>
+            <Link
+              href="/pricing"
+              className="shrink-0 rounded-[10px] border border-slate-blue bg-white px-4 py-2.5 text-[13px] font-semibold uppercase tracking-[0.06em] text-slate-blue hover:bg-slate-blue hover:text-warm-cream transition-colors text-center"
             >
-              hello@afarmersshare.com
-            </a>{" "}
-            to change either.
-          </p>
+              See all plans →
+            </Link>
+          </div>
 
           <dl className="mt-5 divide-y divide-cream-shadow text-[14px]">
             <div className="flex justify-between gap-4 py-3 first:pt-0">
-              <dt className="text-charcoal-soft">Tier</dt>
+              <dt className="text-charcoal-soft">Current tier</dt>
               <dd className="text-charcoal font-semibold text-right">
                 {TIER_LABEL[user.tier] ?? user.tier}
               </dd>
             </div>
             <div className="flex justify-between gap-4 py-3">
-              <dt className="text-charcoal-soft">Persona</dt>
+              <dt className="text-charcoal-soft">Dashboard role</dt>
               <dd className="text-charcoal font-semibold text-right">
                 {PERSONA_LABEL[user.persona] ?? user.persona}
               </dd>
             </div>
           </dl>
+
+          {canUpgrade ? (
+            <p className="mt-4 rounded-[10px] bg-cream-deep/50 border border-cream-shadow px-4 py-3 text-[13px] text-charcoal-soft leading-relaxed">
+              <span className="font-semibold text-charcoal">
+                On a free or demo plan?
+              </span>{" "}
+              Buyer, government, and aggregator tiers unlock Flows, List, and
+              By County for sourcing across regions.
+            </p>
+          ) : null}
+        </section>
+
+        <section className="rounded-[14px] border border-cream-shadow bg-white p-6 sm:p-7">
+          <h2 className="font-display text-[18px] font-semibold text-charcoal">
+            Your details
+          </h2>
+          <p className="mt-1 text-[13px] text-charcoal-soft">
+            Everything you told us at signup. Edit anything below — your
+            dashboard role, your organization, where you&apos;re working from.
+            Saved updates take effect on your next page load.
+          </p>
+          <div className="mt-5">
+            <YourDetailsForm initial={initialDetails} />
+          </div>
         </section>
 
         <section className="rounded-[14px] border border-cream-shadow bg-white p-6 sm:p-7">
