@@ -2,64 +2,14 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import {
+  EMPTY_PROFILE_VALUES,
+  ProfileFields,
+  type ProfileFieldsValues,
+  normalizeWebsite,
+} from "@/components/auth/profile-fields";
 
 type Status = "idle" | "submitting" | "sent" | "error";
-
-// Personas the user can self-select. Excludes "afs" (admin-only) and uses
-// "explore" as the "just looking" fallback. Maps to the persona_t enum.
-const PERSONA_OPTIONS: Array<{ value: string; label: string }> = [
-  { value: "", label: "Choose one…" },
-  { value: "farmer", label: "Farmer / producer" },
-  { value: "buyer", label: "Buyer (institution, retail, food service…)" },
-  { value: "hub", label: "Food hub / aggregator" },
-  { value: "policymaker", label: "Government / public sector" },
-  { value: "nonprofit", label: "Nonprofit / food council" },
-  { value: "funder", label: "Funder / researcher" },
-  { value: "explore", label: "Just exploring" },
-];
-
-// Free-text declared org type. AFS classifies into a real entity node later
-// via fn_classify_signup_org. Values here are user-facing buckets, not the
-// enum; they land in persons.attributes.signup_organization_type as strings.
-const ORG_TYPE_OPTIONS: Array<{ value: string; label: string }> = [
-  { value: "", label: "Choose one…" },
-  { value: "farm", label: "Farm" },
-  { value: "food_hub", label: "Food hub / aggregator" },
-  { value: "grocery", label: "Grocery / retail" },
-  { value: "institution", label: "Institution (hospital, university, corporate)" },
-  { value: "food_service", label: "Food service" },
-  { value: "farmers_market", label: "Farmers market" },
-  { value: "processor", label: "Processor" },
-  { value: "agency", label: "Government agency" },
-  { value: "nonprofit", label: "Nonprofit" },
-  { value: "foundation", label: "Foundation / funder" },
-  { value: "research", label: "Research / academic" },
-  { value: "other", label: "Other" },
-];
-
-// Lookup values seeded by sql/08_signup_to_persons_bridge.sql.
-const INTEREST_OPTIONS: Array<{ value: string; label: string }> = [
-  { value: "", label: "Choose one…" },
-  { value: "source_local_food", label: "Source local food" },
-  { value: "sell_through_afs", label: "Sell through AFS" },
-  { value: "policy_research", label: "Policy / research" },
-  { value: "invest_in_afs", label: "Invest in AFS" },
-  { value: "map_food_system", label: "Map the food system" },
-  { value: "other", label: "Other" },
-];
-
-const REFERRAL_OPTIONS: Array<{ value: string; label: string }> = [
-  { value: "", label: "Choose one…" },
-  { value: "word_of_mouth", label: "Word of mouth" },
-  { value: "social_media", label: "Social media" },
-  { value: "event", label: "Conference / event" },
-  { value: "partner_org", label: "Partner organization" },
-  { value: "web_search", label: "Web search" },
-  { value: "dawn_riley", label: "Dawn Riley (CCO)" },
-  { value: "kelsey_direct", label: "Kelsey Hood Cattaneo (CEO)" },
-  { value: "press_or_article", label: "Press / article" },
-  { value: "other", label: "Other" },
-];
 
 export function SignupForm({
   initialError,
@@ -73,19 +23,7 @@ export function SignupForm({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [persona, setPersona] = useState("");
-  const [orgName, setOrgName] = useState("");
-  const [orgType, setOrgType] = useState("");
-  const [title, setTitle] = useState("");
-  const [regionCounty, setRegionCounty] = useState("");
-  const [website, setWebsite] = useState("");
-  const [primaryInterest, setPrimaryInterest] = useState("");
-  const [referralSource, setReferralSource] = useState("");
-  // Opt-out semantics: default unchecked = consent given. Checking the box
-  // revokes the consent. Trigger receives the inverted boolean (CNS rows are
-  // written when consent = true, so an unchecked opt-out box → CNS row).
-  const [marketingOptOut, setMarketingOptOut] = useState(false);
-  const [directoryOptOut, setDirectoryOptOut] = useState(false);
+  const [profile, setProfile] = useState<ProfileFieldsValues>(EMPTY_PROFILE_VALUES);
 
   const [status, setStatus] = useState<Status>(initialError ? "error" : "idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(
@@ -134,20 +72,20 @@ export function SignupForm({
         emailRedirectTo: callbackUrl,
         data: {
           full_name: fullName.trim(),
-          persona: persona || "explore",
+          persona: profile.persona || "explore",
           // tier intentionally omitted — trigger COALESCEs to 'demo' and
           // AFS reclassifies later via admin tooling. User cannot self-tier.
-          primary_interest: primaryInterest || null,
-          referral_source: referralSource || null,
-          organization_name: orgName.trim() || null,
-          organization_type: orgType || null,
-          website: normalizeWebsite(website),
-          title: title.trim() || null,
-          region_county: regionCounty.trim() || null,
+          primary_interest: profile.primaryInterest || null,
+          referral_source: profile.referralSource || null,
+          organization_name: profile.orgName.trim() || null,
+          organization_type: profile.orgType || null,
+          website: normalizeWebsite(profile.website),
+          title: profile.title.trim() || null,
+          region_county: profile.regionCounty.trim() || null,
           // Opt-out boxes: a CHECKED box means the user is revoking consent,
           // so the consent boolean sent to the trigger is the inverted value.
-          marketing_consent: !marketingOptOut,
-          directory_consent: !directoryOptOut,
+          marketing_consent: !profile.marketingOptOut,
+          directory_consent: !profile.directoryOptOut,
         },
       },
     });
@@ -184,6 +122,8 @@ export function SignupForm({
   }
 
   const isSubmitting = status === "submitting";
+  const patchProfile = (patch: Partial<ProfileFieldsValues>) =>
+    setProfile((prev) => ({ ...prev, ...patch }));
 
   return (
     <div className="space-y-6">
@@ -210,7 +150,10 @@ export function SignupForm({
             The basics
           </legend>
 
-          <Field label="Email address" htmlFor="signup-email">
+          <label className="block" htmlFor="signup-email">
+            <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-charcoal-soft mb-1.5">
+              Email address
+            </span>
             <input
               id="signup-email"
               type="email"
@@ -222,13 +165,12 @@ export function SignupForm({
               disabled={isSubmitting}
               className={inputClass}
             />
-          </Field>
+          </label>
 
-          <Field
-            label="Password"
-            htmlFor="signup-password"
-            hint="At least 8 characters."
-          >
+          <label className="block" htmlFor="signup-password">
+            <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-charcoal-soft mb-1.5">
+              Password
+            </span>
             <input
               id="signup-password"
               type="password"
@@ -240,9 +182,15 @@ export function SignupForm({
               disabled={isSubmitting}
               className={inputClass}
             />
-          </Field>
+            <span className="block mt-1 text-[11px] text-charcoal-soft/80">
+              At least 8 characters.
+            </span>
+          </label>
 
-          <Field label="Full name" htmlFor="signup-name">
+          <label className="block" htmlFor="signup-name">
+            <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-charcoal-soft mb-1.5">
+              Full name
+            </span>
             <input
               id="signup-name"
               type="text"
@@ -255,202 +203,15 @@ export function SignupForm({
               disabled={isSubmitting}
               className={inputClass}
             />
-          </Field>
-        </fieldset>
-
-        {/* Who you are — optional but high-value to AFS */}
-        <fieldset className="space-y-3 pt-2 border-t border-cream-shadow">
-          <legend className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft pt-4">
-            Who you are
-          </legend>
-          <p className="text-[12px] text-charcoal-soft/80 -mt-1">
-            Optional. The more you tell us, the faster we can route you to the
-            right tools.
-          </p>
-
-          <Field label="I am a…" htmlFor="signup-persona">
-            <select
-              id="signup-persona"
-              value={persona}
-              onChange={(e) => setPersona(e.target.value)}
-              disabled={isSubmitting}
-              className={selectClass}
-            >
-              {PERSONA_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-          </Field>
-
-          <Field label="Organization name" htmlFor="signup-org">
-            <input
-              id="signup-org"
-              type="text"
-              autoComplete="organization"
-              value={orgName}
-              onChange={(e) => setOrgName(e.target.value)}
-              maxLength={200}
-              disabled={isSubmitting}
-              className={inputClass}
-            />
-          </Field>
-
-          <Field label="Organization type" htmlFor="signup-org-type">
-            <select
-              id="signup-org-type"
-              value={orgType}
-              onChange={(e) => setOrgType(e.target.value)}
-              disabled={isSubmitting}
-              className={selectClass}
-            >
-              {ORG_TYPE_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-          </Field>
-
-          <Field label="Your role / job title" htmlFor="signup-title">
-            <input
-              id="signup-title"
-              type="text"
-              autoComplete="organization-title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              maxLength={120}
-              disabled={isSubmitting}
-              className={inputClass}
-            />
-          </Field>
-
-          <Field label="Region or county" htmlFor="signup-region">
-            <input
-              id="signup-region"
-              type="text"
-              value={regionCounty}
-              onChange={(e) => setRegionCounty(e.target.value)}
-              placeholder="Jefferson County, KY"
-              maxLength={120}
-              disabled={isSubmitting}
-              className={inputClass}
-            />
-          </Field>
-
-          <Field
-            label="Organization website"
-            htmlFor="signup-website"
-            hint="No need to type http:// — we'll add it for you."
-          >
-            <input
-              id="signup-website"
-              type="text"
-              autoComplete="url"
-              value={website}
-              onChange={(e) => setWebsite(e.target.value)}
-              placeholder="example.com"
-              maxLength={200}
-              disabled={isSubmitting}
-              className={inputClass}
-            />
-          </Field>
-        </fieldset>
-
-        {/* Tell us a bit more — optional context */}
-        <fieldset className="space-y-3 pt-2 border-t border-cream-shadow">
-          <legend className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft pt-4">
-            Tell us a bit more
-          </legend>
-
-          <Field label="Why are you here?" htmlFor="signup-interest">
-            <select
-              id="signup-interest"
-              value={primaryInterest}
-              onChange={(e) => setPrimaryInterest(e.target.value)}
-              disabled={isSubmitting}
-              className={selectClass}
-            >
-              {INTEREST_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-          </Field>
-
-          <Field label="How did you find us?" htmlFor="signup-referral">
-            <select
-              id="signup-referral"
-              value={referralSource}
-              onChange={(e) => setReferralSource(e.target.value)}
-              disabled={isSubmitting}
-              className={selectClass}
-            >
-              {REFERRAL_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-          </Field>
-        </fieldset>
-
-        {/* Preferences — both default to OFF (= consent given). Checking
-            the box revokes the corresponding consent. The intro sentence
-            makes the opt-in explicit at signup time so the granular opt-out
-            controls below sit on top of informed consent. */}
-        <fieldset className="space-y-3 pt-2 border-t border-cream-shadow">
-          <legend className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft pt-4">
-            Preferences
-          </legend>
-          <p className="text-[13px] leading-relaxed text-charcoal-soft -mt-1">
-            By creating your account, you&apos;re agreeing to occasional
-            Provender updates and a directory listing visible to other paying
-            users in your tier. Use the boxes below to opt out of either.
-          </p>
-
-          <label className="flex items-start gap-3 cursor-pointer text-[13px] leading-relaxed text-charcoal">
-            <input
-              type="checkbox"
-              checked={marketingOptOut}
-              onChange={(e) => setMarketingOptOut(e.target.checked)}
-              disabled={isSubmitting}
-              className="mt-1 h-4 w-4 shrink-0 rounded border-cream-shadow text-slate-blue focus:ring-slate-blue"
-            />
-            <span>
-              <span className="font-semibold text-charcoal">
-                Opt out of Provender updates.
-              </span>{" "}
-              <span className="text-charcoal-soft">
-                We send occasional emails about product changes, regional
-                notes, and opportunities. Check this box if you&apos;d rather
-                not receive them. You can change your mind any time.
-              </span>
-            </span>
-          </label>
-
-          <label className="flex items-start gap-3 cursor-pointer text-[13px] leading-relaxed text-charcoal">
-            <input
-              type="checkbox"
-              checked={directoryOptOut}
-              onChange={(e) => setDirectoryOptOut(e.target.checked)}
-              disabled={isSubmitting}
-              className="mt-1 h-4 w-4 shrink-0 rounded border-cream-shadow text-slate-blue focus:ring-slate-blue"
-            />
-            <span>
-              <span className="font-semibold text-charcoal">
-                Do not show me in the Provender directory.
-              </span>{" "}
-              <span className="text-charcoal-soft">
-                By default, other paying users in your tier or above can see
-                your name and organization. Check this box to keep your
-                account hidden. You can change this later.
-              </span>
-            </span>
           </label>
         </fieldset>
+
+        <ProfileFields
+          values={profile}
+          onChange={patchProfile}
+          disabled={isSubmitting}
+          idPrefix="signup"
+        />
 
         <button
           type="submit"
@@ -476,53 +237,8 @@ export function SignupForm({
   );
 }
 
-// Take whatever the user typed in the website field and turn it into a
-// well-formed URL. Rules:
-//   * empty / whitespace-only → null (the trigger drops null fields)
-//   * already starts with http:// or https:// → leave alone
-//   * starts with www. → prepend http://
-//   * otherwise (bare domain or anything else) → prepend http://www.
-// We never reject; the field accepts arbitrary text and AFS classifies on
-// the backend if the string is unusable.
-function normalizeWebsite(raw: string): string | null {
-  const trimmed = raw.trim();
-  if (!trimmed) return null;
-  if (/^https?:\/\//i.test(trimmed)) return trimmed;
-  if (/^www\./i.test(trimmed)) return `http://${trimmed}`;
-  return `http://www.${trimmed}`;
-}
-
 const inputClass =
   "w-full rounded-[10px] border border-cream-shadow bg-white px-3.5 py-2.5 text-[14px] text-charcoal placeholder:text-charcoal-soft/50 focus:outline-none focus:border-slate-blue transition-colors disabled:opacity-60";
-
-const selectClass =
-  "w-full rounded-[10px] border border-cream-shadow bg-white px-3.5 py-2.5 text-[14px] text-charcoal focus:outline-none focus:border-slate-blue transition-colors disabled:opacity-60";
-
-function Field({
-  label,
-  htmlFor,
-  hint,
-  children,
-}: {
-  label: string;
-  htmlFor: string;
-  hint?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="block" htmlFor={htmlFor}>
-      <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-charcoal-soft mb-1.5">
-        {label}
-      </span>
-      {children}
-      {hint ? (
-        <span className="block mt-1 text-[11px] text-charcoal-soft/80">
-          {hint}
-        </span>
-      ) : null}
-    </label>
-  );
-}
 
 function GoogleMark() {
   return (
