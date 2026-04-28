@@ -52,7 +52,7 @@ function fmtPct(n: number | null | undefined, digits = 0): string {
 
 function prettify(raw: string | null | undefined): string {
   if (!raw) return "—";
-  return raw.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  return raw.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
 }
 
 function haversineMiles(

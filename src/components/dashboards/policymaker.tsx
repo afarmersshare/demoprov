@@ -60,7 +60,7 @@ function fmtMoney(n: number | null | undefined): string {
 }
 
 function prettifyCrop(raw: string): string {
-  return raw.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  return raw.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
 }
 
 function haversineMiles(

@@ -129,14 +129,17 @@ const MODULE_LABEL: Record<ModuleSlug, string> = {
 };
 
 // Cheapest tier block that unlocks each module — used by the highlight banner
-// when a user lands here from a locked tab.
+// when a user lands here from a locked tab. Reflects the locked 2026-04-28
+// matrix: Dashboard moved off the farmer block (operators land on Landing
+// instead of Dashboard now), so the cheapest block that unlocks Dashboard
+// is gov_nonprofit.
 const MODULE_TIER_HINT: Record<ModuleSlug, TierBlockId> = {
   landing: "farmer",
   map: "farmer",
   directory: "farmer",
   reports: "farmer",
   network: "farmer",
-  dashboard: "farmer",
+  dashboard: "gov_nonprofit",
   list: "buyer",
   flows: "buyer",
   county: "buyer",

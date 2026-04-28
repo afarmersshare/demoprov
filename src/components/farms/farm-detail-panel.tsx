@@ -5,7 +5,7 @@ import type { Farm } from "./network-explorer";
 
 function prettify(raw: string | null): string {
   if (!raw) return "—";
-  return raw.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  return raw.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
 }
 
 function formatCurrency(amount: number | null): string {

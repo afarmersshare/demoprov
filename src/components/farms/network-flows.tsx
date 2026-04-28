@@ -63,7 +63,7 @@ type LaidLink = SankeyLink<NodeDatum, LinkDatum>;
 
 function prettify(s: string | null | undefined): string {
   if (!s) return "Other";
-  return s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  return s.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
 }
 
 function relVolume(r: Relationship): number {

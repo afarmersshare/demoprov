@@ -7,7 +7,7 @@ function prettify(raw: string | null): string {
   if (!raw) return "—";
   return raw
     .replace(/_/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+    .replace(/^./, (c) => c.toUpperCase());
 }
 
 function statusPillClasses(status: string | null): string {

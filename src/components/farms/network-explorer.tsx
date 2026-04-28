@@ -245,7 +245,7 @@ const ALL_COUNTIES = "__all_counties__";
 const ALL_COMPLIANCE = "all";
 
 function prettify(raw: string): string {
-  return raw.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  return raw.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
 }
 
 // Default tab order for "drop the user on their first entitled module" —

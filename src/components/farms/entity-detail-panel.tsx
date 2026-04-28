@@ -8,7 +8,7 @@ import { LiteracyHook } from "@/components/ui/literacy-hook";
 
 export function prettify(raw: string | null | undefined): string {
   if (!raw) return "—";
-  return raw.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  return raw.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
 }
 
 function formatCurrency(amount: number | null | undefined): string {
