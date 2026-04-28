@@ -249,20 +249,82 @@ function prettify(raw: string): string {
 }
 
 // Default tab order for "drop the user on their first entitled module" —
-// matches the visual TabsList order so the auto-pick lines up with what the
+// matches the visual cluster order so the auto-pick lines up with what the
 // eye sees first.
 const TAB_ORDER: ModuleSlug[] = [
   "landing",
   "dashboard",
   "map",
+  "directory",
+  "list",
+  "county",
   "network",
   "flows",
-  "list",
-  "directory",
-  "county",
-  "pipeline",
   "reports",
+  "pipeline",
 ];
+
+// IA structure (locked 2026-04-28). Six top-level "macro lens" clusters
+// the user picks among, plus Pipeline as a 7th cluster shown only to
+// afs_internal (and anonymous demo visitors who get all modules). Inside
+// the Directory and Network clusters, secondary sub-tabs surface List /
+// By county and Flows respectively. Single-slug clusters skip the
+// secondary nav entirely.
+type ClusterId =
+  | "landing"
+  | "map"
+  | "directory"
+  | "network"
+  | "dashboard"
+  | "reports"
+  | "pipeline";
+
+const CLUSTER_OF: Record<ModuleSlug, ClusterId> = {
+  landing: "landing",
+  map: "map",
+  directory: "directory",
+  list: "directory",
+  county: "directory",
+  network: "network",
+  flows: "network",
+  dashboard: "dashboard",
+  pipeline: "pipeline",
+  reports: "reports",
+};
+
+const PRIMARY_CLUSTERS: {
+  id: ClusterId;
+  label: string;
+  defaultSlug: ModuleSlug;
+  afsOnly?: boolean;
+}[] = [
+  { id: "landing", label: "Landing", defaultSlug: "landing" },
+  { id: "map", label: "Map", defaultSlug: "map" },
+  { id: "directory", label: "Directory", defaultSlug: "directory" },
+  { id: "network", label: "Network", defaultSlug: "network" },
+  { id: "dashboard", label: "Dashboard", defaultSlug: "dashboard" },
+  { id: "reports", label: "Reports", defaultSlug: "reports" },
+  { id: "pipeline", label: "Pipeline", defaultSlug: "pipeline", afsOnly: true },
+];
+
+const SUB_TABS: Partial<
+  Record<
+    ClusterId,
+    { value: ModuleSlug; label: string; mobileHidden?: boolean }[]
+  >
+> = {
+  directory: [
+    { value: "directory", label: "Directory" },
+    { value: "list", label: "List" },
+    { value: "county", label: "By county" },
+  ],
+  network: [
+    { value: "network", label: "Network" },
+    // Flows is a 4-column d3-sankey; long node names overlap below
+    // tablet-landscape width. Hidden under lg, reappears at desktop.
+    { value: "flows", label: "Flows", mobileHidden: true },
+  ],
+};
 
 export function NetworkExplorer({
   persona = "explore",
@@ -738,67 +800,66 @@ export function NetworkExplorer({
         </div>
       ) : null}
 
+      {/* Primary "macro lens" cluster nav — bigger, bolder than the old
+          flat tab strip so it reads as a separate decision from the
+          filter bar above. Custom buttons (not TabsTrigger) because each
+          cluster button needs to highlight when ANY of its sub-slugs is
+          active, not just one specific value. */}
+      <div
+        role="tablist"
+        aria-label="Primary navigation"
+        className="mb-3 grid grid-cols-3 gap-1.5 sm:flex sm:flex-wrap sm:gap-1.5"
+      >
+        {PRIMARY_CLUSTERS.filter(
+          (c) => !c.afsOnly || isUnlocked(c.defaultSlug),
+        ).map((c) => {
+          const isActive = CLUSTER_OF[activeTab as ModuleSlug] === c.id;
+          const isLocked = !isUnlocked(c.defaultSlug);
+          return (
+            <button
+              key={c.id}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => setActiveTab(c.defaultSlug)}
+              className={
+                "inline-flex items-center justify-center gap-1.5 rounded-[10px] border px-3.5 sm:px-4 py-2 text-[12px] sm:text-[13px] font-semibold uppercase tracking-[0.06em] transition-colors " +
+                (isActive
+                  ? "border-slate-blue bg-slate-blue text-warm-cream shadow-sm"
+                  : "border-cream-shadow bg-white text-charcoal-soft hover:border-slate-blue hover:text-slate-blue")
+              }
+            >
+              {c.label}
+              {isLocked && !isActive ? (
+                <Lock className="w-3 h-3 opacity-60" aria-hidden />
+              ) : null}
+            </button>
+          );
+        })}
+      </div>
+
       <Tabs
         value={activeTab}
         onValueChange={setActiveTab}
         className="w-full"
       >
-        {/*
-          Mobile: 3-column grid so all 9 tabs are visible at once with no
-          horizontal scroll (see commit "Mobile: stack tabs..."). Desktop
-          (sm+): revert to the original inline-flex strip via tailwind-merge
-          override of the cva defaults in TabsList.
-        */}
-        <TabsList className="!grid !grid-cols-3 !gap-1 !w-full !h-auto !p-1.5 sm:!inline-flex sm:!gap-0 sm:!w-fit sm:!h-8 sm:!p-[3px]">
-          <TabTriggerWithLock slug="landing" locked={!isUnlocked("landing")}>
-            Landing
-          </TabTriggerWithLock>
-          <TabTriggerWithLock slug="map" locked={!isUnlocked("map")}>
-            Map
-          </TabTriggerWithLock>
-          <TabTriggerWithLock slug="network" locked={!isUnlocked("network")}>
-            Network
-          </TabTriggerWithLock>
-          {/*
-            Flows is a 4-column d3-sankey. Long node names ("Restaurant
-            Independent", "Foodservice Management", "Institution Hospital")
-            overlap below tablet-landscape width because d3-sankey doesn't
-            reserve label space. Hidden below lg (1024px) — covers phones
-            in any orientation and tablet portrait; reappears on tablet
-            landscape and desktop.
-          */}
-          <TabTriggerWithLock
-            slug="flows"
-            locked={!isUnlocked("flows")}
-            className="hidden lg:flex"
-          >
-            Flows
-          </TabTriggerWithLock>
-          <TabTriggerWithLock slug="list" locked={!isUnlocked("list")}>
-            List
-          </TabTriggerWithLock>
-          <TabTriggerWithLock
-            slug="directory"
-            locked={!isUnlocked("directory")}
-          >
-            Directory
-          </TabTriggerWithLock>
-          <TabTriggerWithLock slug="county" locked={!isUnlocked("county")}>
-            By county
-          </TabTriggerWithLock>
-          <TabTriggerWithLock
-            slug="dashboard"
-            locked={!isUnlocked("dashboard")}
-          >
-            Dashboard
-          </TabTriggerWithLock>
-          <TabTriggerWithLock slug="pipeline" locked={!isUnlocked("pipeline")}>
-            Pipeline
-          </TabTriggerWithLock>
-          <TabTriggerWithLock slug="reports" locked={!isUnlocked("reports")}>
-            Reports
-          </TabTriggerWithLock>
-        </TabsList>
+        {/* Secondary nav — only when the active cluster has sub-tabs. The
+            inline TabsList here lets the sub-tabs use the existing
+            TabTriggerWithLock pattern with proper Radix accessibility. */}
+        {SUB_TABS[CLUSTER_OF[activeTab as ModuleSlug]] ? (
+          <TabsList className="mb-4 !inline-flex !gap-0 !h-8 !p-[3px]">
+            {SUB_TABS[CLUSTER_OF[activeTab as ModuleSlug]]!.map((t) => (
+              <TabTriggerWithLock
+                key={t.value}
+                slug={t.value}
+                locked={!isUnlocked(t.value)}
+                className={t.mobileHidden ? "hidden lg:flex" : undefined}
+              >
+                {t.label}
+              </TabTriggerWithLock>
+            ))}
+          </TabsList>
+        ) : null}
         <TabsContent value="landing" className="mt-4">
           {isUnlocked("landing") ? (
             <LandingTab
