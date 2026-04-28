@@ -604,22 +604,26 @@ export function NetworkExplorer({
     filteredRecoveryNodes.length +
     filteredEnablers.length;
 
+  // Landing tab is intentionally chrome-free: no hero stats, no filter bar,
+  // no compliance chip. The Landing copy is the surface; the rest of the
+  // explorer's data scaffolding belongs to the working tabs.
+  const showExplorerChrome = activeTab !== "landing";
+
   return (
     <div>
-      {loading ? (
+      {showExplorerChrome && (loading ? (
         <div className="mb-6 text-sm text-charcoal-soft">Loading…</div>
       ) : loadError ? (
         <div className="mb-6 text-sm text-red-700">Error: {loadError}</div>
       ) : (
-        <>
-          <FarmsSummary
-            filteredFarms={filteredFarms}
-            totalFarms={farms}
-            filterActive={filterActive}
-          />
-        </>
-      )}
+        <FarmsSummary
+          filteredFarms={filteredFarms}
+          totalFarms={farms}
+          filterActive={filterActive}
+        />
+      ))}
 
+      {showExplorerChrome && (
       <div className="mb-5 rounded-[14px] border border-cream-shadow bg-white px-4 py-4 sm:px-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-8 sm:gap-y-3">
         <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
           <label className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft">
@@ -717,8 +721,9 @@ export function NetworkExplorer({
           </button>
         ) : null}
       </div>
+      )}
 
-      {complianceFilter !== ALL_COMPLIANCE ? (
+      {showExplorerChrome && complianceFilter !== ALL_COMPLIANCE ? (
         <div className="mb-4 -mt-1 inline-flex items-center gap-2 rounded-full bg-slate-blue/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-blue">
           <span className="inline-block h-1.5 w-1.5 rounded-full bg-slate-blue" />
           Compliance filter: {filteredFarms.length}{" "}
