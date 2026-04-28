@@ -92,25 +92,40 @@ export function AuthChip() {
   const initials = computeInitials(label);
 
   return (
-    <Link href="/profile" className={chipClass}>
-      <span className="h-7 w-7 shrink-0 rounded-full overflow-hidden bg-cream-deep flex items-center justify-center border border-cream-shadow">
-        {avatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={avatarUrl}
-            alt=""
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <span className="text-[10px] font-bold text-slate-blue/70 normal-case tracking-normal">
-            {initials}
-          </span>
-        )}
-      </span>
-      <span className="truncate normal-case tracking-normal text-[12px] font-semibold">
-        Hi, {label}
-      </span>
-    </Link>
+    <span className="inline-flex items-center gap-2">
+      <Link href="/profile" className={chipClass}>
+        <span className="h-7 w-7 shrink-0 rounded-full overflow-hidden bg-cream-deep flex items-center justify-center border border-cream-shadow">
+          {avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={avatarUrl}
+              alt=""
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <span className="text-[10px] font-bold text-slate-blue/70 normal-case tracking-normal">
+              {initials}
+            </span>
+          )}
+        </span>
+        <span className="truncate normal-case tracking-normal text-[12px] font-semibold">
+          Hi, {label}
+        </span>
+      </Link>
+      {/*
+        Server-side sign-out: POST to /auth/signout so the SSR Supabase
+        client clears the session cookies. Styled as a quiet text link to
+        keep the chip the primary visual; the button is the secondary action.
+      */}
+      <form action="/auth/signout" method="post" className="inline">
+        <button
+          type="submit"
+          className="text-[11px] font-semibold uppercase tracking-[0.08em] text-charcoal-soft/80 hover:text-slate-blue transition-colors px-1"
+        >
+          Sign out
+        </button>
+      </form>
+    </span>
   );
 }
 
