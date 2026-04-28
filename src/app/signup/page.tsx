@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { SignupForm } from "@/components/auth/signup-form";
+import { SiteFooter } from "@/components/site-footer";
 import { getAuthedUser } from "@/lib/auth/get-user";
 
 type SearchParams = Promise<{ error?: string; next?: string }>;
@@ -71,6 +72,7 @@ export default async function SignupPage({
           </p>
         </div>
       </div>
+      <SiteFooter />
     </main>
   );
 }

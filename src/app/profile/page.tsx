@@ -7,6 +7,7 @@ import { AuthChip } from "@/components/auth/auth-chip";
 import { YourDetailsForm } from "@/components/profile/your-details-form";
 import { AvatarUpload } from "@/components/profile/avatar-upload";
 import { ResetPasswordForm } from "@/components/auth/reset-password-form";
+import { SiteFooter } from "@/components/site-footer";
 import {
   EMPTY_PROFILE_VALUES,
   type ProfileFieldsValues,
@@ -457,6 +458,7 @@ export default async function ProfilePage() {
           </Link>
         </div>
       </div>
+      <SiteFooter />
     </main>
   );
 }

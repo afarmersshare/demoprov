@@ -9,6 +9,7 @@ import { PersonaSwitcher } from "@/components/persona-switcher";
 import { EntryBanner } from "@/components/entry-banner";
 import { AuthChip } from "@/components/auth/auth-chip";
 import { WelcomeStrip } from "@/components/welcome-strip";
+import { SiteFooter } from "@/components/site-footer";
 import { createClient } from "@/lib/supabase/client";
 import type { Persona } from "@/components/farms/network-explorer";
 import type { ModuleSlug, Tier } from "@/lib/auth/get-user";
@@ -177,6 +178,7 @@ function PageBody() {
           />
         </div>
       )}
+      <SiteFooter />
     </main>
   );
 }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/auth/login-form";
+import { SiteFooter } from "@/components/site-footer";
 import { getAuthedUser } from "@/lib/auth/get-user";
 
 type SearchParams = Promise<{ error?: string; next?: string }>;
@@ -140,6 +141,7 @@ export default async function LoginPage({
           </div>
         </div>
       </div>
+      <SiteFooter />
     </main>
   );
 }

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { ArrowRight, Check } from "lucide-react";
 import type { ModuleSlug } from "@/lib/auth/get-user";
 import { AuthChip } from "@/components/auth/auth-chip";
+import { SiteFooter } from "@/components/site-footer";
 
 export const metadata: Metadata = {
   title: "Plans · Provender",
@@ -360,6 +361,7 @@ export default async function PricingPage({
           </Link>
         </div>
       </div>
+      <SiteFooter />
     </main>
   );
 }

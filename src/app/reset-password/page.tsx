@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getAuthedUser } from "@/lib/auth/get-user";
 import { ResetPasswordForm } from "@/components/auth/reset-password-form";
+import { SiteFooter } from "@/components/site-footer";
 
 // Recovery-flow landing page. Users arrive here after clicking the link in
 // a "reset your password" email — /auth/callback exchanges the code, sets
@@ -49,6 +50,7 @@ export default async function ResetPasswordPage() {
           </section>
         </div>
       </div>
+      <SiteFooter />
     </main>
   );
 }

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { CompleteProfileForm } from "@/components/auth/complete-profile-form";
+import { SiteFooter } from "@/components/site-footer";
 
 // Server-rendered gate page. Reached by the middleware when an authenticated
 // user has user_profiles.profile_completed_at IS NULL. Two short-circuit
@@ -80,6 +81,7 @@ export default async function CompleteProfilePage() {
           </div>
         </div>
       </div>
+      <SiteFooter />
     </main>
   );
 }

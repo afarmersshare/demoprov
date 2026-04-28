@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { AuthChip } from "@/components/auth/auth-chip";
 import { ContactForm } from "@/components/contact/contact-form";
+import { SiteFooter } from "@/components/site-footer";
 
 export const metadata: Metadata = {
   title: "Contact · Provender",
@@ -73,6 +74,7 @@ export default function ContactPage() {
           </div>
         </div>
       </div>
+      <SiteFooter />
     </main>
   );
 }
