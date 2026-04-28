@@ -33,7 +33,13 @@ import { PipelineDashboard } from "../dashboards/pipeline-dashboard";
 import { LockedModule } from "../locked-module";
 import { LandingTab } from "./landing-tab";
 import type { ModuleSlug, Tier } from "@/lib/auth/get-user";
-import { Lock } from "lucide-react";
+import {
+  Lock,
+  Layers,
+  Map as MapIcon,
+  Waves,
+  Sprout,
+} from "lucide-react";
 
 export type Persona =
   | "policymaker"
@@ -279,11 +285,77 @@ type Altitude = "system" | "territory" | "flow" | "ground";
 type Focus = "overview" | "farms" | "buyers" | "gaps";
 type Scope = "foodshed" | "org";
 
-const ALTITUDES: { id: Altitude; label: string; gloss: string }[] = [
-  { id: "system", label: "System", gloss: "The whole basin" },
-  { id: "territory", label: "Territory", gloss: "The geography" },
-  { id: "flow", label: "Flow", gloss: "How things move" },
-  { id: "ground", label: "Ground", gloss: "On the ground" },
+// Per-altitude accent classes — applied to the icon, the active-state
+// underline, and the active-state ring. Each altitude has a distinct
+// accent so the viewer can see at a glance which altitude they're at,
+// even peripheral. Macro to micro reads cool→warm: slate-blue (basin) →
+// forest-sage (land) → terracotta (movement) → amber (the soil where
+// things grow). All four are existing palette tokens.
+const ALTITUDES: {
+  id: Altitude;
+  label: string;
+  gloss: string;
+  Icon: React.ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
+  accent: {
+    icon: string; // text color for the icon (always-on)
+    activeBar: string; // bottom underline / accent bar when active
+    activeRing: string; // ring color when active
+    activeBg: string; // background color when active
+    activeText: string; // text color when active
+  };
+}[] = [
+  {
+    id: "system",
+    label: "System",
+    gloss: "The whole basin",
+    Icon: Layers,
+    accent: {
+      icon: "text-slate-blue",
+      activeBar: "bg-slate-blue",
+      activeRing: "ring-slate-blue/40",
+      activeBg: "bg-slate-blue/10",
+      activeText: "text-slate-blue",
+    },
+  },
+  {
+    id: "territory",
+    label: "Territory",
+    gloss: "The geography",
+    Icon: MapIcon,
+    accent: {
+      icon: "text-forest-sage",
+      activeBar: "bg-forest-sage",
+      activeRing: "ring-forest-sage/40",
+      activeBg: "bg-forest-sage/10",
+      activeText: "text-forest-sage",
+    },
+  },
+  {
+    id: "flow",
+    label: "Flow",
+    gloss: "How things move",
+    Icon: Waves,
+    accent: {
+      icon: "text-terracotta",
+      activeBar: "bg-terracotta",
+      activeRing: "ring-terracotta/40",
+      activeBg: "bg-terracotta/10",
+      activeText: "text-terracotta",
+    },
+  },
+  {
+    id: "ground",
+    label: "Ground",
+    gloss: "On the ground",
+    Icon: Sprout,
+    accent: {
+      icon: "text-amber",
+      activeBar: "bg-amber",
+      activeRing: "ring-amber/40",
+      activeBg: "bg-amber/10",
+      activeText: "text-amber",
+    },
+  },
 ];
 
 const FOCI: { id: Focus; label: string }[] = [
@@ -919,87 +991,127 @@ export function NetworkExplorer({
         ) : null}
       </div>
 
-      {/* Altitude row — the macro lens. Big, bold pill buttons. The four
-          altitudes go macro to micro: System (basin) → Territory
-          (geography) → Flow (movement) → Ground (individuals). */}
-      <div
-        role="tablist"
-        aria-label="Altitude"
-        className="mb-2 grid grid-cols-2 gap-1.5 sm:flex sm:flex-wrap sm:gap-1.5"
-      >
-        {ALTITUDES.map((a) => {
-          const isActive = altitude === a.id;
-          return (
-            <button
-              key={a.id}
-              type="button"
-              role="tab"
-              aria-selected={isActive}
-              onClick={() => setAltitude(a.id)}
-              className={
-                "inline-flex flex-col items-start gap-0 rounded-[10px] border px-3.5 sm:px-4 py-2 transition-colors " +
-                (isActive
-                  ? "border-slate-blue bg-slate-blue text-warm-cream shadow-sm"
-                  : "border-cream-shadow bg-white text-charcoal-soft hover:border-slate-blue hover:text-slate-blue")
-              }
-            >
-              <span className="text-[12px] sm:text-[13px] font-semibold uppercase tracking-[0.08em]">
-                {a.label}
-              </span>
-              <span
+      {/* Altitude + Focus navigator — contained card with two stacked
+          surfaces. The dark upper band is the altitude row (macro lens
+          + per-altitude accent color); the lighter lower band is the
+          focus row (slice within altitude). Two distinct surfaces in
+          one widget so the user sees them as related but separate
+          decisions. */}
+      <div className="mb-3 overflow-hidden rounded-[14px] border border-cream-shadow shadow-sm">
+        {/* Altitude row — dark band, four altitudes with their accent
+            icons. Active altitude shows a thick accent underline at the
+            bottom of the button. */}
+        <div
+          role="tablist"
+          aria-label="Altitude"
+          className="grid grid-cols-2 sm:grid-cols-4 bg-charcoal"
+        >
+          {ALTITUDES.map((a) => {
+            const isActive = altitude === a.id;
+            const Icon = a.Icon;
+            return (
+              <button
+                key={a.id}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setAltitude(a.id)}
                 className={
-                  "text-[10px] uppercase tracking-[0.06em] " +
-                  (isActive ? "text-warm-cream/75" : "text-charcoal-soft/65")
+                  "group relative flex flex-col items-center gap-1.5 px-3 py-3.5 transition-colors " +
+                  (isActive
+                    ? "bg-charcoal-soft/30"
+                    : "hover:bg-charcoal-soft/15")
                 }
               >
-                {a.gloss}
-              </span>
-            </button>
-          );
-        })}
+                <Icon
+                  className={
+                    "h-4 w-4 transition-colors " +
+                    (isActive
+                      ? a.accent.icon
+                      : a.accent.icon + " opacity-50 group-hover:opacity-90")
+                  }
+                  aria-hidden
+                />
+                <span
+                  className={
+                    "text-[11px] sm:text-[12px] font-semibold uppercase tracking-[0.14em] transition-colors " +
+                    (isActive
+                      ? "text-warm-cream"
+                      : "text-warm-cream/55 group-hover:text-warm-cream/85")
+                  }
+                >
+                  {a.label}
+                </span>
+                <span
+                  aria-hidden
+                  className={
+                    "absolute bottom-0 left-3 right-3 h-[3px] rounded-t-full transition-opacity " +
+                    a.accent.activeBar +
+                    " " +
+                    (isActive ? "opacity-100" : "opacity-0")
+                  }
+                />
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Focus row — lighter band, four focus columns. Active focus
+            shows as a white pill. Same four options at every altitude
+            so the schema is consistent. */}
+        <div
+          role="tablist"
+          aria-label="Focus"
+          className="grid grid-cols-2 sm:grid-cols-4 bg-charcoal-soft/95"
+        >
+          {FOCI.map((f) => {
+            const isActive = focus === f.id;
+            return (
+              <button
+                key={f.id}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setFocus(f.id)}
+                className={
+                  "px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors " +
+                  (isActive
+                    ? "bg-warm-cream text-charcoal"
+                    : "text-warm-cream/70 hover:text-warm-cream hover:bg-charcoal-soft/60")
+                }
+              >
+                {f.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Focus row — slice within the active altitude. Same four
-          options at every altitude so the schema is consistent. Cells
-          without a real rendering yet show a placeholder. */}
-      <div
-        role="tablist"
-        aria-label="Focus"
-        className="mb-3 inline-flex rounded-[10px] border border-cream-shadow bg-cream-deep/40 p-[3px]"
-      >
-        {FOCI.map((f) => {
-          const isActive = focus === f.id;
+      {/* Metadata chips — current cell's state at a glance. The active
+          altitude's accent color tints the entity-count chip so the chip
+          row reinforces the altitude you're at. */}
+      <div className="mb-4 flex flex-wrap gap-1.5 text-[11px]">
+        {(() => {
+          const a = ALTITUDES.find((x) => x.id === altitude)!;
           return (
-            <button
-              key={f.id}
-              type="button"
-              role="tab"
-              aria-selected={isActive}
-              onClick={() => setFocus(f.id)}
+            <span
               className={
-                "rounded-[8px] px-3 sm:px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] transition-colors " +
-                (isActive
-                  ? "bg-white text-slate-blue shadow-sm"
-                  : "text-charcoal-soft hover:text-slate-blue")
+                "inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-semibold uppercase tracking-[0.06em] " +
+                a.accent.activeBg +
+                " " +
+                a.accent.activeText
               }
             >
-              {f.label}
-            </button>
+              {filteredFarms.length +
+                filteredMarkets.length +
+                filteredDistributors.length +
+                filteredProcessors.length +
+                filteredRecoveryNodes.length +
+                filteredEnablers.length}{" "}
+              entities
+            </span>
           );
-        })}
-      </div>
-
-      {/* Metadata chips — current cell's state at a glance. */}
-      <div className="mb-4 flex flex-wrap gap-1.5 text-[11px]">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-pale px-3 py-1 text-slate-blue font-semibold uppercase tracking-[0.06em]">
-          {filteredFarms.length +
-            filteredMarkets.length +
-            filteredDistributors.length +
-            filteredProcessors.length +
-            filteredRecoveryNodes.length +
-            filteredEnablers.length}{" "}
-          entities
-        </span>
+        })()}
         <span className="inline-flex items-center gap-1.5 rounded-full bg-cream-deep/60 px-3 py-1 text-charcoal-soft font-semibold uppercase tracking-[0.06em]">
           {Math.max(0, scopedFarms.length - buyerReadyCount)} farms with
           gaps
