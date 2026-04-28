@@ -264,67 +264,59 @@ const TAB_ORDER: ModuleSlug[] = [
   "pipeline",
 ];
 
-// IA structure (locked 2026-04-28). Six top-level "macro lens" clusters
-// the user picks among, plus Pipeline as a 7th cluster shown only to
-// afs_internal (and anonymous demo visitors who get all modules). Inside
-// the Directory and Network clusters, secondary sub-tabs surface List /
-// By county and Flows respectively. Single-slug clusters skip the
-// secondary nav entirely.
-type ClusterId =
-  | "landing"
-  | "map"
-  | "directory"
-  | "network"
-  | "dashboard"
-  | "reports"
-  | "pipeline";
+// IA structure (Calla consult, 2026-04-28). Watershed cartography rendered
+// as macro-to-micro: the viewer flies at one of four altitudes, slices by
+// one of four focus areas, and views the data either at the full-foodshed
+// scope or scoped to their organization. Reports and Pipeline are
+// orthogonal utilities, accessible from any cell.
+//
+//   SCOPE    (foodshed | org)                             ← top-level toggle
+//   ALTITUDE (system · territory · flow · ground)         ← what scale
+//   FOCUS    (overview · farms · buyers · gaps)           ← what aspect
+//   METADATA (entity counts, gaps flagged, last updated)  ← state of cell
 
-const CLUSTER_OF: Record<ModuleSlug, ClusterId> = {
-  landing: "landing",
-  map: "map",
-  directory: "directory",
-  list: "directory",
-  county: "directory",
-  network: "network",
-  flows: "network",
-  dashboard: "dashboard",
-  pipeline: "pipeline",
-  reports: "reports",
-};
+type Altitude = "system" | "territory" | "flow" | "ground";
+type Focus = "overview" | "farms" | "buyers" | "gaps";
+type Scope = "foodshed" | "org";
 
-const PRIMARY_CLUSTERS: {
-  id: ClusterId;
-  label: string;
-  defaultSlug: ModuleSlug;
-  afsOnly?: boolean;
-}[] = [
-  { id: "landing", label: "Landing", defaultSlug: "landing" },
-  { id: "map", label: "Map", defaultSlug: "map" },
-  { id: "directory", label: "Directory", defaultSlug: "directory" },
-  { id: "network", label: "Network", defaultSlug: "network" },
-  { id: "dashboard", label: "Dashboard", defaultSlug: "dashboard" },
-  { id: "reports", label: "Reports", defaultSlug: "reports" },
-  { id: "pipeline", label: "Pipeline", defaultSlug: "pipeline", afsOnly: true },
+const ALTITUDES: { id: Altitude; label: string; gloss: string }[] = [
+  { id: "system", label: "System", gloss: "The whole basin" },
+  { id: "territory", label: "Territory", gloss: "The geography" },
+  { id: "flow", label: "Flow", gloss: "How things move" },
+  { id: "ground", label: "Ground", gloss: "On the ground" },
 ];
 
-const SUB_TABS: Partial<
-  Record<
-    ClusterId,
-    { value: ModuleSlug; label: string; mobileHidden?: boolean }[]
-  >
-> = {
-  directory: [
-    { value: "directory", label: "Directory" },
-    { value: "list", label: "List" },
-    { value: "county", label: "By county" },
-  ],
-  network: [
-    { value: "network", label: "Network" },
-    // Flows is a 4-column d3-sankey; long node names overlap below
-    // tablet-landscape width. Hidden under lg, reappears at desktop.
-    { value: "flows", label: "Flows", mobileHidden: true },
-  ],
+const FOCI: { id: Focus; label: string }[] = [
+  { id: "overview", label: "Overview" },
+  { id: "farms", label: "Farms" },
+  { id: "buyers", label: "Buyers" },
+  { id: "gaps", label: "Gaps" },
+];
+
+// (altitude, focus) → which existing TabsContent value renders. Cells with
+// no mapping render a generic "coming soon" placeholder. As Phase-3 surfaces
+// land, fill cells in here rather than adding another flat tab.
+const CELL_TO_SLUG: Record<Altitude, Partial<Record<Focus, ModuleSlug>>> = {
+  system: { overview: "dashboard" },
+  territory: { overview: "map", gaps: "county" },
+  flow: { overview: "network", gaps: "flows" },
+  ground: { overview: "directory", farms: "list" },
 };
+
+// Reverse lookup: which (altitude, focus) renders a given slug. Used when
+// LandingTab cards or other UI wants to navigate by slug — the IA layer
+// translates that to the new coordinates.
+function cellForSlug(
+  slug: ModuleSlug,
+): { altitude: Altitude; focus: Focus } | null {
+  for (const altitude of Object.keys(CELL_TO_SLUG) as Altitude[]) {
+    const foci = CELL_TO_SLUG[altitude];
+    for (const focus of Object.keys(foci) as Focus[]) {
+      if (foci[focus] === slug) return { altitude, focus };
+    }
+  }
+  return null;
+}
 
 export function NetworkExplorer({
   persona = "explore",
@@ -369,32 +361,74 @@ export function NetworkExplorer({
   const [countyFilter, setCountyFilter] = useState<string>(ALL_COUNTIES);
   const [complianceFilter, setComplianceFilter] =
     useState<ComplianceFilter>(ALL_COMPLIANCE);
-  // Default landing surface per persona (locked tier x modules matrix
-  // 2026-04-28). Operators (farmer, buyer, hub) land on the personalized
-  // Landing tab; observers (policymaker, afs, nonprofit, funder) land on
-  // Dashboard; explore lands on Map. The auto-pick useEffect below catches
-  // anyone whose tier doesn't actually entitle them to that default.
-  const defaultTabForPersona = (p: Persona): string => {
-    if (embedMode) return "map";
-    if (p === "explore") return "map";
-    if (p === "farmer" || p === "buyer" || p === "hub") return "landing";
-    return "dashboard";
+  // Default IA cell per persona. Operators (farmer, buyer, hub) start in
+  // SYSTEM × OVERVIEW at org scope — what was the "Landing" tab is now
+  // the org-scoped read of the highest altitude. Observers
+  // (policymaker, nonprofit, funder, afs) start in SYSTEM × OVERVIEW at
+  // foodshed scope — the persona-keyed Dashboard. Explore lands at
+  // TERRITORY × OVERVIEW (the map of the region they haven't placed
+  // themselves in yet). Embed mode also starts at TERRITORY × OVERVIEW.
+  const defaultCellForPersona = (
+    p: Persona,
+  ): { altitude: Altitude; focus: Focus; scope: Scope } => {
+    if (embedMode)
+      return { altitude: "territory", focus: "overview", scope: "foodshed" };
+    if (p === "explore")
+      return { altitude: "territory", focus: "overview", scope: "foodshed" };
+    if (p === "farmer" || p === "buyer" || p === "hub")
+      return { altitude: "system", focus: "overview", scope: "org" };
+    return { altitude: "system", focus: "overview", scope: "foodshed" };
   };
-  const [activeTab, setActiveTab] = useState<string>(
-    defaultTabForPersona(persona),
-  );
+  const initialCell = defaultCellForPersona(persona);
+  const [altitude, setAltitude] = useState<Altitude>(initialCell.altitude);
+  const [focus, setFocus] = useState<Focus>(initialCell.focus);
+  const [scope, setScope] = useState<Scope>(initialCell.scope);
   const [selectedEntity, setSelectedEntity] = useState<NetworkEntity | null>(
     null,
   );
 
-  // If a signed-in user lands on a tab their tier doesn't include, jump
-  // them to the first entitled tab in canonical order. Demo / anonymous
-  // users (entitledModules undefined) skip this entirely. Runs once
-  // entitlements resolve; later user-initiated tab changes aren't
-  // overridden because the effect only fires on entitledModules changes
-  // and the new activeTab is, by definition, entitled.
+  // activeTab is the underlying TabsContent key. Derived from
+  // (altitude, focus) — when the cell maps to an existing surface, use
+  // that slug; otherwise route to a "_placeholder" content slot. The
+  // org-scope SYSTEM × OVERVIEW cell is special: it renders the
+  // personalized Landing surface instead of the regional Dashboard.
+  const activeTab: string = (() => {
+    if (
+      altitude === "system" &&
+      focus === "overview" &&
+      scope === "org" &&
+      isUnlocked("landing")
+    ) {
+      return "landing";
+    }
+    return CELL_TO_SLUG[altitude]?.[focus] ?? "_placeholder";
+  })();
+
+  // Legacy setter — accepts a ModuleSlug (LandingTab capability cards,
+  // etc.) and translates to the new (altitude, focus) coordinates.
+  const setActiveTab = (slug: string) => {
+    if (slug === "landing") {
+      setAltitude("system");
+      setFocus("overview");
+      setScope("org");
+      return;
+    }
+    const cell = cellForSlug(slug as ModuleSlug);
+    if (cell) {
+      setAltitude(cell.altitude);
+      setFocus(cell.focus);
+      return;
+    }
+    setAltitude("territory");
+    setFocus("overview");
+  };
+
+  // If the user's tier doesn't include the underlying slug for the cell
+  // they're on, jump them to the first entitled cell. Demo / anonymous
+  // users (entitledModules undefined) skip this entirely.
   useEffect(() => {
     if (!enforcing) return;
+    if (activeTab === "_placeholder") return;
     if (isUnlocked(activeTab as ModuleSlug)) return;
     const fallback = TAB_ORDER.find((slug) => isUnlocked(slug));
     if (fallback) setActiveTab(fallback);
@@ -519,8 +553,42 @@ export function NetworkExplorer({
     return map;
   }, [farms, impactDocs]);
 
+  // Scope filter — applies before the user-controlled filter chain. When
+  // a tenant is viewing in "my organization" scope, the dataset is
+  // narrowed to records linked to their org. For v1 demo (no seeded
+  // org-link data yet) we narrow to a deterministic subset that
+  // demonstrates the toggle does something visible: regen-verified farms
+  // for the farm side, the first three of each buyer-side entity type.
+  // When real tenant data lands, replace this with a join on a
+  // per-persona "what's mine" predicate.
+  const scopedFarms = useMemo(() => {
+    if (scope === "foodshed") return farms;
+    return farms.filter((f) => f.regenerative_claim_verified).slice(0, 8);
+  }, [farms, scope]);
+
+  const scopedMarkets = useMemo(
+    () => (scope === "foodshed" ? markets : markets.slice(0, 3)),
+    [markets, scope],
+  );
+  const scopedDistributors = useMemo(
+    () => (scope === "foodshed" ? distributors : distributors.slice(0, 2)),
+    [distributors, scope],
+  );
+  const scopedProcessors = useMemo(
+    () => (scope === "foodshed" ? processors : processors.slice(0, 2)),
+    [processors, scope],
+  );
+  const scopedRecoveryNodes = useMemo(
+    () => (scope === "foodshed" ? recoveryNodes : recoveryNodes.slice(0, 2)),
+    [recoveryNodes, scope],
+  );
+  const scopedEnablers = useMemo(
+    () => (scope === "foodshed" ? enablers : enablers.slice(0, 2)),
+    [enablers, scope],
+  );
+
   const filteredFarms = useMemo(() => {
-    return farms.filter((f) => {
+    return scopedFarms.filter((f) => {
       if (statusFilter !== "all" && f.afs_member_status !== statusFilter) {
         return false;
       }
@@ -539,7 +607,7 @@ export function NetworkExplorer({
       return true;
     });
   }, [
-    farms,
+    scopedFarms,
     statusFilter,
     typeFilter,
     countyFilter,
@@ -567,31 +635,31 @@ export function NetworkExplorer({
   // so when a status is actively selected we hide them entirely. The
   // By-county tab surfaces a note explaining this.
   const filteredMarkets = useMemo(() => {
-    return markets.filter((m) =>
+    return scopedMarkets.filter((m) =>
       statusFilter === "all" ? true : m.afs_member_status === statusFilter,
     );
-  }, [markets, statusFilter]);
+  }, [scopedMarkets, statusFilter]);
 
   const filteredDistributors = useMemo(() => {
-    return distributors.filter((d) =>
+    return scopedDistributors.filter((d) =>
       statusFilter === "all" ? true : d.afs_member_status === statusFilter,
     );
-  }, [distributors, statusFilter]);
+  }, [scopedDistributors, statusFilter]);
 
   const filteredProcessors = useMemo(() => {
-    return processors.filter((p) =>
+    return scopedProcessors.filter((p) =>
       statusFilter === "all" ? true : p.afs_member_status === statusFilter,
     );
-  }, [processors, statusFilter]);
+  }, [scopedProcessors, statusFilter]);
 
   const filteredRecoveryNodes = useMemo(
-    () => (statusFilter === "all" ? recoveryNodes : []),
-    [recoveryNodes, statusFilter],
+    () => (statusFilter === "all" ? scopedRecoveryNodes : []),
+    [scopedRecoveryNodes, statusFilter],
   );
 
   const filteredEnablers = useMemo(
-    () => (statusFilter === "all" ? enablers : []),
-    [enablers, statusFilter],
+    () => (statusFilter === "all" ? scopedEnablers : []),
+    [scopedEnablers, statusFilter],
   );
 
   // Farms scoped by status + type but NOT by county — the By-county tab
@@ -666,10 +734,12 @@ export function NetworkExplorer({
     filteredRecoveryNodes.length +
     filteredEnablers.length;
 
-  // Landing tab is intentionally chrome-free: no hero stats, no filter bar,
-  // no compliance chip. The Landing copy is the surface; the rest of the
-  // explorer's data scaffolding belongs to the working tabs.
-  const showExplorerChrome = activeTab !== "landing";
+  // Cells that render their own content (Landing welcome, placeholders
+  // for unbuilt cells) skip the explorer chrome — no hero stats, no
+  // filter bar, no compliance chip. Data-view cells (map, list, dashboard,
+  // etc.) get the full chrome.
+  const showExplorerChrome =
+    activeTab !== "landing" && activeTab !== "_placeholder";
 
   return (
     <div>
@@ -800,42 +870,143 @@ export function NetworkExplorer({
         </div>
       ) : null}
 
-      {/* Primary "macro lens" cluster nav — bigger, bolder than the old
-          flat tab strip so it reads as a separate decision from the
-          filter bar above. Custom buttons (not TabsTrigger) because each
-          cluster button needs to highlight when ANY of its sub-slugs is
-          active, not just one specific value. */}
+      {/* Watershed IA shell. Three rows: SCOPE (foodshed vs my-org),
+          ALTITUDE (system → ground), FOCUS (slice within altitude),
+          plus a metadata chip strip. The user always knows three things
+          at a glance: what scale they're looking at, what aspect, and
+          whether the data is the whole basin or just their piece. */}
+
+      {/* Scope toggle — top of the IA, persistent across altitude
+          changes. The single most important control on the page: it's
+          where the subscription value moment lives. */}
+      <div className="mb-3 flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
+        <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-charcoal-soft/80">
+          Scope
+        </span>
+        <div className="inline-flex rounded-full border border-cream-shadow bg-white p-[3px] text-[11px] font-semibold uppercase tracking-[0.08em]">
+          <button
+            type="button"
+            onClick={() => setScope("foodshed")}
+            aria-pressed={scope === "foodshed"}
+            className={
+              "rounded-full px-3.5 py-1.5 transition-colors " +
+              (scope === "foodshed"
+                ? "bg-slate-blue text-warm-cream"
+                : "text-charcoal-soft hover:text-slate-blue")
+            }
+          >
+            The whole foodshed
+          </button>
+          <button
+            type="button"
+            onClick={() => setScope("org")}
+            aria-pressed={scope === "org"}
+            className={
+              "rounded-full px-3.5 py-1.5 transition-colors " +
+              (scope === "org"
+                ? "bg-accent-amber text-charcoal"
+                : "text-charcoal-soft hover:text-slate-blue")
+            }
+          >
+            My organization
+          </button>
+        </div>
+        {scope === "org" ? (
+          <span className="text-[11px] italic text-charcoal-soft/85 leading-snug">
+            Showing a sample of your-organization-shaped data. With your
+            data connected, this is the live read of your operations.
+          </span>
+        ) : null}
+      </div>
+
+      {/* Altitude row — the macro lens. Big, bold pill buttons. The four
+          altitudes go macro to micro: System (basin) → Territory
+          (geography) → Flow (movement) → Ground (individuals). */}
       <div
         role="tablist"
-        aria-label="Primary navigation"
-        className="mb-3 grid grid-cols-3 gap-1.5 sm:flex sm:flex-wrap sm:gap-1.5"
+        aria-label="Altitude"
+        className="mb-2 grid grid-cols-2 gap-1.5 sm:flex sm:flex-wrap sm:gap-1.5"
       >
-        {PRIMARY_CLUSTERS.filter(
-          (c) => !c.afsOnly || isUnlocked(c.defaultSlug),
-        ).map((c) => {
-          const isActive = CLUSTER_OF[activeTab as ModuleSlug] === c.id;
-          const isLocked = !isUnlocked(c.defaultSlug);
+        {ALTITUDES.map((a) => {
+          const isActive = altitude === a.id;
           return (
             <button
-              key={c.id}
+              key={a.id}
               type="button"
               role="tab"
               aria-selected={isActive}
-              onClick={() => setActiveTab(c.defaultSlug)}
+              onClick={() => setAltitude(a.id)}
               className={
-                "inline-flex items-center justify-center gap-1.5 rounded-[10px] border px-3.5 sm:px-4 py-2 text-[12px] sm:text-[13px] font-semibold uppercase tracking-[0.06em] transition-colors " +
+                "inline-flex flex-col items-start gap-0 rounded-[10px] border px-3.5 sm:px-4 py-2 transition-colors " +
                 (isActive
                   ? "border-slate-blue bg-slate-blue text-warm-cream shadow-sm"
                   : "border-cream-shadow bg-white text-charcoal-soft hover:border-slate-blue hover:text-slate-blue")
               }
             >
-              {c.label}
-              {isLocked && !isActive ? (
-                <Lock className="w-3 h-3 opacity-60" aria-hidden />
-              ) : null}
+              <span className="text-[12px] sm:text-[13px] font-semibold uppercase tracking-[0.08em]">
+                {a.label}
+              </span>
+              <span
+                className={
+                  "text-[10px] uppercase tracking-[0.06em] " +
+                  (isActive ? "text-warm-cream/75" : "text-charcoal-soft/65")
+                }
+              >
+                {a.gloss}
+              </span>
             </button>
           );
         })}
+      </div>
+
+      {/* Focus row — slice within the active altitude. Same four
+          options at every altitude so the schema is consistent. Cells
+          without a real rendering yet show a placeholder. */}
+      <div
+        role="tablist"
+        aria-label="Focus"
+        className="mb-3 inline-flex rounded-[10px] border border-cream-shadow bg-cream-deep/40 p-[3px]"
+      >
+        {FOCI.map((f) => {
+          const isActive = focus === f.id;
+          return (
+            <button
+              key={f.id}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => setFocus(f.id)}
+              className={
+                "rounded-[8px] px-3 sm:px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] transition-colors " +
+                (isActive
+                  ? "bg-white text-slate-blue shadow-sm"
+                  : "text-charcoal-soft hover:text-slate-blue")
+              }
+            >
+              {f.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Metadata chips — current cell's state at a glance. */}
+      <div className="mb-4 flex flex-wrap gap-1.5 text-[11px]">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-pale px-3 py-1 text-slate-blue font-semibold uppercase tracking-[0.06em]">
+          {filteredFarms.length +
+            filteredMarkets.length +
+            filteredDistributors.length +
+            filteredProcessors.length +
+            filteredRecoveryNodes.length +
+            filteredEnablers.length}{" "}
+          entities
+        </span>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-cream-deep/60 px-3 py-1 text-charcoal-soft font-semibold uppercase tracking-[0.06em]">
+          {Math.max(0, scopedFarms.length - buyerReadyCount)} farms with
+          gaps
+        </span>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-cream-deep/40 px-3 py-1 text-charcoal-soft/80 italic">
+          last sync · demo dataset
+        </span>
       </div>
 
       <Tabs
@@ -843,23 +1014,6 @@ export function NetworkExplorer({
         onValueChange={setActiveTab}
         className="w-full"
       >
-        {/* Secondary nav — only when the active cluster has sub-tabs. The
-            inline TabsList here lets the sub-tabs use the existing
-            TabTriggerWithLock pattern with proper Radix accessibility. */}
-        {SUB_TABS[CLUSTER_OF[activeTab as ModuleSlug]] ? (
-          <TabsList className="mb-4 !inline-flex !gap-0 !h-8 !p-[3px]">
-            {SUB_TABS[CLUSTER_OF[activeTab as ModuleSlug]]!.map((t) => (
-              <TabTriggerWithLock
-                key={t.value}
-                slug={t.value}
-                locked={!isUnlocked(t.value)}
-                className={t.mobileHidden ? "hidden lg:flex" : undefined}
-              >
-                {t.label}
-              </TabTriggerWithLock>
-            ))}
-          </TabsList>
-        ) : null}
         <TabsContent value="landing" className="mt-4">
           {isUnlocked("landing") ? (
             <LandingTab
@@ -1106,7 +1260,50 @@ export function NetworkExplorer({
             <LockedModule slug="reports" />
           )}
         </TabsContent>
+        <TabsContent value="_placeholder" className="mt-4">
+          <CellPlaceholder
+            altitude={altitude}
+            focus={focus}
+            scope={scope}
+            onJumpToOverview={() => setFocus("overview")}
+          />
+        </TabsContent>
       </Tabs>
+
+      {/* Reports + Pipeline live outside the altitude system — they're
+          orthogonal utilities accessible from any cell. Reports is a
+          spans-altitudes export tool; Pipeline is AFS-internal-only. */}
+      <div className="mt-6 pt-4 border-t border-cream-shadow/60 flex flex-wrap gap-2 items-center">
+        <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-charcoal-soft/70">
+          Tools
+        </span>
+        <button
+          type="button"
+          onClick={() => setActiveTab("reports")}
+          className={
+            "rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] transition-colors " +
+            (activeTab === "reports"
+              ? "border-slate-blue bg-slate-blue text-warm-cream"
+              : "border-cream-shadow bg-white text-charcoal-soft hover:border-slate-blue hover:text-slate-blue")
+          }
+        >
+          Reports
+        </button>
+        {isUnlocked("pipeline") ? (
+          <button
+            type="button"
+            onClick={() => setActiveTab("pipeline")}
+            className={
+              "rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] transition-colors " +
+              (activeTab === "pipeline"
+                ? "border-slate-blue bg-slate-blue text-warm-cream"
+                : "border-cream-shadow bg-white text-charcoal-soft hover:border-slate-blue hover:text-slate-blue")
+            }
+          >
+            Pipeline · AFS
+          </button>
+        ) : null}
+      </div>
 
       <EntityDetailOverlay
         entity={selectedEntity}
@@ -1131,6 +1328,59 @@ export function NetworkExplorer({
         if (enforcing && !hasLockedTab) return null;
         return <EmbedCta variant="persona" />;
       })()}
+    </div>
+  );
+}
+
+// Cell placeholder — rendered when the active (altitude, focus, scope)
+// triple has no live surface yet. Empty states are framed as "what you'd
+// see here" instead of "coming soon," with a one-click jump to the
+// overview cell at the same altitude (which always has a real surface).
+function CellPlaceholder({
+  altitude,
+  focus,
+  scope,
+  onJumpToOverview,
+}: {
+  altitude: Altitude;
+  focus: Focus;
+  scope: Scope;
+  onJumpToOverview: () => void;
+}) {
+  const altitudeLabel =
+    ALTITUDES.find((a) => a.id === altitude)?.label ?? altitude;
+  const focusLabel = FOCI.find((f) => f.id === focus)?.label ?? focus;
+  const lede = (() => {
+    if (focus === "farms")
+      return `Farm-side ${altitudeLabel.toLowerCase()} view — same altitude, narrowed to producers.`;
+    if (focus === "buyers")
+      return `Buyer-side ${altitudeLabel.toLowerCase()} view — same altitude, narrowed to demand.`;
+    if (focus === "gaps")
+      return `Where the ${altitudeLabel.toLowerCase()} has thin coverage, missing connections, or compliance work to close.`;
+    return `${altitudeLabel} × ${focusLabel} — coming as the data layer fills in.`;
+  })();
+  return (
+    <div className="rounded-[14px] border border-cream-shadow bg-white p-6 sm:p-10">
+      <div className="mx-auto max-w-xl text-center">
+        <div className="mx-auto inline-flex items-center gap-2 rounded-full bg-cream-deep/60 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-charcoal-soft">
+          {altitudeLabel} · {focusLabel}
+          {scope === "org" ? " · Your organization" : ""}
+        </div>
+        <h2 className="mt-5 font-display text-[22px] sm:text-[24px] font-semibold text-slate-blue leading-[1.2] tracking-[-0.015em]">
+          This view is on the way.
+        </h2>
+        <p className="mt-2.5 text-[14px] leading-relaxed text-charcoal-soft">
+          {lede}
+        </p>
+        <button
+          type="button"
+          onClick={onJumpToOverview}
+          className="mt-6 inline-flex items-center gap-2 rounded-full bg-slate-blue px-5 py-2 text-[12px] font-semibold uppercase tracking-[0.08em] text-warm-cream hover:bg-slate-blue-light transition-colors"
+        >
+          See {altitudeLabel} · Overview
+          <span aria-hidden>→</span>
+        </button>
+      </div>
     </div>
   );
 }
