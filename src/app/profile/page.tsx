@@ -74,6 +74,7 @@ const MANAGED_CONSENTS: ManagedConsent[] = [
 ];
 
 const ALL_MODULE_SLUGS: ModuleSlug[] = [
+  "landing",
   "map",
   "network",
   "flows",
@@ -86,6 +87,7 @@ const ALL_MODULE_SLUGS: ModuleSlug[] = [
 ];
 
 const MODULE_LABEL: Record<ModuleSlug, string> = {
+  landing: "Landing",
   map: "Map",
   network: "Network",
   flows: "Flows",

@@ -116,6 +116,7 @@ const TIER_BLOCKS: TierBlock[] = [
 ];
 
 const MODULE_LABEL: Record<ModuleSlug, string> = {
+  landing: "Landing",
   map: "Map",
   network: "Network",
   flows: "Flows",
@@ -130,6 +131,7 @@ const MODULE_LABEL: Record<ModuleSlug, string> = {
 // Cheapest tier block that unlocks each module — used by the highlight banner
 // when a user lands here from a locked tab.
 const MODULE_TIER_HINT: Record<ModuleSlug, TierBlockId> = {
+  landing: "farmer",
   map: "farmer",
   directory: "farmer",
   reports: "farmer",

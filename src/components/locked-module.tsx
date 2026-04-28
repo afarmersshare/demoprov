@@ -8,6 +8,15 @@ const MODULE_PITCH: Record<
   ModuleSlug,
   { title: string; lede: string; bullets: string[] }
 > = {
+  landing: {
+    title: "Landing",
+    lede: "Your personalized home — your farm or organization at a glance, compliance status, and what AFS is doing for you right now.",
+    bullets: [
+      "Your record front-and-center, not buried in a directory",
+      "Live status on listings, gaps, and outstanding asks",
+      "Available on every paid tier",
+    ],
+  },
   map: {
     title: "Map",
     lede: "See every farm, market, processor, and recovery node in your region on one interactive map.",

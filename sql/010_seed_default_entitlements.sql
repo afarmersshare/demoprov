@@ -34,26 +34,37 @@ RETURNS text[]
 LANGUAGE sql
 IMMUTABLE
 AS $$
+  -- Locked 2026-04-28. Source of truth: project_tier_modules_matrix.md
+  -- (Kelsey's memory). Six top-level tabs: Landing · Map · Directory (List,
+  -- By county nested) · Network (Flows nested) · Dashboard · Reports —
+  -- plus Pipeline gated to afs_internal.
+  --
+  -- Operator personas (farmer, buyer, hub) get Landing instead of Dashboard.
+  -- Observer personas (government, nonprofit, funder, aggregator, afs) get
+  -- both Landing and Dashboard. demo (universal free) gets Map + Dashboard
+  -- only — it's the unconnected-visitor floor; signed-in operators upgrade
+  -- past it. farmer_free is deprecated and collapses to the demo set
+  -- (enum value retained for migration safety).
   SELECT CASE p_tier
-    WHEN 'farmer_free'         THEN ARRAY['map','directory','reports']
-    WHEN 'farmer_paid'         THEN ARRAY['map','directory','network','dashboard','reports']
-    WHEN 'buyer_institutional' THEN ARRAY['map','network','flows','list','directory','county','dashboard','reports']
-    WHEN 'buyer_foodhub'       THEN ARRAY['map','network','flows','list','directory','county','dashboard','reports']
-    WHEN 'buyer_grocery'       THEN ARRAY['map','network','flows','list','directory','county','dashboard','reports']
-    WHEN 'buyer_foodservice'   THEN ARRAY['map','network','list','directory','dashboard','reports']
-    WHEN 'buyer_farmersmarket' THEN ARRAY['map','directory','list','dashboard','reports']
-    WHEN 'buyer_processor'     THEN ARRAY['map','network','flows','list','directory','county','dashboard','reports']
-    WHEN 'government'          THEN ARRAY['map','flows','county','dashboard','reports']
-    WHEN 'nonprofit'           THEN ARRAY['map','network','flows','list','directory','dashboard','reports']
-    WHEN 'funder'              THEN ARRAY['map','flows','county','dashboard','reports']
-    WHEN 'aggregator_licensed' THEN ARRAY['map','network','flows','list','directory','county','dashboard','pipeline','reports']
-    WHEN 'afs_internal'        THEN ARRAY['map','network','flows','list','directory','county','dashboard','pipeline','reports']
-    WHEN 'demo'                THEN ARRAY['map','network','flows','list','directory','county','dashboard','pipeline','reports']
+    WHEN 'demo'                THEN ARRAY['map','dashboard']
+    WHEN 'farmer_free'         THEN ARRAY['map','dashboard']
+    WHEN 'farmer_paid'         THEN ARRAY['landing','map','directory','list','county','network','flows','reports']
+    WHEN 'buyer_institutional' THEN ARRAY['landing','map','directory','list','county','network','flows','reports']
+    WHEN 'buyer_grocery'       THEN ARRAY['landing','map','directory','list','county','network','flows','reports']
+    WHEN 'buyer_foodservice'   THEN ARRAY['landing','map','directory','list','county','network','flows','reports']
+    WHEN 'buyer_farmersmarket' THEN ARRAY['landing','map','directory','list','county','network','flows','reports']
+    WHEN 'buyer_processor'     THEN ARRAY['landing','map','directory','list','county','network','flows','reports']
+    WHEN 'buyer_foodhub'       THEN ARRAY['landing','map','directory','list','county','network','flows','reports']
+    WHEN 'government'          THEN ARRAY['landing','map','directory','list','county','network','flows','dashboard','reports']
+    WHEN 'nonprofit'           THEN ARRAY['landing','map','directory','list','county','network','flows','dashboard','reports']
+    WHEN 'funder'              THEN ARRAY['landing','map','directory','list','county','network','flows','dashboard','reports']
+    WHEN 'aggregator_licensed' THEN ARRAY['landing','map','directory','list','county','network','flows','dashboard','pipeline','reports']
+    WHEN 'afs_internal'        THEN ARRAY['landing','map','directory','list','county','network','flows','dashboard','pipeline','reports']
   END;
 $$;
 
 COMMENT ON FUNCTION public.default_modules_for_tier(public.tier_t) IS
-  'Canonical tier → modules mapping. Pure — does not read any rows. Mirror of the matrix documented in 008_auth_users.sql lines 181–267. Update both together.';
+  'Canonical tier → modules mapping. Pure — does not read any rows. Locked 2026-04-28; source of truth is project_tier_modules_matrix.md in Kelsey memory. The proposed-matrix block in 008_auth_users.sql (lines 181–267) is the original draft and is now historical.';
 
 
 -- ============================================================================
@@ -143,8 +154,10 @@ COMMENT ON FUNCTION public.seed_default_entitlements_for_all() IS
 --
 -- When the auto-provision trigger in 008_auth_users.sql inserts a fresh
 -- user_profiles row at (tier=demo, persona=explore), this trigger then seeds
--- the matching demo entitlements (= all 9 modules). Keeps the demo experience
--- intact without any additional admin work.
+-- the matching demo entitlements. Post-2026-04-28 matrix lock, that means
+-- Map + Dashboard only — the unconnected-visitor floor. Anonymous URL-param
+-- visitors bypass entitlements entirely (network-explorer.tsx treats undefined
+-- as "all tabs unlocked"), so the public sales-demo flow is unaffected.
 --
 -- Fires AFTER INSERT on user_profiles so it sees the row that triggered it.
 -- An admin tier change later (e.g. demo → farmer_free) does NOT re-seed —

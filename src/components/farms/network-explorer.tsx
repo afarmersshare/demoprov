@@ -251,6 +251,7 @@ function prettify(raw: string): string {
 // matches the visual TabsList order so the auto-pick lines up with what the
 // eye sees first.
 const TAB_ORDER: ModuleSlug[] = [
+  "landing",
   "dashboard",
   "map",
   "network",

@@ -18,6 +18,7 @@ export type Tier =
   | "demo";
 
 export type ModuleSlug =
+  | "landing"
   | "map"
   | "network"
   | "flows"
