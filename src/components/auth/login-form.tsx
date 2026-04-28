@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
-type Status = "idle" | "sending" | "sent" | "error";
-type Mode = "magic" | "password";
+type Status = "idle" | "sending" | "sent" | "reset_sent" | "error";
+type Mode = "magic" | "password" | "forgot";
 
 export function LoginForm({
   initialError,
@@ -86,6 +86,32 @@ export function LoginForm({
     window.location.href = next ?? "/";
   }
 
+  async function handleForgot(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!email.trim()) return;
+    setStatus("sending");
+    setErrorMsg(null);
+    // Recovery flow: Supabase emails a token-bearing link. The link routes
+    // to /auth/callback which exchanges the code and forwards to
+    // /reset-password where the user picks a new password. Forcing the next
+    // hop to /reset-password keeps the recovery session scoped to that
+    // single action.
+    const redirectBase =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/auth/callback`
+        : "/auth/callback";
+    const redirectTo = `${redirectBase}?next=${encodeURIComponent("/reset-password")}`;
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo,
+    });
+    if (error) {
+      setStatus("error");
+      setErrorMsg(error.message);
+      return;
+    }
+    setStatus("reset_sent");
+  }
+
   if (status === "sent") {
     return (
       <div className="rounded-[12px] border border-cream-shadow bg-warm-cream/60 px-5 py-6 text-center">
@@ -106,6 +132,88 @@ export function LoginForm({
         >
           Use a different email
         </button>
+      </div>
+    );
+  }
+
+  if (status === "reset_sent") {
+    return (
+      <div className="rounded-[12px] border border-cream-shadow bg-warm-cream/60 px-5 py-6 text-center">
+        <div className="font-display text-[22px] font-semibold text-slate-blue mb-2">
+          Check your inbox
+        </div>
+        <p className="text-[14px] leading-relaxed text-charcoal-soft">
+          We sent a password-reset link to{" "}
+          <span className="font-semibold text-charcoal">{email}</span>. Click
+          it to choose a new password. The link works once and then expires.
+        </p>
+        <button
+          type="button"
+          onClick={() => {
+            setStatus("idle");
+            setMode("password");
+            setEmail("");
+          }}
+          className="mt-4 text-[12px] font-semibold uppercase tracking-[0.08em] text-slate-blue hover:text-slate-blue-light transition-colors"
+        >
+          Back to sign in
+        </button>
+      </div>
+    );
+  }
+
+  if (mode === "forgot") {
+    return (
+      <div className="space-y-5">
+        <form onSubmit={handleForgot} className="space-y-3">
+          <div>
+            <h3 className="font-display text-[18px] font-semibold text-slate-blue leading-tight">
+              Reset your password
+            </h3>
+            <p className="mt-1.5 text-[13px] text-charcoal-soft leading-relaxed">
+              Enter the email on your account and we&apos;ll send you a link
+              to choose a new password.
+            </p>
+          </div>
+          <label className="block">
+            <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-charcoal-soft mb-1.5">
+              Email address
+            </span>
+            <input
+              type="email"
+              required
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@organization.org"
+              disabled={status === "sending"}
+              className="w-full rounded-[10px] border border-cream-shadow bg-white px-3.5 py-2.5 text-[14px] text-charcoal placeholder:text-charcoal-soft/50 focus:outline-none focus:border-slate-blue transition-colors disabled:opacity-60"
+            />
+          </label>
+          <button
+            type="submit"
+            disabled={status === "sending" || !email.trim()}
+            className="w-full rounded-[10px] bg-slate-blue px-4 py-3 text-[14px] font-semibold text-white hover:bg-slate-blue-light transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {status === "sending" ? "Sending…" : "Send reset link"}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMode("password");
+              setErrorMsg(null);
+              setStatus("idle");
+            }}
+            className="w-full text-center text-[12px] font-semibold uppercase tracking-[0.08em] text-charcoal-soft hover:text-slate-blue transition-colors"
+          >
+            Back to sign in
+          </button>
+        </form>
+        {errorMsg ? (
+          <p className="text-[12px] text-red-700 bg-red-50 border border-red-200 rounded-[8px] px-3 py-2">
+            {errorMsg}
+          </p>
+        ) : null}
       </div>
     );
   }
@@ -213,6 +321,18 @@ export function LoginForm({
             className="w-full text-center text-[12px] font-semibold uppercase tracking-[0.08em] text-charcoal-soft hover:text-slate-blue transition-colors"
           >
             Use a sign-in link instead
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMode("forgot");
+              setPassword("");
+              setErrorMsg(null);
+              setStatus("idle");
+            }}
+            className="w-full text-center text-[11px] text-charcoal-soft/80 hover:text-slate-blue transition-colors"
+          >
+            Forgot your password?
           </button>
         </form>
       )}
