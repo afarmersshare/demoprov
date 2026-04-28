@@ -6,6 +6,7 @@ import { updateDisplayName, toggleConsent } from "./actions";
 import { AuthChip } from "@/components/auth/auth-chip";
 import { YourDetailsForm } from "@/components/profile/your-details-form";
 import { AvatarUpload } from "@/components/profile/avatar-upload";
+import { ResetPasswordForm } from "@/components/auth/reset-password-form";
 import {
   EMPTY_PROFILE_VALUES,
   type ProfileFieldsValues,
@@ -414,6 +415,20 @@ export default async function ProfilePage() {
               );
             })}
           </ul>
+        </section>
+
+        <section className="rounded-[14px] border border-cream-shadow bg-white p-6 sm:p-7">
+          <h2 className="font-display text-[18px] font-semibold text-charcoal">
+            Change password
+          </h2>
+          <p className="mt-1 text-[13px] text-charcoal-soft">
+            Pick a new password for this account. Stays in effect across all
+            your devices — anywhere you&apos;re signed in keeps its session
+            until it expires.
+          </p>
+          <div className="mt-5 max-w-[420px]">
+            <ResetPasswordForm stayOnPage />
+          </div>
         </section>
 
         <section className="rounded-[14px] border border-cream-shadow bg-white p-6 sm:p-7">

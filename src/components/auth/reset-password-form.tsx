@@ -8,9 +8,20 @@ type Status = "idle" | "saving" | "success" | "error";
 // Client-side new-password form. Calls supabase.auth.updateUser on the
 // active session — works for both the recovery-email flow (lands here
 // from /auth/callback?next=/reset-password) and any signed-in user who
-// navigates directly. On success, redirects home so middleware can route
-// to the persona dashboard.
-export function ResetPasswordForm() {
+// navigates directly.
+//
+// stayOnPage:
+//   undefined / false → recovery default. Full-nav to "/" on success so
+//                       middleware re-reads the session and routes to
+//                       the persona dashboard.
+//   true              → /profile use. Clear the fields, show "Saved."
+//                       and let the user keep editing other profile
+//                       sections without being kicked off the page.
+export function ResetPasswordForm({
+  stayOnPage = false,
+}: {
+  stayOnPage?: boolean;
+} = {}) {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [status, setStatus] = useState<Status>("idle");
@@ -35,6 +46,11 @@ export function ResetPasswordForm() {
       return;
     }
     setStatus("success");
+    if (stayOnPage) {
+      setPassword("");
+      setConfirm("");
+      return;
+    }
     // Full nav so middleware re-reads the session and routes to the right
     // persona surface.
     window.location.href = "/";
@@ -89,9 +105,16 @@ export function ResetPasswordForm() {
         {status === "saving"
           ? "Saving…"
           : status === "success"
-            ? "Saved — redirecting…"
+            ? stayOnPage
+              ? "Saved."
+              : "Saved — redirecting…"
             : "Save new password"}
       </button>
+      {status === "success" && stayOnPage ? (
+        <p className="text-[12px] text-charcoal-soft bg-slate-pale border border-slate-blue/20 rounded-[8px] px-3 py-2">
+          Your password has been updated.
+        </p>
+      ) : null}
       {errorMsg ? (
         <p className="text-[12px] text-red-700 bg-red-50 border border-red-200 rounded-[8px] px-3 py-2">
           {errorMsg}
