@@ -31,7 +31,8 @@ import { EmbedCta } from "../embed-cta";
 import { ReportsTab } from "./reports-tab";
 import { PipelineDashboard } from "../dashboards/pipeline-dashboard";
 import { LockedModule } from "../locked-module";
-import type { ModuleSlug } from "@/lib/auth/get-user";
+import { LandingTab } from "./landing-tab";
+import type { ModuleSlug, Tier } from "@/lib/auth/get-user";
 import { Lock } from "lucide-react";
 
 export type Persona =
@@ -267,6 +268,8 @@ export function NetworkExplorer({
   persona = "explore",
   embedMode = false,
   entitledModules,
+  displayName,
+  tier,
 }: {
   persona?: Persona;
   embedMode?: boolean;
@@ -274,6 +277,10 @@ export function NetworkExplorer({
   // [] = signed in with zero entitlements (treat all tabs as locked).
   // Defined and non-empty = enforce: only listed slugs render the live tool.
   entitledModules?: ModuleSlug[];
+  // Optional — used by the Landing tab to render "Welcome back, {name}" and
+  // the tier badge. Anonymous visitors see a generic greeting.
+  displayName?: string | null;
+  tier?: Tier | null;
 }) {
   // Treating "no plumbed entitlements" as "demo" preserves the existing
   // anonymous experience — the public landing/embed surfaces continue to
@@ -300,8 +307,19 @@ export function NetworkExplorer({
   const [countyFilter, setCountyFilter] = useState<string>(ALL_COUNTIES);
   const [complianceFilter, setComplianceFilter] =
     useState<ComplianceFilter>(ALL_COMPLIANCE);
+  // Default landing surface per persona (locked tier x modules matrix
+  // 2026-04-28). Operators (farmer, buyer, hub) land on the personalized
+  // Landing tab; observers (policymaker, afs, nonprofit, funder) land on
+  // Dashboard; explore lands on Map. The auto-pick useEffect below catches
+  // anyone whose tier doesn't actually entitle them to that default.
+  const defaultTabForPersona = (p: Persona): string => {
+    if (embedMode) return "map";
+    if (p === "explore") return "map";
+    if (p === "farmer" || p === "buyer" || p === "hub") return "landing";
+    return "dashboard";
+  };
   const [activeTab, setActiveTab] = useState<string>(
-    embedMode ? "map" : persona === "explore" ? "map" : "dashboard",
+    defaultTabForPersona(persona),
   );
   const [selectedEntity, setSelectedEntity] = useState<NetworkEntity | null>(
     null,
@@ -727,6 +745,9 @@ export function NetworkExplorer({
           override of the cva defaults in TabsList.
         */}
         <TabsList className="!grid !grid-cols-3 !gap-1 !w-full !h-auto !p-1.5 sm:!inline-flex sm:!gap-0 sm:!w-fit sm:!h-8 sm:!p-[3px]">
+          <TabTriggerWithLock slug="landing" locked={!isUnlocked("landing")}>
+            Landing
+          </TabTriggerWithLock>
           <TabTriggerWithLock slug="map" locked={!isUnlocked("map")}>
             Map
           </TabTriggerWithLock>
@@ -773,6 +794,18 @@ export function NetworkExplorer({
             Reports
           </TabTriggerWithLock>
         </TabsList>
+        <TabsContent value="landing" className="mt-4">
+          {isUnlocked("landing") ? (
+            <LandingTab
+              persona={persona}
+              displayName={displayName}
+              tier={tier}
+              onSelectTab={setActiveTab}
+            />
+          ) : (
+            <LockedModule slug="landing" />
+          )}
+        </TabsContent>
         <TabsContent value="map" className="mt-4">
           {isUnlocked("map") ? (
             <div className="md:grid md:grid-cols-[1fr_340px] md:gap-5">

@@ -172,6 +172,8 @@ function PageBody() {
           <NetworkExplorer
             persona={persona}
             entitledModules={entitledModules}
+            displayName={displayName}
+            tier={tier}
           />
         </div>
       )}
