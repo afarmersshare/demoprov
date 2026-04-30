@@ -86,6 +86,7 @@ const ALL_MODULE_SLUGS: ModuleSlug[] = [
   "dashboard",
   "pipeline",
   "reports",
+  "winnow",
 ];
 
 const MODULE_LABEL: Record<ModuleSlug, string> = {
@@ -99,6 +100,7 @@ const MODULE_LABEL: Record<ModuleSlug, string> = {
   dashboard: "Dashboard",
   pipeline: "Pipeline",
   reports: "Reports",
+  winnow: "WINNOW (funding)",
 };
 
 const PERSONA_LABEL: Record<string, string> = {
