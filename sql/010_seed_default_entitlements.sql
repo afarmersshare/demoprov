@@ -59,7 +59,7 @@ AS $$
     WHEN 'nonprofit'           THEN ARRAY['landing','map','directory','list','county','network','flows','dashboard','reports']
     WHEN 'funder'              THEN ARRAY['landing','map','directory','list','county','network','flows','dashboard','reports']
     WHEN 'aggregator_licensed' THEN ARRAY['landing','map','directory','list','county','network','flows','dashboard','pipeline','reports']
-    WHEN 'afs_internal'        THEN ARRAY['landing','map','directory','list','county','network','flows','dashboard','pipeline','reports']
+    WHEN 'afs_internal'        THEN ARRAY['landing','map','directory','list','county','network','flows','dashboard','pipeline','reports','winnow']
   END;
 $$;
 
