@@ -203,6 +203,98 @@ unchanged (/, /auth/*, /complete-profile, /contact-us, /login, /pricing,
 
 ---
 
+## Entry 3 — Operator persona options preserved in signup form
+
+**Date:** 2026-05-19
+**Phase:** 4
+**Status:** Preserved (in-place, exported alongside the active list)
+**Author:** Claude (with Kelsey's long-leash go-ahead)
+
+### The story
+
+The signup form's persona dropdown previously offered every persona that
+exists in the system — farmers, buyers, food hubs, policymakers, nonprofits,
+funders, explorers. Three of those (farmer, buyer, hub) are operators in
+the food economy: they run businesses inside the system that Atlas
+*observes*. Atlas readers (cities, funders, nonprofits) study the food
+system without operating in it, so a signup choice like "I'm a buyer
+(institution, retail, food service…)" doesn't make sense for the Atlas
+audience.
+
+Per Kelsey's call: farmers *can* sign up for Atlas (their primary use
+case is still further out — likely a white-label per-farmer build that's
+a much-later phase), but buyers and food hubs really only make sense as
+Provender users. So the active signup list keeps farmer, drops buyer and
+hub.
+
+The persona labels also got tightened to match the reader audience
+language: "Government / public sector" became "Government / public sector /
+food council" (food councils are a key Atlas audience and were previously
+inferred under nonprofit, which wasn't quite right). "Nonprofit / food
+council" simplified to "Nonprofit." "Funder / researcher" expanded to
+"Funder / researcher / investor" so impact investors see themselves on
+the dropdown.
+
+The persona_t enum in the database is untouched. Every value (including
+buyer, hub, farmer_paid, etc.) remains valid — we never drop enum values
+per the schema discipline. The signup UI just doesn't expose buyer and
+hub anymore.
+
+### Tech specs
+
+**Edits to `src/components/auth/profile-fields.tsx`:**
+
+1. PERSONA_OPTIONS slimmed to reader-friendly options:
+   - "Government / public sector / food council" → `policymaker`
+   - "Nonprofit" → `nonprofit`
+   - "Funder / researcher / investor" → `funder`
+   - "Farmer / producer" → `farmer`
+   - "Just exploring" → `explore`
+
+2. Added new exported constant `PRESERVED_OPERATOR_PERSONA_OPTIONS`
+   containing the buyer and hub options that were removed from
+   PERSONA_OPTIONS. Lives in the same file so it's discoverable and
+   typed identically.
+
+3. Updated the inline comment block above PERSONA_OPTIONS to explain
+   Atlas's reader-only framing and reference the preserved constant.
+
+**What's NOT changed:**
+
+- The `persona_t` enum in Supabase — values intact.
+- `PERSONA_ENTRIES` in `persona-switcher.tsx` — still has the full set
+  (admin users testing different personas need to see them; Atlas
+  visibility of the switcher itself is gated in `page.tsx` already).
+- Tier values like `farmer_paid`, `buyer_school`, `buyer_institutional`,
+  `aggregator_licensed` — untouched in the SQL tier matrix files.
+
+**Visible demo changes:**
+
+- The persona dropdown on /signup and /complete-profile now shows 5
+  reader options instead of 7 mixed reader/operator options.
+- Anyone with an existing account whose persona is `buyer` or `hub`
+  still works — only the future signup form changed; their stored
+  persona value is still a valid enum value and continues to drive their
+  default views.
+
+**Resurrection notes for Provender's build sprint:**
+
+1. Merge `PRESERVED_OPERATOR_PERSONA_OPTIONS` back into `PERSONA_OPTIONS`
+   in `profile-fields.tsx`. The shape is identical so a spread works:
+   `[...PERSONA_OPTIONS, ...PRESERVED_OPERATOR_PERSONA_OPTIONS]`.
+2. Consider splitting persona options into product-specific sets if the
+   multi-product UI architecture by then has separate signup flows for
+   Atlas vs Provender. (Provender signup is likely an admin-curated
+   "create this aggregator's account" flow rather than self-serve, in
+   which case Provender doesn't even need a persona dropdown.)
+3. The reader-audience label tightening (food council added to
+   policymaker, investor added to funder) is probably right to keep
+   even when operator options come back — review at resurrection time.
+
+**Resurrection trigger:** Provender build sprint, Aug–Nov 2026.
+
+---
+
 ## Entry 2 — Scope toggle and persona switcher gated for operators
 
 **Date:** 2026-05-19

@@ -37,17 +37,37 @@ export const EMPTY_PROFILE_VALUES: ProfileFieldsValues = {
   directoryOptOut: false,
 };
 
-// Personas the user can self-select. Excludes "afs" (admin-only) and uses
-// "explore" as the "just looking" fallback. Maps to the persona_t enum.
+// Personas the user can self-select. Atlas is a reader product — for
+// people who study a regional food system rather than operate inside it.
+// This list reflects that audience.
+//
+// Excludes "afs" (admin-only). Maps to the persona_t enum (which still
+// includes the operator values for Provender's eventual build — see
+// PRESERVED_OPERATOR_PERSONA_OPTIONS below).
 export const PERSONA_OPTIONS: Array<{ value: string; label: string }> = [
   { value: "", label: "Choose one…" },
+  { value: "policymaker", label: "Government / public sector / food council" },
+  { value: "nonprofit", label: "Nonprofit" },
+  { value: "funder", label: "Funder / researcher / investor" },
   { value: "farmer", label: "Farmer / producer" },
+  { value: "explore", label: "Just exploring" },
+];
+
+// PRESERVED — operator persona options for Provender's eventual build.
+// These were active in the pre-Atlas signup flow but make no sense for
+// Atlas's reader audience (a buyer or aggregator runs operations; Atlas
+// only serves observers). The persona_t enum values are intact in the
+// database; only the UI surface excludes them.
+//
+// When Provender's build sprint starts, merge this array back into
+// PERSONA_OPTIONS (or split into separate Provender / Atlas option sets
+// depending on the multi-product UI architecture by then).
+export const PRESERVED_OPERATOR_PERSONA_OPTIONS: Array<{
+  value: string;
+  label: string;
+}> = [
   { value: "buyer", label: "Buyer (institution, retail, food service…)" },
   { value: "hub", label: "Food hub / aggregator" },
-  { value: "policymaker", label: "Government / public sector" },
-  { value: "nonprofit", label: "Nonprofit / food council" },
-  { value: "funder", label: "Funder / researcher" },
-  { value: "explore", label: "Just exploring" },
 ];
 
 // Free-text declared org type. AFS classifies into a real entity node later
