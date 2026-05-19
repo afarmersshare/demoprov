@@ -202,3 +202,112 @@ unchanged (/, /auth/*, /complete-profile, /contact-us, /login, /pricing,
 **Resurrection trigger:** Provender build sprint, Aug–Nov 2026.
 
 ---
+
+## Entry 2 — Scope toggle and persona switcher gated for operators
+
+**Date:** 2026-05-19
+**Phase:** 3 (combined 3a + 3b)
+**Status:** Preserved (in-place, gated behind a prop)
+**Author:** Claude (with Kelsey's long-leash go-ahead)
+
+### The story
+
+This entry covers two operator-only UI surfaces that were too embedded to
+physically move into the preservation folder. Instead they're preserved
+**in place**, gated behind a single boolean prop. Atlas instances of the
+explorer don't pass the prop (default off) and the operator UI doesn't
+render. Provender's build sprint will flip the prop on and the operator
+UI returns intact, exercised on every Atlas build in the meantime.
+
+The first surface is the **foodshed ↔ "My organization" scope toggle** —
+the single most important control in the original IA, because the "My
+organization" mode was where Provender's subscription value moment lived
+("here's the whole foodshed; here's just your operation"). For Atlas
+readers (cities, funders, nonprofits, researchers) the "My organization"
+mode makes no sense — they have no org represented in the system to scope
+to. So Atlas hides the toggle entirely; readers only ever see the whole
+foodshed.
+
+The second surface is the **top-bar persona switcher** — a dropdown that
+let anonymous URL-param visitors and admin users switch between persona
+lenses (policymaker, farmer, buyer, hub, nonprofit, funder, etc.) for
+demo purposes. Atlas has *one audience* (readers), so the switcher loses
+its purpose: a city planner doesn't need to flip to "buyer view" mid-demo.
+We hide it for everyone except `afs_internal` admin (who still need to
+test different personas for QA). Anonymous visitors who want to preview a
+specific reader view (`?persona=funder`) can still do so via URL — only
+the UI control disappears.
+
+The persona switcher itself stays imported by `page.tsx` and renders
+under the admin condition. The component file `persona-switcher.tsx`
+keeps its full PERSONA_ENTRIES list (including operator personas like
+farmer/buyer/hub) — that list is what an admin would see when QAing the
+old operator views. Phase 4 may revisit whether the operator entries
+should be split out for further preservation discipline.
+
+### Tech specs
+
+**Edits to `src/components/farms/network-explorer.tsx`:**
+
+1. Added a new sub-component `ScopeToggle` at the top of the file. It
+   takes `scope`, `setScope`, and `showOrgMode` props. When `showOrgMode`
+   is false, the component returns `null` (the entire toggle UI
+   disappears, including the "Scope" label). When `showOrgMode` is true,
+   the component renders the original two-button toggle plus the italic
+   "Showing a sample of your-organization-shaped data" descriptor.
+
+2. Replaced the inline scope-toggle JSX (was at lines 936-977) with
+   `<ScopeToggle scope={scope} setScope={setScope}
+   showOrgMode={showOperatorControls} />`.
+
+3. Added a new `showOperatorControls?: boolean` prop to NetworkExplorer
+   (default `false`). The prop is documented inline: it's the
+   per-instance "this is the Provender instance, render operator UI"
+   gate.
+
+4. Updated `defaultCellForPersona`: operator personas (farmer, buyer,
+   hub) only default to `scope: "org"` when `showOperatorControls` is
+   true. In Atlas mode they default to `scope: "foodshed"` along with
+   everyone else.
+
+**Edits to `src/app/page.tsx`:**
+
+1. Changed the persona-switcher visibility conditional from
+   `persona && (!isLoggedIn || isAdmin)` to `persona && isAdmin`.
+   Anonymous visitors no longer see the switcher UI. URL-param persona
+   override still works for them; they just don't get the dropdown.
+
+2. Added an inline comment explaining the visibility rule so a future
+   reader understands why anon visitors lost the switcher.
+
+**Note:** `page.tsx` doesn't pass `showOperatorControls` to its
+`<NetworkExplorer>` instances — the default `false` applies. Atlas mode
+in effect everywhere.
+
+**Visible demo changes:**
+
+- The scope toggle (the "Scope: The whole foodshed | My organization"
+  control above the altitude row) disappears entirely. The altitude row
+  is now the top control in the navigator card.
+- The persona-switcher dropdown in the top-right nav disappears for
+  anonymous visitors and signed-in non-admin users. Only `afs_internal`
+  admin users see it.
+
+**Resurrection notes for Provender's build sprint:**
+
+1. In Provender's instance of `<NetworkExplorer>` (wherever it ends up
+   in the Provender app), pass `showOperatorControls={true}`. That alone
+   resurrects the scope toggle UI and restores operator persona default
+   cells to org-scope.
+
+2. In Provender's top nav (if it reuses page.tsx structure), restore
+   the original conditional `(!isLoggedIn || isAdmin)` for the persona
+   switcher — or whatever visibility rule Provender wants.
+
+3. The PersonaSwitcher component itself doesn't need modification. Its
+   PERSONA_ENTRIES still include the operator entries (farmer, buyer,
+   hub), so once visibility is restored, the dropdown shows them again.
+
+**Resurrection trigger:** Provender build sprint, Aug–Nov 2026.
+
+---

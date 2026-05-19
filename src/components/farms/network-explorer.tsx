@@ -387,12 +387,74 @@ function cellForSlug(
   return null;
 }
 
+// ─── ScopeToggle ─────────────────────────────────────────────────────────────
+// The foodshed ↔ "my organization" scope control. The "My organization" mode
+// is OPERATOR-ONLY: it scopes the data to the viewer's own org, which only
+// makes sense for users who have an org represented in the system
+// (aggregators, food hubs, buyers). Atlas readers (cities, funders,
+// nonprofits) only ever look at the whole foodshed, so the toggle is hidden
+// when `showOrgMode` is false. Preserved here so Provender's build sprint
+// can flip the prop and resurrect the operator behavior intact.
+function ScopeToggle({
+  scope,
+  setScope,
+  showOrgMode,
+}: {
+  scope: Scope;
+  setScope: (s: Scope) => void;
+  showOrgMode: boolean;
+}) {
+  if (!showOrgMode) return null;
+  return (
+    <div className="mb-3 flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
+      <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-charcoal-soft/80">
+        Scope
+      </span>
+      <div className="inline-flex rounded-full border border-cream-shadow bg-white p-[3px] text-[11px] font-semibold uppercase tracking-[0.08em]">
+        <button
+          type="button"
+          onClick={() => setScope("foodshed")}
+          aria-pressed={scope === "foodshed"}
+          className={
+            "rounded-full px-3.5 py-1.5 transition-colors " +
+            (scope === "foodshed"
+              ? "bg-slate-blue text-warm-cream"
+              : "text-charcoal-soft hover:text-slate-blue")
+          }
+        >
+          The whole foodshed
+        </button>
+        <button
+          type="button"
+          onClick={() => setScope("org")}
+          aria-pressed={scope === "org"}
+          className={
+            "rounded-full px-3.5 py-1.5 transition-colors " +
+            (scope === "org"
+              ? "bg-accent-amber text-charcoal"
+              : "text-charcoal-soft hover:text-slate-blue")
+          }
+        >
+          My organization
+        </button>
+      </div>
+      {scope === "org" ? (
+        <span className="text-[11px] italic text-charcoal-soft/85 leading-snug">
+          Showing a sample of your-organization-shaped data. With your
+          data connected, this is the live read of your operations.
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
 export function NetworkExplorer({
   persona = "explore",
   embedMode = false,
   entitledModules,
   displayName,
   tier,
+  showOperatorControls = false,
 }: {
   persona?: Persona;
   embedMode?: boolean;
@@ -404,6 +466,13 @@ export function NetworkExplorer({
   // the tier badge. Anonymous visitors see a generic greeting.
   displayName?: string | null;
   tier?: Tier | null;
+  // OPERATOR FEATURE GATE. Default false (Atlas). When true (Provender),
+  // operator-only UI surfaces inside the explorer become visible — the
+  // foodshed↔org scope toggle's "My organization" mode, etc. Atlas readers
+  // (cities, funders, nonprofits) don't have an "org" to scope to; this
+  // prop defaults off for them. Provender's build sprint will flip it on
+  // for operator personas. Preserved in-place rather than moved.
+  showOperatorControls?: boolean;
 }) {
   // Treating "no plumbed entitlements" as "demo" preserves the existing
   // anonymous experience — the public landing/embed surfaces continue to
@@ -430,13 +499,18 @@ export function NetworkExplorer({
   const [countyFilter, setCountyFilter] = useState<string>(ALL_COUNTIES);
   const [complianceFilter, setComplianceFilter] =
     useState<ComplianceFilter>(ALL_COMPLIANCE);
-  // Default IA cell per persona. Operators (farmer, buyer, hub) start in
-  // SYSTEM × OVERVIEW at org scope — what was the "Landing" tab is now
-  // the org-scoped read of the highest altitude. Observers
-  // (policymaker, nonprofit, funder, afs) start in SYSTEM × OVERVIEW at
-  // foodshed scope — the persona-keyed Dashboard. Explore lands at
-  // TERRITORY × OVERVIEW (the map of the region they haven't placed
-  // themselves in yet). Embed mode also starts at TERRITORY × OVERVIEW.
+  // Default IA cell per persona.
+  //
+  // Atlas mode (showOperatorControls=false): every persona lands at
+  // SYSTEM × OVERVIEW × foodshed (the regional Dashboard) — the org scope
+  // doesn't exist in Atlas. "Explore" lands at TERRITORY × OVERVIEW.
+  //
+  // Provender mode (showOperatorControls=true): operators (farmer, buyer,
+  // hub) start in SYSTEM × OVERVIEW × org — the org-scoped read of the
+  // highest altitude (previously the personalized Landing tab). Observers
+  // (policymaker, nonprofit, funder, afs) start at foodshed scope.
+  //
+  // Embed mode always lands at TERRITORY × OVERVIEW × foodshed.
   const defaultCellForPersona = (
     p: Persona,
   ): { altitude: Altitude; focus: Focus; scope: Scope } => {
@@ -444,7 +518,10 @@ export function NetworkExplorer({
       return { altitude: "territory", focus: "overview", scope: "foodshed" };
     if (p === "explore")
       return { altitude: "territory", focus: "overview", scope: "foodshed" };
-    if (p === "farmer" || p === "buyer" || p === "hub")
+    if (
+      showOperatorControls &&
+      (p === "farmer" || p === "buyer" || p === "hub")
+    )
       return { altitude: "system", focus: "overview", scope: "org" };
     return { altitude: "system", focus: "overview", scope: "foodshed" };
   };
@@ -933,48 +1010,13 @@ export function NetworkExplorer({
           at a glance: what scale they're looking at, what aspect, and
           whether the data is the whole basin or just their piece. */}
 
-      {/* Scope toggle — top of the IA, persistent across altitude
-          changes. The single most important control on the page: it's
-          where the subscription value moment lives. */}
-      <div className="mb-3 flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
-        <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-charcoal-soft/80">
-          Scope
-        </span>
-        <div className="inline-flex rounded-full border border-cream-shadow bg-white p-[3px] text-[11px] font-semibold uppercase tracking-[0.08em]">
-          <button
-            type="button"
-            onClick={() => setScope("foodshed")}
-            aria-pressed={scope === "foodshed"}
-            className={
-              "rounded-full px-3.5 py-1.5 transition-colors " +
-              (scope === "foodshed"
-                ? "bg-slate-blue text-warm-cream"
-                : "text-charcoal-soft hover:text-slate-blue")
-            }
-          >
-            The whole foodshed
-          </button>
-          <button
-            type="button"
-            onClick={() => setScope("org")}
-            aria-pressed={scope === "org"}
-            className={
-              "rounded-full px-3.5 py-1.5 transition-colors " +
-              (scope === "org"
-                ? "bg-accent-amber text-charcoal"
-                : "text-charcoal-soft hover:text-slate-blue")
-            }
-          >
-            My organization
-          </button>
-        </div>
-        {scope === "org" ? (
-          <span className="text-[11px] italic text-charcoal-soft/85 leading-snug">
-            Showing a sample of your-organization-shaped data. With your
-            data connected, this is the live read of your operations.
-          </span>
-        ) : null}
-      </div>
+      {/* Scope toggle — top of the IA. Operator-only: only renders when
+          showOperatorControls is true. See ScopeToggle component above. */}
+      <ScopeToggle
+        scope={scope}
+        setScope={setScope}
+        showOrgMode={showOperatorControls}
+      />
 
       {/* Altitude + Focus navigator — contained card with two stacked
           surfaces. The dark upper band is the altitude row (macro lens

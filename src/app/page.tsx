@@ -151,7 +151,12 @@ function PageBody() {
             Provender<span className="text-accent-amber">.</span>
           </Link>
           <div className="flex items-center gap-2.5">
-            {persona && (!isLoggedIn || isAdmin) ? (
+            {/* Persona switcher: Atlas hides this entirely — the demo has
+                one audience (readers), no need to switch lenses. Admin
+                (afs_internal) keeps the switcher for testing different
+                personas. Anon visitors can still set ?persona= via URL if
+                they want to preview a specific reader view. */}
+            {persona && isAdmin ? (
               <PersonaSwitcher persona={persona} isAdmin={isAdmin} />
             ) : null}
             <AuthChip />
