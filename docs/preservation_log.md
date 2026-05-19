@@ -315,6 +315,90 @@ real pricing conversation behind it.
 
 ---
 
+## Entry 5 — Copy sweep + dead-prop cleanup in network-explorer
+
+**Date:** 2026-05-19
+**Phase:** 6
+**Status:** Cleanup (operator-flavored language and dead props removed)
+**Author:** Claude (with Kelsey's long-leash go-ahead)
+
+### The story
+
+Phase 6 was scoped as a sweep of operator-flavored language across active
+Atlas code paths. Surprising finding: almost all of the operator copy was
+already inside files that got preserved in Phases 2, 3, 4, and 5 — the
+personalized Landing tab's "Welcome back, [Name]" greeting, the Pipeline
+dashboard's "Compliance gap flagging" CTAs, the scope-toggle's "live read
+of your operations" descriptor, the pricing page's tier-block copy.
+
+What remained in active code was a single dead-prop pattern: NetworkExplorer
+still accepted `displayName?: string | null` and `tier?: Tier | null` props,
+which were forwarded to the (now-preserved) LandingTab to render the
+"Welcome back, [Name]" header and tier badge. With LandingTab gone, those
+props had no callers using their values — they were just passed in from
+page.tsx and ignored. Removing them tightens the explorer's interface and
+makes it obvious to a future engineer that the explorer doesn't need to
+know who's looking at it (the explorer is a viewer-agnostic IA shell;
+viewer-aware behavior lives in surfaces the explorer renders).
+
+No other operator phrases needed removal from the active demo. The remaining
+"operator" or "AFS internal" mentions in active code are either:
+- accurate role labels (e.g., `afs_internal` tier name in /profile)
+- inside locked-module descriptions for modules that no longer render
+  in Atlas (Pipeline lede)
+- generic auth copy that applies to any user ("Create your account",
+  "Welcome to Provender")
+- comments about removed features that will be cleared on Phase 7 rename
+
+### Tech specs
+
+**Edits to `src/components/farms/network-explorer.tsx`:**
+
+1. Removed `displayName` and `tier` from destructured props in the
+   component signature.
+2. Removed `displayName?: string | null` and `tier?: Tier | null` from
+   the props type.
+3. Removed the inline comment that documented them ("Optional — used by
+   the Landing tab to render 'Welcome back, {name}'...").
+4. Removed `Tier` from the `@/lib/auth/get-user` import — it was no
+   longer referenced anywhere in the file.
+
+**Edits to `src/app/page.tsx`:**
+
+1. Removed `displayName={displayName}` and `tier={tier}` from the
+   `<NetworkExplorer>` JSX. The component invocation is now
+   `<NetworkExplorer persona={persona} entitledModules={entitledModules} />`.
+
+**What's NOT changed:**
+
+- "Create your account" auth copy — generic and audience-agnostic.
+- "AFS internal" tier label in /profile — accurate description of an
+  admin role.
+- "Welcome to Provender" auth-page heading — neutral and will get
+  renamed to Atlas in Phase 7.
+- Module descriptions in `locked-module.tsx` for modules that no longer
+  render (Pipeline) — dead code that doesn't reach Atlas users.
+
+**Visible demo changes:**
+
+- None visually. The dead-prop removal is purely internal.
+- Future code archaeology is cleaner: NetworkExplorer has a tighter
+  prop interface, no stale comments about LandingTab.
+
+**Resurrection notes for Provender's build sprint:**
+
+When LandingTab gets resurrected (per Entry 1's resurrection notes),
+its parent will need to provide the user's `displayName` and `tier`
+again. If NetworkExplorer is reused as Provender's IA shell, restore
+the two props on its signature and pass them through from
+Provender's page-level data fetcher. Or — likelier and cleaner — have
+LandingTab read those values from its own data fetcher rather than
+forwarding them through NetworkExplorer.
+
+**Resurrection trigger:** Same as Entry 1 (Provender build sprint).
+
+---
+
 ## Entry 3 — Operator persona options preserved in signup form
 
 **Date:** 2026-05-19

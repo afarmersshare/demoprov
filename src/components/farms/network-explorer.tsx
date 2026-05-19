@@ -30,7 +30,7 @@ import { BuyerDashboard } from "../dashboards/buyer";
 import { EmbedCta } from "../embed-cta";
 import { ReportsTab } from "./reports-tab";
 import { LockedModule } from "../locked-module";
-import type { ModuleSlug, Tier } from "@/lib/auth/get-user";
+import type { ModuleSlug } from "@/lib/auth/get-user";
 import {
   Lock,
   Layers,
@@ -452,8 +452,6 @@ export function NetworkExplorer({
   persona = "explore",
   embedMode = false,
   entitledModules,
-  displayName,
-  tier,
   showOperatorControls = false,
 }: {
   persona?: Persona;
@@ -462,10 +460,6 @@ export function NetworkExplorer({
   // [] = signed in with zero entitlements (treat all tabs as locked).
   // Defined and non-empty = enforce: only listed slugs render the live tool.
   entitledModules?: ModuleSlug[];
-  // Optional — used by the Landing tab to render "Welcome back, {name}" and
-  // the tier badge. Anonymous visitors see a generic greeting.
-  displayName?: string | null;
-  tier?: Tier | null;
   // OPERATOR FEATURE GATE. Default false (Atlas). When true (Provender),
   // operator-only UI surfaces inside the explorer become visible — the
   // foodshed↔org scope toggle's "My organization" mode, etc. Atlas readers
