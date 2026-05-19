@@ -203,6 +203,118 @@ unchanged (/, /auth/*, /complete-profile, /contact-us, /login, /pricing,
 
 ---
 
+## Entry 4 — Tier × modules pricing page replaced with request-access stub
+
+**Date:** 2026-05-19
+**Phase:** 5
+**Status:** Preserved (full original file in preservation folder)
+**Author:** Claude (with Kelsey's long-leash go-ahead)
+
+### The story
+
+The `/pricing` page previously showed the locked-2026-04-28 unified-product
+tier × modules matrix — four tier blocks (Farmer / Producer, Buyer /
+Institution, Government, Nonprofit, Research, Licensed Aggregator), each
+with eyebrow + name + price headline + price detail + included-modules
+chip list + description + mailto CTA. It also rendered a "highlight"
+banner when a user landed on it from a locked module (e.g.,
+`/pricing?highlight=pipeline` would steer them to the aggregator tier).
+
+That entire page was constructed around the unified-product framing where
+one platform served farmers, buyers, gov/nonprofits, and aggregators each
+at different price points with different modules unlocked. Under the
+three-product architecture (Atlas → Provender → Tilthe), each product
+gets its own pricing, and the unified tier matrix gets retired or
+restructured (deferred per the advisor consult to after June 20).
+
+For Atlas specifically, pricing is undefined right now — Remy hasn't
+ruled on it yet (per the v2-α conversation queue). So the Atlas access
+page is a request-form stub: who Atlas is for, get-in-touch language,
+mailto CTA. No tier table, no price figures.
+
+The full original pricing page is preserved verbatim in
+`_preserved-for-provender/pricing-tiers/pricing-page.tsx` — including
+the TIER_BLOCKS constant, the MODULE_TIER_HINT lookup, the highlight
+banner logic, and the four detailed tier descriptions. When Provender's
+pricing question comes back to the table (post-June-20), the tier
+content here is the starting point. Even if Atlas, Provender, and Tilthe
+each get separate pricing pages, the language and structure here are
+reusable references.
+
+### Tech specs
+
+**Files moved:**
+
+| From | To |
+|---|---|
+| `src/app/pricing/page.tsx` | `src/components/_preserved-for-provender/pricing-tiers/pricing-page.tsx` |
+
+**New `src/app/pricing/page.tsx`:**
+
+- Server-side rendered page (Next.js App Router convention)
+- Imports: Link, Metadata type, ArrowRight icon, AuthChip, SiteFooter
+- Top nav matches the rest of the site (Provender wordmark + AuthChip)
+- Three sections in the main column:
+  1. Header — "Request access for your organization" + paragraph framing
+     Provender as the intelligence layer for non-operators
+  2. Audience card — four bulleted lines: cities/councils, nonprofits,
+     funders/CDFIs/impact investors, researchers/journalists
+  3. Get-in-touch CTA section — slate-blue accent box with mailto
+  4. "How this works" — two-column reassurance about relationship-led
+     access and illustrative demo data
+- Bottom link back to "/" explorer
+
+**What's removed from the active page:**
+
+- TIER_BLOCKS constant (4 tier definitions)
+- MODULE_LABEL + MODULE_TIER_HINT lookups
+- Highlight banner logic (handles `?highlight=` query param)
+- Per-tier price headlines, detail, includes chips, descriptions
+- The "Four kinds of organizations" framing
+
+**What's unchanged:**
+
+- `/pricing` route still exists at the same path
+- Navigation links to `/pricing` (from LockedModule, from
+  cell-placeholder routing, from any hardcoded links) all still work
+- The page still has SiteFooter and AuthChip
+- The locked-2026-04-28 SQL tier matrix (`sql/010`, `sql/013`) is
+  untouched in the migrations folder — only the UI surface changed
+
+**Visible demo changes:**
+
+- `/pricing` now shows a short request-access page instead of the
+  four-block tier matrix.
+- The "highlight" parameter from locked-module CTAs is ignored (the user
+  still lands on /pricing, just sees the new stub regardless of which
+  module they came from).
+- Page metadata title changed from "Plans · Provender" to
+  "Access · Provender".
+
+**Resurrection notes for Provender's build sprint:**
+
+1. The preserved `pricing-page.tsx` is a full working Next.js page. To
+   resurrect: move it back to `src/app/pricing/page.tsx` (or to
+   Provender's equivalent route), and the tier matrix returns.
+2. Before resurrecting verbatim, decide:
+   - Is this Atlas pricing, Provender pricing, or Tilthe pricing?
+     (Probably Provender — the operator tiers in here are
+     aggregator/buyer-shaped.)
+   - Does the tier × modules matrix structure still match Provender's
+     module set by then? Probably not — Provender will have its own
+     modules.
+3. The MODULE_TIER_HINT routing pattern (route locked-module clicks to
+   the cheapest tier that unlocks them) is good UX worth keeping.
+4. The 4-tier structure (Farmer / Buyer / Gov-Nonprofit / Aggregator)
+   was already starting to feel forced for Atlas (which collapsed
+   farmer/buyer/aggregator to operator-only and added researcher).
+   Don't be afraid to restructure on resurrection.
+
+**Resurrection trigger:** Provender (or Tilthe) build sprint with a
+real pricing conversation behind it.
+
+---
+
 ## Entry 3 — Operator persona options preserved in signup form
 
 **Date:** 2026-05-19
