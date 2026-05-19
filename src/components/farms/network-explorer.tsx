@@ -29,9 +29,7 @@ import { FarmerDashboard } from "../dashboards/farmer";
 import { BuyerDashboard } from "../dashboards/buyer";
 import { EmbedCta } from "../embed-cta";
 import { ReportsTab } from "./reports-tab";
-import { PipelineDashboard } from "../dashboards/pipeline-dashboard";
 import { LockedModule } from "../locked-module";
-import { LandingTab } from "./landing-tab";
 import type { ModuleSlug, Tier } from "@/lib/auth/get-user";
 import {
   Lock,
@@ -258,7 +256,6 @@ function prettify(raw: string): string {
 // matches the visual cluster order so the auto-pick lines up with what the
 // eye sees first.
 const TAB_ORDER: ModuleSlug[] = [
-  "landing",
   "dashboard",
   "map",
   "directory",
@@ -267,14 +264,14 @@ const TAB_ORDER: ModuleSlug[] = [
   "network",
   "flows",
   "reports",
-  "pipeline",
 ];
 
 // IA structure (Calla consult, 2026-04-28). Watershed cartography rendered
 // as macro-to-micro: the viewer flies at one of four altitudes, slices by
 // one of four focus areas, and views the data either at the full-foodshed
-// scope or scoped to their organization. Reports and Pipeline are
-// orthogonal utilities, accessible from any cell.
+// scope or scoped to their organization. Reports is an orthogonal utility,
+// accessible from any cell. (Pipeline preserved for Provender — see
+// _preserved-for-provender/pipeline-dashboard.tsx.)
 //
 //   SCOPE    (foodshed | org)                             ← top-level toggle
 //   ALTITUDE (system · territory · flow · ground)         ← what scale
@@ -376,8 +373,8 @@ const CELL_TO_SLUG: Record<Altitude, Partial<Record<Focus, ModuleSlug>>> = {
 };
 
 // Reverse lookup: which (altitude, focus) renders a given slug. Used when
-// LandingTab cards or other UI wants to navigate by slug — the IA layer
-// translates that to the new coordinates.
+// UI elements want to navigate by slug — the IA layer translates that to
+// the new coordinates.
 function cellForSlug(
   slug: ModuleSlug,
 ): { altitude: Altitude; focus: Focus } | null {
@@ -461,30 +458,18 @@ export function NetworkExplorer({
 
   // activeTab is the underlying TabsContent key. Derived from
   // (altitude, focus) — when the cell maps to an existing surface, use
-  // that slug; otherwise route to a "_placeholder" content slot. The
-  // org-scope SYSTEM × OVERVIEW cell is special: it renders the
-  // personalized Landing surface instead of the regional Dashboard.
+  // that slug; otherwise route to a "_placeholder" content slot.
+  // (The org-scope SYSTEM × OVERVIEW cell previously rendered a
+  // personalized Landing surface — that's now preserved for Provender;
+  // org-scope falls through to the regional Dashboard until Provender
+  // ships its own operator surface.)
   const activeTab: string = (() => {
-    if (
-      altitude === "system" &&
-      focus === "overview" &&
-      scope === "org" &&
-      isUnlocked("landing")
-    ) {
-      return "landing";
-    }
     return CELL_TO_SLUG[altitude]?.[focus] ?? "_placeholder";
   })();
 
-  // Legacy setter — accepts a ModuleSlug (LandingTab capability cards,
-  // etc.) and translates to the new (altitude, focus) coordinates.
+  // Legacy setter — accepts a ModuleSlug and translates to the new
+  // (altitude, focus) coordinates.
   const setActiveTab = (slug: string) => {
-    if (slug === "landing") {
-      setAltitude("system");
-      setFocus("overview");
-      setScope("org");
-      return;
-    }
     const cell = cellForSlug(slug as ModuleSlug);
     if (cell) {
       setAltitude(cell.altitude);
@@ -1126,18 +1111,6 @@ export function NetworkExplorer({
         onValueChange={setActiveTab}
         className="w-full"
       >
-        <TabsContent value="landing" className="mt-4">
-          {isUnlocked("landing") ? (
-            <LandingTab
-              persona={persona}
-              displayName={displayName}
-              tier={tier}
-              onSelectTab={setActiveTab}
-            />
-          ) : (
-            <LockedModule slug="landing" />
-          )}
-        </TabsContent>
         <TabsContent value="map" className="mt-4">
           {isUnlocked("map") ? (
             <div className="md:grid md:grid-cols-[1fr_340px] md:gap-5">
@@ -1344,16 +1317,6 @@ export function NetworkExplorer({
             <LockedModule slug="dashboard" />
           )}
         </TabsContent>
-        <TabsContent value="pipeline" className="mt-4">
-          {isUnlocked("pipeline") ? (
-            <PipelineDashboard
-              farms={filteredFarms}
-              complianceByFarm={complianceByFarm}
-            />
-          ) : (
-            <LockedModule slug="pipeline" />
-          )}
-        </TabsContent>
         <TabsContent value="reports" className="mt-4">
           {isUnlocked("reports") ? (
             <ReportsTab
@@ -1382,9 +1345,10 @@ export function NetworkExplorer({
         </TabsContent>
       </Tabs>
 
-      {/* Reports + Pipeline live outside the altitude system — they're
-          orthogonal utilities accessible from any cell. Reports is a
-          spans-altitudes export tool; Pipeline is AFS-internal-only. */}
+      {/* Reports lives outside the altitude system — it's an orthogonal
+          spans-altitudes export tool accessible from any cell. (Pipeline
+          previously lived here too; preserved for Provender — see
+          _preserved-for-provender/pipeline-dashboard.tsx.) */}
       <div className="mt-6 pt-4 border-t border-cream-shadow/60 flex flex-wrap gap-2 items-center">
         <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-charcoal-soft/70">
           Tools
@@ -1401,20 +1365,6 @@ export function NetworkExplorer({
         >
           Reports
         </button>
-        {isUnlocked("pipeline") ? (
-          <button
-            type="button"
-            onClick={() => setActiveTab("pipeline")}
-            className={
-              "rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] transition-colors " +
-              (activeTab === "pipeline"
-                ? "border-slate-blue bg-slate-blue text-warm-cream"
-                : "border-cream-shadow bg-white text-charcoal-soft hover:border-slate-blue hover:text-slate-blue")
-            }
-          >
-            Pipeline · AFS
-          </button>
-        ) : null}
       </div>
 
       <EntityDetailOverlay

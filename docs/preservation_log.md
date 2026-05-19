@@ -91,3 +91,114 @@ disposable.
 2026, gated by AFS aggregation pilot kickoff).
 
 ---
+
+## Entry 1 — Landing tab and Pipeline dashboard preserved
+
+**Date:** 2026-05-19
+**Phase:** 2
+**Status:** Preserved (not yet resurrected)
+**Author:** Claude (with Kelsey's explicit go-ahead)
+
+### The story
+
+Two operator-facing surfaces moved from active Atlas code into preservation
+today: the **personalized Landing tab** and the **Pipeline dashboard**.
+
+The **Landing tab** was the personalized "your home view" rendered when an
+authenticated operator (a farmer, buyer, or food hub persona) hit the demo.
+It said *"Welcome back, [Name]"*, showed their tier badge, and offered
+capability cards that navigated to other tabs based on what their tier
+unlocked. The whole concept assumes the viewer *operates* something —
+they have a farm, a buying program, a hub — and the view orients them
+to their own work. Atlas readers (city planners, funders, nonprofits) don't
+operate anything inside the system, so a personalized Landing doesn't fit.
+The component lives intact for Provender, which absolutely needs an
+operator home view when it ships for AFS internal aggregation operations.
+
+The **Pipeline dashboard** was the AFS-internal sales pipeline tracker —
+a CRM-shaped view of farms in various enrollment stages, paired with
+compliance gap data per farm. It was the most operator-specific surface
+in the entire build, gated to the `afs_internal` tier, accessed via a
+"Pipeline · AFS" button in the bottom Tools strip. Atlas readers have no
+business seeing a sales pipeline. The Pipeline dashboard preserves cleanly
+for Provender — the data model (farms + compliance gaps + enrollment
+stage) is exactly what aggregator operators need.
+
+The IA structure stays unchanged: the watershed altitude grid (System ·
+Territory · Flow · Ground × Overview · Farms · Buyers · Gaps) is the
+Atlas surface and stays in place. What changed: the System × Overview ×
+org cell, which previously rendered the personalized Landing tab,
+now falls through to the regional Dashboard. The org-scope behavior
+itself (the foodshed↔org toggle's "org" mode) is preserved for Phase 3
+to handle properly — that's a `showOperatorControls` prop on the
+explorer, not a file move.
+
+### Tech specs
+
+**Files moved (via `git mv` to preserve history):**
+
+| From | To |
+|---|---|
+| `src/components/farms/landing-tab.tsx` | `src/components/_preserved-for-provender/landing-tab.tsx` |
+| `src/components/dashboards/pipeline-dashboard.tsx` | `src/components/_preserved-for-provender/pipeline-dashboard.tsx` |
+
+**Edits to `src/components/farms/network-explorer.tsx`:**
+
+- Removed `import { PipelineDashboard } from "../dashboards/pipeline-dashboard";`
+- Removed `import { LandingTab } from "./landing-tab";`
+- Removed `"landing"` and `"pipeline"` from `TAB_ORDER`
+- Removed the entire `<TabsContent value="landing">` block
+- Removed the entire `<TabsContent value="pipeline">` block
+- Removed the special-case "landing" branch in the `activeTab` derivation
+  (org-scope System × Overview now falls through to `CELL_TO_SLUG` →
+  "dashboard")
+- Removed the special-case "landing" handler in `setActiveTab`
+- Removed the "Pipeline · AFS" button from the bottom Tools strip
+- Updated comments at lines 273 and 1385 to note Pipeline preservation
+- Updated comment at line 378 to remove the LandingTab-specific reference
+
+**Edits to `tsconfig.json`:**
+
+Added `src/components/_preserved-for-provender` to the `exclude` array so
+TypeScript does not type-check files in the preservation folder. This
+allows preserved files to carry broken relative imports
+(e.g., `landing-tab.tsx` imports `./network-explorer`, which no longer
+resolves from its new location) without failing the Atlas build.
+
+**Verification:** `npm run build` passes cleanly after edits. Routes
+unchanged (/, /auth/*, /complete-profile, /contact-us, /login, /pricing,
+/profile, /reports/[slug], /reset-password, /signup).
+
+**Visible demo changes:**
+
+- The personalized "Landing" tab no longer renders. Operator personas
+  (farmer/buyer/hub) still default to System × Overview × org but that
+  cell now shows the regional Dashboard.
+- The "Pipeline · AFS" button is gone from the bottom Tools strip.
+- The Pipeline tab cannot be reached even by URL because there's no
+  `<TabsContent value="pipeline">` to render.
+
+**Resurrection notes for Provender's build sprint:**
+
+1. **Landing tab** — `landing-tab.tsx` will need its `./network-explorer`
+   import path updated to wherever NetworkExplorer ends up in Provender's
+   tree. The Persona type is imported from network-explorer; Provender
+   will likely keep the same type. The `onSelectTab` prop callback
+   pattern stays usable.
+2. **Pipeline dashboard** — `pipeline-dashboard.tsx` is self-contained
+   except for `Farm` and `complianceByFarm` types (from network-explorer
+   and a sibling module). It needs minimal modification to plug back in.
+3. **The activeTab special-case** — in Provender's network-explorer (or
+   whatever replaces it), restore the special-case so that org-scope
+   System × Overview returns "landing" instead of falling through to
+   dashboard. Restore the `<TabsContent value="landing">` block.
+4. **The Tools strip Pipeline button** — restore inside the Tools strip,
+   gated by `isUnlocked("pipeline")`.
+5. **TAB_ORDER** — re-add `"landing"` and `"pipeline"` slugs.
+6. **tsconfig** — once files are moved out, the `_preserved-for-provender`
+   exclude can stay (other preserved items will still be there) or be
+   removed depending on cleanup state.
+
+**Resurrection trigger:** Provender build sprint, Aug–Nov 2026.
+
+---

@@ -46,10 +46,8 @@ When Provender's build sprint starts:
 ```
 _preserved-for-provender/
 ├── README.md                    ← this file
-│
-│   (Phase 2 will add:)
-├── landing-tab.tsx              personalized operator Landing
-├── pipeline-tab.tsx             sales pipeline (afs_internal)
+├── landing-tab.tsx              personalized operator Landing (Phase 2)
+├── pipeline-dashboard.tsx       sales pipeline, AFS-internal (Phase 2)
 │
 │   (Phase 4 will add:)
 ├── signup-options.ts            operator persona options
@@ -63,3 +61,11 @@ persona switcher and scope-toggle "org" mode inside `network-explorer.tsx`),
 the preservation strategy is **in-place conditionalization** — they live
 inside their original file behind a `showOperatorControls` prop. See the
 log entry for Phase 3 when that lands.
+
+## Build configuration
+
+This folder is excluded from TypeScript type-checking via `tsconfig.json`
+(under `exclude`). That means preserved files can carry broken relative
+imports (e.g., `./network-explorer` references that no longer resolve from
+this folder's location) without breaking the Atlas build. **When a file is
+resurrected**, its imports must be fixed as part of the move out.
