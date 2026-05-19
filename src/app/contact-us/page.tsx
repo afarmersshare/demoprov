@@ -5,9 +5,9 @@ import { ContactForm } from "@/components/contact/contact-form";
 import { SiteFooter } from "@/components/site-footer";
 
 export const metadata: Metadata = {
-  title: "Contact · Provender",
+  title: "Contact · Atlas",
   description:
-    "Reach the Provender team — questions about plans, partnerships, regional rollouts, or research access.",
+    "Reach the Atlas team — questions about plans, partnerships, regional rollouts, or research access.",
 };
 
 // Plain-English contact surface. No backend wiring: the form builds a
@@ -24,7 +24,7 @@ export default function ContactPage() {
             href="/"
             className="font-display text-[26px] font-bold tracking-[-0.02em] leading-none text-slate-blue hover:text-slate-blue-light transition-colors"
           >
-            Provender<span className="text-accent-amber">.</span>
+            Atlas<span className="text-accent-amber">.</span>
           </Link>
           <AuthChip />
         </div>
@@ -40,7 +40,7 @@ export default function ContactPage() {
               Tell us what you&apos;re working on.
             </h1>
             <p className="mt-3 text-[15px] text-charcoal-soft leading-relaxed">
-              Provender is built around real conversations. Drop us a note
+              Atlas is built around real conversations. Drop us a note
               and we&apos;ll come back with a real reply — usually inside a
               few business days.
             </p>

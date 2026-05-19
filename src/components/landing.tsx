@@ -39,7 +39,7 @@ const ROLES: Role[] = [
     need: "I need buyers who understand what I produce and can verify it.",
     position: {
       head: "You're inside the system. Most tools are built looking at you from outside it.",
-      body: "Provender starts where you are. Your certifications, capacity, and practices become legible to the buyers and institutions near you — without you having to navigate their procurement portals to get there.",
+      body: "Atlas starts where you are. Your certifications, capacity, and practices become legible to the buyers and institutions near you — without you having to navigate their procurement portals to get there.",
     },
     finds: [
       {
@@ -63,7 +63,7 @@ const ROLES: Role[] = [
     need: "I need reliable regional supply I can trace and verify.",
     position: {
       head: "You need supply you can trust before you can commit to it.",
-      body: "Provender maps what's available in your region — verified capacity, certification status, seasonal reliability — so you can evaluate supply before you make the call, not after.",
+      body: "Atlas maps what's available in your region — verified capacity, certification status, seasonal reliability — so you can evaluate supply before you make the call, not after.",
     },
     finds: [
       {
@@ -87,7 +87,7 @@ const ROLES: Role[] = [
     need: "I aggregate, process, or distribute between farms and markets.",
     position: {
       head: "You sit between supply and demand. The system rarely shows you both at once.",
-      body: "Provender maps upstream and downstream simultaneously — farms, buyers, flow volumes, county gaps — so you can see where you fit and where the connections you facilitate are most needed.",
+      body: "Atlas maps upstream and downstream simultaneously — farms, buyers, flow volumes, county gaps — so you can see where you fit and where the connections you facilitate are most needed.",
     },
     finds: [
       {
@@ -103,7 +103,7 @@ const ROLES: Role[] = [
         detail: "What's already routing through where.",
       },
     ],
-    note: "API integration means Provender connects to what you already use — it doesn't ask you to start over.",
+    note: "API integration means Atlas connects to what you already use — it doesn't ask you to start over.",
   },
   {
     id: "policymaker",
@@ -111,7 +111,7 @@ const ROLES: Role[] = [
     need: "I need to see system gaps and measure regional resilience.",
     position: {
       head: "You need the system to be legible before you can intervene in it.",
-      body: "Provender translates farm-level data into regional patterns — compliance readiness, supply gaps, equity indicators, concentration risk — so you can see where policy leverage actually exists.",
+      body: "Atlas translates farm-level data into regional patterns — compliance readiness, supply gaps, equity indicators, concentration risk — so you can see where policy leverage actually exists.",
     },
     finds: [
       {
@@ -135,7 +135,7 @@ const ROLES: Role[] = [
     need: "I source from farms and route food to people and places it needs to reach.",
     position: {
       head: "You move food where it's needed, not where it sells.",
-      body: "Provender shows you the farms, recovery sources, and access channels in your region — so you can build supply you can rely on without re-knocking on the same doors every season.",
+      body: "Atlas shows you the farms, recovery sources, and access channels in your region — so you can build supply you can rely on without re-knocking on the same doors every season.",
     },
     finds: [
       {
@@ -159,7 +159,7 @@ const ROLES: Role[] = [
     need: "I need proof of impact and system-level investment opportunity.",
     position: {
       head: "You need to see system leverage, not just individual projects.",
-      body: "Provender makes the regional food system's underlying structure visible — where capital gaps exist, where network maturity is accelerating, where a well-placed investment connects actors who are close but can't find each other.",
+      body: "Atlas makes the regional food system's underlying structure visible — where capital gaps exist, where network maturity is accelerating, where a well-placed investment connects actors who are close but can't find each other.",
     },
     finds: [
       {
@@ -365,7 +365,7 @@ export function Landing() {
           <div className="text-[12px] text-charcoal-soft/75 leading-[1.55]">
             All people, farms, and buyers in this demo are fictional. County
             boundaries are real (US Census); the data schema underneath is the
-            real Provender system.
+            real Atlas system.
           </div>
         </div>
       </div>

@@ -19,7 +19,7 @@ export function SiteFooter() {
         <div className="grid gap-6 sm:grid-cols-[1fr_auto] sm:items-start">
           <div>
             <div className="font-display text-[20px] font-bold tracking-[-0.01em] leading-none text-slate-blue">
-              Provender<span className="text-accent-amber">.</span>
+              Atlas<span className="text-accent-amber">.</span>
             </div>
             <p className="mt-2 text-[13px] text-charcoal-soft leading-relaxed max-w-md">
               Where the regional food system becomes legible — to the people

@@ -341,7 +341,7 @@ export function ProfileFields({
         </legend>
         <p className="text-[13px] leading-relaxed text-charcoal-soft -mt-1">
           By creating your account, you&apos;re agreeing to occasional
-          Provender updates and a directory listing visible to other paying
+          Atlas updates and a directory listing visible to other paying
           users in your tier. Use the boxes below to opt out of either.
         </p>
 
@@ -355,7 +355,7 @@ export function ProfileFields({
           />
           <span>
             <span className="font-semibold text-charcoal">
-              Opt out of Provender updates.
+              Opt out of Atlas updates.
             </span>{" "}
             <span className="text-charcoal-soft">
               We send occasional emails about product changes, regional
@@ -375,7 +375,7 @@ export function ProfileFields({
           />
           <span>
             <span className="font-semibold text-charcoal">
-              Do not show me in the Provender directory.
+              Do not show me in the Atlas directory.
             </span>{" "}
             <span className="text-charcoal-soft">
               By default, other paying users in your tier or above can see

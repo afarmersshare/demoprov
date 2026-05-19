@@ -43,7 +43,7 @@ export default async function CompleteProfilePage() {
             href="/"
             className="font-display text-[26px] font-bold tracking-[-0.02em] leading-none text-slate-blue hover:text-slate-blue-light transition-colors"
           >
-            Provender<span className="text-accent-amber">.</span>
+            Atlas<span className="text-accent-amber">.</span>
           </Link>
           <form action="/auth/signout" method="post">
             <button

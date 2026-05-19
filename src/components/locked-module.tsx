@@ -147,7 +147,7 @@ export function LockedModule({ slug }: { slug: ModuleSlug }) {
           <a
             href={`mailto:hello@afarmersshare.com?subject=Unlock%20${encodeURIComponent(
               pitch.title,
-            )}%20on%20Provender`}
+            )}%20on%20Atlas`}
             className="font-semibold text-slate-blue hover:text-slate-blue-light"
           >
             hello@afarmersshare.com

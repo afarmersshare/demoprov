@@ -124,7 +124,7 @@ function PageBody() {
         <nav className="border-b border-cream-shadow bg-chrome/85 backdrop-blur-md sticky top-0 z-20">
           <div className="mx-auto max-w-7xl flex items-center justify-between px-6 sm:px-10 py-3.5">
             <div className="font-display text-[26px] font-bold tracking-[-0.02em] leading-none text-slate-blue">
-              Provender<span className="text-accent-amber">.</span>
+              Atlas<span className="text-accent-amber">.</span>
             </div>
             <div className="inline-flex items-center gap-2 rounded-full bg-slate-pale px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-charcoal-soft">
               <span className="inline-block h-2 w-2 rounded-full bg-region-badge" />
@@ -148,7 +148,7 @@ function PageBody() {
             href="/"
             className="font-display text-[26px] font-bold tracking-[-0.02em] leading-none text-slate-blue hover:text-slate-blue-light transition-colors"
           >
-            Provender<span className="text-accent-amber">.</span>
+            Atlas<span className="text-accent-amber">.</span>
           </Link>
           <div className="flex items-center gap-2.5">
             {/* Persona switcher: Atlas hides this entirely — the demo has

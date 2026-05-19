@@ -28,7 +28,7 @@ export default async function ResetPasswordPage() {
             href="/"
             className="font-display text-[26px] font-bold tracking-[-0.02em] leading-none text-slate-blue hover:text-slate-blue-light transition-colors"
           >
-            Provender<span className="text-accent-amber">.</span>
+            Atlas<span className="text-accent-amber">.</span>
           </Link>
         </div>
       </nav>

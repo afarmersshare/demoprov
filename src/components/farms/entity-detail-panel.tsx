@@ -634,7 +634,7 @@ function LockedFieldModal({
         </p>
 
         <a
-          href="mailto:hello@afarmersshare.com?subject=Inquiry%20from%20Provender%20demo"
+          href="mailto:hello@afarmersshare.com?subject=Inquiry%20from%20Atlas%20demo"
           className="inline-flex items-center gap-2 rounded-full bg-slate-blue px-4 py-2 text-[12px] font-semibold uppercase tracking-[0.1em] text-warm-cream transition-colors hover:bg-slate-blue-light"
         >
           hello@afarmersshare.com

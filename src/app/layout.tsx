@@ -21,7 +21,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Provender — Louisville food-system explorer",
+  title: "Atlas — Louisville food-system explorer",
   description:
     "A Farmer's Share Corporation · a mapped view of farms across Louisville metro and surrounding Kentucky / Southern Indiana counties.",
 };

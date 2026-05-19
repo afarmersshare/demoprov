@@ -40,7 +40,7 @@ export default async function LoginPage({
             href="/"
             className="font-display text-[26px] font-bold tracking-[-0.02em] leading-none text-slate-blue hover:text-slate-blue-light transition-colors"
           >
-            Provender<span className="text-accent-amber">.</span>
+            Atlas<span className="text-accent-amber">.</span>
           </Link>
           <div className="inline-flex items-center gap-2 rounded-full bg-slate-pale px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-charcoal-soft">
             <span className="inline-block h-2 w-2 rounded-full bg-region-badge" />
@@ -53,7 +53,7 @@ export default async function LoginPage({
         <div className="w-full max-w-[960px]">
           <div className="text-center mb-8">
             <h1 className="font-display text-[28px] sm:text-[32px] font-semibold text-charcoal leading-tight tracking-[-0.01em]">
-              Welcome to Provender
+              Welcome to Atlas
             </h1>
             <p className="mt-2 text-[14px] text-charcoal-soft leading-relaxed">
               New here? Create an account on the left. Already signed up?
@@ -67,7 +67,7 @@ export default async function LoginPage({
             {/* Create an account — left column */}
             <section className="rounded-[14px] border border-cream-shadow bg-white px-6 sm:px-7 py-7 shadow-sm flex flex-col">
               <div className="text-[11px] font-bold uppercase tracking-[0.1em] text-charcoal-soft">
-                New to Provender
+                New to Atlas
               </div>
               <h2 className="mt-2 font-display text-[22px] font-semibold text-slate-blue leading-tight">
                 Create an account

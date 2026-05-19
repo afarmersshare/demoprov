@@ -5,9 +5,9 @@ import { AuthChip } from "@/components/auth/auth-chip";
 import { SiteFooter } from "@/components/site-footer";
 
 export const metadata: Metadata = {
-  title: "Access · Provender",
+  title: "Access · Atlas",
   description:
-    "Request access to Provender for your city, food council, nonprofit, funder, or research organization. Plans are relationship-led, not self-serve.",
+    "Request access to Atlas for your city, food council, nonprofit, funder, or research organization. Plans are relationship-led, not self-serve.",
 };
 
 function mailtoFor(subject: string): string {
@@ -42,7 +42,7 @@ export default async function PricingPage() {
             href="/"
             className="font-display text-[26px] font-bold tracking-[-0.02em] leading-none text-slate-blue hover:text-slate-blue-light transition-colors"
           >
-            Provender<span className="text-accent-amber">.</span>
+            Atlas<span className="text-accent-amber">.</span>
           </Link>
           <AuthChip />
         </div>
@@ -57,7 +57,7 @@ export default async function PricingPage() {
             Request access for your organization
           </h1>
           <p className="mt-3 text-[15px] leading-relaxed text-charcoal-soft">
-            Provender is the intelligence layer for a regional food system —
+            Atlas is the intelligence layer for a regional food system —
             built so non-operators (cities, councils, nonprofits, funders,
             researchers) can read what&apos;s happening, where the gaps are,
             and how value is moving. Access is relationship-led. We scope
@@ -68,7 +68,7 @@ export default async function PricingPage() {
 
         <section className="rounded-[14px] border border-cream-shadow bg-white p-6 sm:p-8">
           <h2 className="font-display text-[22px] font-semibold text-slate-blue leading-tight">
-            Who Provender is built for
+            Who Atlas is built for
           </h2>
           <ul className="mt-4 space-y-4 text-[13.5px] leading-relaxed text-charcoal">
             {AUDIENCE_LINES.map((line) => (
@@ -97,7 +97,7 @@ export default async function PricingPage() {
             to understand. We&apos;ll come back with a fit and a number.
           </p>
           <a
-            href={mailtoFor("Provender access — request")}
+            href={mailtoFor("Atlas access — request")}
             className="mt-5 inline-flex items-center gap-2 rounded-full bg-slate-blue px-6 py-2.5 text-[13px] font-semibold uppercase tracking-[0.08em] text-warm-cream hover:bg-slate-blue-light transition-colors"
           >
             hello@afarmersshare.com
@@ -113,7 +113,7 @@ export default async function PricingPage() {
             <div>
               <p className="font-semibold text-charcoal">Relationship-led</p>
               <p className="mt-1 text-charcoal-soft">
-                Provender scopes access through a conversation, not a
+                Atlas scopes access through a conversation, not a
                 checkout. Pricing reflects your region, audience, and the
                 questions you need answered.
               </p>

@@ -40,7 +40,7 @@ export function ContactForm() {
     e.preventDefault();
     if (!canSubmit) return;
 
-    const subject = `Provender — ${REASON_LABEL[reason]}${
+    const subject = `Atlas — ${REASON_LABEL[reason]}${
       organization.trim() ? ` (${organization.trim()})` : ""
     }`;
 

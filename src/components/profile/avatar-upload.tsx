@@ -204,7 +204,7 @@ export function AvatarUpload({
 
         <p className="text-[12px] text-charcoal-soft/80 leading-relaxed">
           JPEG, PNG, WebP, or GIF up to 2 MB. Visible only to other signed-in
-          Provender users — anonymous visitors can&apos;t see it.
+          Atlas users — anonymous visitors can&apos;t see it.
         </p>
 
         {status === "saved" ? (

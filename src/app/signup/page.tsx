@@ -36,7 +36,7 @@ export default async function SignupPage({
             href="/"
             className="font-display text-[26px] font-bold tracking-[-0.02em] leading-none text-slate-blue hover:text-slate-blue-light transition-colors"
           >
-            Provender<span className="text-accent-amber">.</span>
+            Atlas<span className="text-accent-amber">.</span>
           </Link>
           <div className="inline-flex items-center gap-2 rounded-full bg-slate-pale px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-charcoal-soft">
             <span className="inline-block h-2 w-2 rounded-full bg-region-badge" />
@@ -49,7 +49,7 @@ export default async function SignupPage({
         <div className="w-full max-w-[560px]">
           <div className="text-center mb-7">
             <h1 className="font-display text-[28px] sm:text-[32px] font-semibold text-charcoal leading-tight tracking-[-0.01em]">
-              Create your Provender account
+              Create your Atlas account
             </h1>
             <p className="mt-2 text-[14px] text-charcoal-soft leading-relaxed">
               The basics are required. The rest helps us route you to the right

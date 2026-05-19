@@ -399,6 +399,118 @@ forwarding them through NetworkExplorer.
 
 ---
 
+## Entry 6 — User-facing rename: Provender → Atlas
+
+**Date:** 2026-05-19
+**Phase:** 7
+**Status:** Rename complete; repo + Vercel + DNS unchanged.
+**Author:** Claude (with Kelsey's long-leash go-ahead)
+
+### The story
+
+Everything visible to a user — the wordmark in every nav, every page
+title in the browser tab, every body-copy reference, every mailto subject
+line, every consent checkbox label — now reads "Atlas" instead of
+"Provender." The product the world sees is Atlas.
+
+What did NOT change is intentional:
+
+- The **repo name** (`afarmersshare/demoprov`) — renaming repos is fragile
+  (Vercel, GitHub OAuth, scripts, environment configs all reference it).
+  Repo gets renamed only when there's a real reason and a coordinated
+  push to update every dependent.
+- The **Vercel project name** — same reasoning.
+- The **`prov-demo.afarmersshare.com` URL** — Phase 8 sets up the new
+  `atlas-demo.afarmersshare.com` subdomain alongside.
+- **Code comments** about "Provender's build sprint" — these correctly
+  reference the future Provender product (the operator app) that will be
+  built later. Keeping the word right where it belongs.
+- The **`_preserved-for-provender/` folder name + contents** — that's
+  literally Provender preservation; the word is correct.
+- The **brand palette comment in `globals.css`** — calls the palette
+  "Provender brand palette" historically; future Pell engagement can
+  decide whether to rename to "AFS product family palette" or similar.
+  Not user-facing; leave for naming-conversation cleanup later.
+
+### Tech specs
+
+**Files modified (user-facing strings):**
+
+| File | What changed |
+|---|---|
+| `src/app/layout.tsx` | Page metadata title |
+| `src/app/page.tsx` | Two wordmark instances (signed-in nav + embed-mode nav) |
+| `src/app/contact-us/page.tsx` | Title, description, wordmark, body sentence |
+| `src/app/complete-profile/page.tsx` | Wordmark |
+| `src/app/login/page.tsx` | Wordmark, "Welcome to" heading, "New to" copy |
+| `src/app/pricing/page.tsx` | Title, description, wordmark, body sentences, mailto subject |
+| `src/app/profile/page.tsx` | Notification setting title, wordmark, welcome fallback, "X users" copy |
+| `src/app/reset-password/page.tsx` | Wordmark |
+| `src/app/signup/page.tsx` | Wordmark, "Create your account" heading |
+| `src/app/reports/[slug]/page.tsx` | Report page title pattern |
+| `src/components/contact/contact-form.tsx` | Mailto subject prefix |
+| `src/components/site-footer.tsx` | Wordmark |
+| `src/components/entry-banner.tsx` | "live X demo" sentence |
+| `src/components/auth/profile-fields.tsx` | 3 consent checkbox labels ("X updates", "Opt out of X updates", "Do not show me in the X directory") |
+| `src/components/profile/avatar-upload.tsx` | "other signed-in X users" copy |
+| `src/components/farms/entity-detail-panel.tsx` | Mailto subject |
+| `src/components/locked-module.tsx` | Mailto URL subject param |
+| `src/components/reports/gap-analysis-report.tsx` | "X database" mention |
+| `src/components/reports/report-shell.tsx` | Three report-footer strings (brand attribution, source dataset, generated-by note) |
+| `src/components/landing.tsx` | Eight persona-keyed body-copy lines |
+
+Total: 20 active files modified, approximately 40 string replacements.
+
+**Execution method:**
+
+The bulk of the rename ran as a batch of targeted `sed -i` invocations
+in a single Bash command, each pattern unique enough not to match
+preservation references. Each pattern was tested before execution.
+
+**Verification:**
+
+After the sed batch, every remaining "Provender" mention in the
+codebase was audited:
+- 8 mentions in `network-explorer.tsx` — all code comments documenting
+  preservation behavior and the future Provender product
+- 5 mentions in `profile-fields.tsx` — all code comments about
+  PRESERVED_OPERATOR_PERSONA_OPTIONS
+- 2 mentions in `globals.css` — brand-palette history comment
+- All `_preserved-for-provender/*` files — intentionally preserved as-is
+
+Build passes. No active user-facing string says "Provender" anymore.
+
+**Visible demo changes:**
+
+- Every page title in the browser tab now starts with "Atlas".
+- The wordmark in the top nav (and the footer) reads "Atlas." (with the
+  amber period kept).
+- Login, signup, complete-profile, reset-password pages all greet
+  users with "Welcome to Atlas" / "Create your Atlas account" etc.
+- The landing page's persona-keyed body copy now refers to Atlas as the
+  thing that "starts where you are," "maps what's available," etc.
+- Reports footer reads "Atlas · A Farmer's Share Corporation."
+- Mailto links generate subject lines with "Atlas" instead of
+  "Provender."
+- Consent checkboxes on signup/profile read "Opt out of Atlas updates"
+  and "Do not show me in the Atlas directory."
+
+**Resurrection notes:**
+
+This phase has no preservation in the "resurrection" sense — it's a
+straight rename of user-facing strings. When Provender (the operator
+product) ships, it will have its own UI, its own wordmark, its own
+copy. The Atlas-named copy here doesn't need to be "resurrected" — it
+stays Atlas-named because the Atlas surface stays Atlas.
+
+If Pell ever renames Atlas (the working name was provisional pending
+brand engagement), the same sed-batch pattern can rename everything
+again in roughly five minutes.
+
+**Resurrection trigger:** N/A (rename is permanent for Atlas).
+
+---
+
 ## Entry 3 — Operator persona options preserved in signup form
 
 **Date:** 2026-05-19

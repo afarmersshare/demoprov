@@ -53,7 +53,7 @@ type ManagedConsent = {
 const MANAGED_CONSENTS: ManagedConsent[] = [
   {
     type: "marketing_use",
-    title: "Provender updates",
+    title: "Atlas updates",
     description:
       "Occasional emails about product changes, regional notes, and new opportunities.",
     whenOnLabel: (date) =>
@@ -190,7 +190,7 @@ export default async function ProfilePage() {
             href="/"
             className="font-display text-[26px] font-bold tracking-[-0.02em] leading-none text-slate-blue hover:text-slate-blue-light transition-colors"
           >
-            Provender<span className="text-accent-amber">.</span>
+            Atlas<span className="text-accent-amber">.</span>
           </Link>
           <AuthChip />
         </div>
@@ -202,7 +202,7 @@ export default async function ProfilePage() {
             Your account
           </p>
           <h1 className="mt-1 font-display text-[30px] sm:text-[34px] font-semibold text-slate-blue leading-[1.15] tracking-[-0.015em]">
-            {user.displayName ?? "Welcome to Provender"}
+            {user.displayName ?? "Welcome to Atlas"}
           </h1>
           <p className="mt-1.5 text-[14px] text-charcoal-soft">
             {user.email ?? "—"}
@@ -215,7 +215,7 @@ export default async function ProfilePage() {
           </h2>
           <p className="mt-1 text-[13px] text-charcoal-soft">
             A face goes a long way in a network. Your photo is visible to
-            other signed-in Provender users and never to anonymous visitors.
+            other signed-in Atlas users and never to anonymous visitors.
           </p>
           <div className="mt-5">
             <AvatarUpload

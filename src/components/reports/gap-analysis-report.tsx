@@ -158,7 +158,7 @@ export function GapAnalysisReport() {
         <p className="text-[13px] text-charcoal-soft leading-relaxed">
           <b className="text-charcoal">Supply</b> is the live count of farms
           with <span className="font-mono">afs_member_status = enrolled</span>{" "}
-          per county from the Provender database.
+          per county from the Atlas database.
         </p>
         <p className="mt-3 text-[13px] text-charcoal-soft leading-relaxed">
           <b className="text-charcoal">Demand</b> is an illustrative

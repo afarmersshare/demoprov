@@ -16,7 +16,7 @@ export async function generateMetadata({
   const report = getReport(slug);
   if (!report) return { title: "Report not found" };
   return {
-    title: `${report.name} · Provender`,
+    title: `${report.name} · Atlas`,
     description: report.description,
   };
 }

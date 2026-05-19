@@ -33,7 +33,7 @@ export function EntryBanner() {
       <div className="mx-auto max-w-7xl flex items-start gap-4 px-6 sm:px-10 py-3">
         <p className="flex-1 text-[13px] leading-snug text-slate-blue">
           You&rsquo;re exploring the Louisville&ndash;Kentuckiana region dataset
-          &mdash; a live Provender demo. This is real infrastructure, not a
+          &mdash; a live Atlas demo. This is real infrastructure, not a
           mockup.{" "}
           <a
             href="mailto:hello@afarmersshare.com"
