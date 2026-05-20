@@ -511,6 +511,77 @@ again in roughly five minutes.
 
 ---
 
+## Entry 7 — DNS cutover complete (Phase 8)
+
+**Date:** 2026-05-19
+**Phase:** 8
+**Status:** Complete; Atlas demo live on new URL with old URL redirecting.
+**Author:** Claude (capturing Kelsey's dashboard work)
+
+### The story
+
+The Atlas demo now lives at **atlas-demo.afarmersshare.com**. The old
+**prov-demo.afarmersshare.com** redirects there permanently. The pivot
+is end-to-end visible: a viewer who hits either URL lands on the
+Atlas-named, Atlas-flavored, reader-audience-shaped demo. The mismatch
+between "we call it Atlas internally" and "the URL still says Provender"
+is gone.
+
+The DNS side was Kelsey's hands — adding the subdomain in Vercel
+demoprov project, adding the CNAME record in Cloudflare for
+afarmersshare.com, choosing the redirect for the old subdomain. My
+sandbox doesn't have DNS or Vercel dashboard access, so the
+instructions were handed over and Kelsey executed.
+
+The underlying repo + Vercel project are still named `demoprov` /
+`provender-demo`. That's intentional per the "we never rename
+load-bearing infrastructure on a whim" rule. The domain layer is what
+the world sees; the repo layer is what the engineer touches. They can
+diverge without harm.
+
+### Tech specs
+
+**Vercel demoprov project:**
+- Added `atlas-demo.afarmersshare.com` as a custom domain
+- Added `prov-demo.afarmersshare.com` redirect (308 permanent) →
+  `atlas-demo.afarmersshare.com`
+
+**Cloudflare DNS for afarmersshare.com:**
+- CNAME record: `atlas-demo` → (Vercel-issued CNAME target)
+- Proxy status: DNS only (gray cloud) — Vercel handles TLS directly
+
+**TLS certificate:**
+- Auto-issued by Vercel for the new domain on first verification
+
+**No code changes** in the repo for this phase. DNS + Vercel-side
+config only.
+
+### Visible to users
+
+- `https://atlas-demo.afarmersshare.com` resolves and serves the Atlas
+  demo with valid TLS.
+- `https://prov-demo.afarmersshare.com` 308-redirects to the new URL.
+  Bookmarks and shared links keep working with a one-hop redirect.
+- The pivot is fully visible end-to-end — URL, page titles, wordmark,
+  body copy, mailto subjects, footer attribution. Nothing says
+  "Provender" to a user anymore.
+
+### What's NOT changed (intentional)
+
+- GitHub repo name (`afarmersshare/demoprov`)
+- Vercel project name (`demoprov`)
+- Supabase project ID (`lxehhllpomioqvjdjqzq`)
+- Local working directory (`C:/Users/kelsh/dev/provender-demo`)
+- The Furrow tracker URL (`furrow.afarmersshare.com`) — that's a
+  separate app
+
+**Resurrection trigger:** N/A. The Atlas URL is permanent for the
+reader product. Provender (the operator product) will get its own
+subdomain (likely `provender.afarmersshare.com` or similar) when its
+build sprint starts.
+
+---
+
 ## Entry 3 — Operator persona options preserved in signup form
 
 **Date:** 2026-05-19
