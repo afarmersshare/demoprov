@@ -27,7 +27,8 @@ export type ModuleSlug =
   | "county"
   | "dashboard"
   | "pipeline"
-  | "reports";
+  | "reports"
+  | "winnow";
 
 export type AuthedUser = {
   userId: string;
